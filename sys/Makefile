@@ -15,6 +15,11 @@ INCLUDES := -I.
 LIBS := # -lm
 
 SRCS := $(wildcard *.[Sc])
+
+# Library printf
+SRCS += printf/printf.c
+INCLUDES += -I./printf
+
 OBJS := $(patsubst %.c,%.o,$(SRCS))
 OBJS := $(patsubst %.S,%.o,$(OBJS))
 OBJS := $(addprefix $(BUILD_DIR)/, $(OBJS))
@@ -29,12 +34,12 @@ all: $(KERNEL_IMG)  # Default target
 
 $(BUILD_DIR)/%.o: %.S
 	@ printf "  %-4s %-16s %s\n" AS $< "$(C_OPTIONS)"
-	$(V) mkdir -p $(BUILD_DIR)
+	$(V) mkdir -p $(BUILD_DIR)/$(dir $<)
 	$(V) $(CC) -c $< -o $@ $(CFLAGS)
 
 $(BUILD_DIR)/%.o: %.c
 	@ printf "  %-4s %-16s %s\n" CC $< "$(C_OPTIONS)"
-	$(V) mkdir -p $(BUILD_DIR)
+	$(V) mkdir -p $(BUILD_DIR)/$(dir $<)
 	$(V) $(CC) -c $< -o $@ $(CFLAGS)
 
 $(KERNEL_ELF): $(OBJS) link.ld

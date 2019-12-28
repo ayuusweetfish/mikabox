@@ -1,0 +1,6 @@
+[submodule "sys/printf"]
+	path = sys/printf
+	url = https://github.com/mpaland/printf.git
+[submodule "sys/stb"]
+	path = sys/stb
+	url = https://github.com/nothings/stb.git
