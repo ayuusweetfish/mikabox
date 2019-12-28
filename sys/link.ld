@@ -4,7 +4,7 @@ SECTIONS
   PROVIDE(__executable_start = 0x8000);
 
   .text.startup : { *(.text.startup) }
-  .text : { *(.text) }
+  .text : { *(.text .text.*) }
   .rodata : { *(.rodata) }
   .data : { *(.data) }
   . = ALIGN(0x8);
