@@ -25,6 +25,8 @@ ARCH_FLAGS := -mfpu=vfp -mfloat-abi=hard -march=armv6k -mtune=arm1176jzf-s
 CFLAGS := $(ARCH_FLAGS) $(C_OPTIONS) $(INCLUDES)
 LDFLAGS := $(ARCH_FLAGS) -nostartfiles $(LIBS)
 
+all: $(KERNEL_IMG)  # Default target
+
 $(BUILD_DIR)/%.o: %.S
 	@ printf "  %-4s %-16s %s\n" AS $< "$(C_OPTIONS)"
 	$(V) mkdir -p $(BUILD_DIR)
@@ -46,4 +48,4 @@ $(KERNEL_IMG): $(KERNEL_ELF)
 clean:
 	rm -rf $(BUILD_DIR)
 
-.DEFAULT_GOAL := $(KERNEL_IMG)
+.PHONY: clean all
