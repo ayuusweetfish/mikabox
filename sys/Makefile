@@ -10,30 +10,34 @@ OBJCOPY = $(TOOLCHAIN_PREFIX)objcopy
 V := @
 
 BUILD_DIR := build
-C_OPTIONS := -O2
+C_OPTIONS := -std=c99 -O2
+INCLUDES := -I.
+LIBS := -lm
 
-S_SRCS := $(wildcard *.S)
-C_SRCS := $(wildcard *.c)
-S_OBJS := $(addprefix $(BUILD_DIR)/, $(notdir $(S_SRCS:.S=.o)))
-C_OBJS := $(addprefix $(BUILD_DIR)/, $(notdir $(C_SRCS:.c=.o)))
+SRCS := $(wildcard *.[Sc])
+OBJS := $(patsubst %.c,%.o,$(SRCS))
+OBJS := $(patsubst %.S,%.o,$(OBJS))
+OBJS := $(addprefix $(BUILD_DIR)/, $(OBJS))
 KERNEL_ELF := $(BUILD_DIR)/kernel.elf
 KERNEL_IMG := $(BUILD_DIR)/kernel.img
 
-CFLAGS := -mfpu=vfp -mfloat-abi=hard -march=armv6k -mtune=arm1176jzf-s $(C_OPTIONS)
+CFLAGS := -mfpu=vfp -mfloat-abi=hard -march=armv6k -mtune=arm1176jzf-s \
+  $(C_OPTIONS) $(INCLUDES)
+LDFLAGS := -nostartfiles -nostdlib $(LIBS)
+
+$(BUILD_DIR)/%.o: %.S
+	@ printf "  %-4s %-16s %s\n" AS $< "$(C_OPTIONS)"
+	$(V) mkdir -p $(BUILD_DIR)
+	$(V) $(CC) $(CFLAGS) -c $< -o $@
 
 $(BUILD_DIR)/%.o: %.c
 	@ printf "  %-4s %-16s %s\n" CC $< "$(C_OPTIONS)"
 	$(V) mkdir -p $(BUILD_DIR)
 	$(V) $(CC) $(CFLAGS) -c $< -o $@
 
-$(BUILD_DIR)/%.o: %.S
-	@ printf "  %-4s %-16s %s\n" CC $< "$(C_OPTIONS)"
-	$(V) mkdir -p $(BUILD_DIR)
-	$(V) $(CC) $(CFLAGS) -c $< -o $@
-
-$(KERNEL_ELF): $(S_OBJS) $(C_OBJS) link.ld
+$(KERNEL_ELF): $(OBJS) link.ld
 	@ printf "  %-4s %s\n" LD $@
-	$(V) $(LD) $(LDFLAGS) -nostartfiles -T link.ld $(S_OBJS) $(C_OBJS) -o $@
+	$(V) $(CC) $(LDFLAGS) -nostartfiles -T link.ld $(OBJS) -o $@
 
 $(KERNEL_IMG): $(KERNEL_ELF)
 	@ printf "  %-4s %-16s %s\n" COPY $< $@
@@ -42,4 +46,4 @@ $(KERNEL_IMG): $(KERNEL_ELF)
 clean:
 	rm -rf $(BUILD_DIR)
 
-all: $(KERNEL_IMG)
+.DEFAULT_GOAL := $(KERNEL_IMG)
