@@ -24,8 +24,8 @@
 
 #define MAX_ROWS  32
 #define MAX_COLS  80
-#define CHAR_W    12
-#define CHAR_H    24
+#define CHAR_W    10
+#define CHAR_H    20
 #define CHAR_BL   18  // Baseline
 static char buf[MAX_ROWS][MAX_COLS];
 static uint32_t w, h, rs, cs;
@@ -98,11 +98,6 @@ void _putchar(char character)
   }
 }
 
-static inline float f(float x)
-{
-  return x * x * x * 4;
-}
-
 void charbuf_flush()
 {
   uint32_t blend[256];
@@ -114,14 +109,10 @@ void charbuf_flush()
   }
 
   uint32_t time = *TMR_CLO;
-  float phase = (float)(time & ((1 << 20) - 1)) / (1 << 20);
-  // float angle = sinf((phase - 0.5f) * M_PI * 2) / 2 + phase * M_PI;
-  float angle = (phase < 0.5 ? f(phase) : (1 - f(1 - phase))) * M_PI;
-  float cos_angle = cos(angle);
-  float sin_angle = sin(angle);
-  const float R = 5;
-  const float T = 1.5;
-  float ycen = phase * (1 - phase) * R * 4 + R + 2;
+  float phase = (float)(time & ((1 << 19) - 1)) / (1 << 19);
+  const float R = 3;
+  float ycen = phase * (1 - phase) * R * 5 + R + 2;
+  float value = 128 + 64 * cosf(phase * M_PI * 2);
 
   uint32_t r0 = r, c0 = c;
   for (uint32_t r = 0, y0 = 0; r <= rs; r++, y0 += CHAR_H)
@@ -134,11 +125,9 @@ void charbuf_flush()
         float dx = (float)x + 0.5f - 0.5f * CHAR_W;
         float dy = (float)y + 0.5f - CHAR_H + ycen;
         float dcsq = dx * dx + dy * dy;
-        float dl = fabsf(dx * cos_angle + dy * sin_angle);
-        if (dcsq <= (R + 1) * (R + 1) && dl <= T + 0.5) {
-          float p = 192;
+        if (dcsq <= (R + 1) * (R + 1)) {
+          float p = value;
           if (dcsq > R * R) p *= (1 - (sqrtf(dcsq) - R));
-          if (dl > T) p *= (1 - (dl - T) * 2);
           pix = (uint8_t)(p + 0.5f);
         }
       }

@@ -16,21 +16,22 @@ int main()
   stbtt_InitFont(&font, fbuf,
     stbtt_GetFontOffsetForIndex(fbuf, 0));
 
-  int w = 12, h = 24;
+  // Character width, height, baseline
+  int w = 10, h = 20, bl = 15;
   uint8_t *bitmap = (uint8_t *)malloc(w * (h + 1));
 
   fp = fopen("font_bitmap.h", "w");
 
   for (char c = 32; c != (char)128; c++) {
     int x0, y0, x1, y1;
-    float scale = stbtt_ScaleForPixelHeight(&font, 24);
+    float scale = stbtt_ScaleForPixelHeight(&font, h);
 
     stbtt_GetCodepointBitmapBox(
       &font, c, scale, scale, &x0, &y0, &x1, &y1);
 
     memset(bitmap, 0, w * h);
     stbtt_MakeCodepointBitmap(&font,
-      bitmap + w * (18 + y0) + x0, w, h - (18 + y0), w, scale, scale, c);
+      bitmap + w * (bl + y0) + x0, w, h - (bl + y0), w, scale, scale, c);
 
     if (c == 32)
       fprintf(fp, "uint8_t bitmap[%d][%d][%d] = {\n{\n", 128 - 32, h, w);
@@ -39,7 +40,7 @@ int main()
     for (int i = 0; i < h; i++) {
       fprintf(fp, "  {");
       for (int j = 0; j < w; j++)
-        fprintf(fp, "%3d%c", bitmap[i * w + j], j == 11 ? '}' : ',');
+        fprintf(fp, "%3d%c", bitmap[i * w + j], j == w - 1 ? '}' : ',');
       fprintf(fp, ",\n");
     }
   }
