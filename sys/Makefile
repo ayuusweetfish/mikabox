@@ -12,7 +12,7 @@ V := @
 BUILD_DIR := build
 C_OPTIONS := -std=c99 -Wall -O2
 INCLUDES := -I.
-LIBS := # -lm
+LIBS := -lm
 
 SRCS := $(wildcard *.[Sc])
 
