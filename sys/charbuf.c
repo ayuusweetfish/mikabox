@@ -32,6 +32,8 @@ static uint32_t w, h, rs, cs;
 static uint32_t r, c;
 static bool newline_unwritten;
 
+static char last[BUF_COUNT][MAX_ROWS + 1][MAX_COLS + 1];
+
 /*
 static stbtt_fontinfo font;
 static uint8_t bitmap[96][CHAR_H][CHAR_W];
@@ -47,6 +49,7 @@ void charbuf_init(uint32_t width, uint32_t height)
   r = c = 0;
   newline_unwritten = false;
   memset(buf, 0, sizeof buf);
+  memset(last, -1, sizeof last);
 
 /*
   stbtt_InitFont(&font, FantasqueSansMono_Regular_ttf,
@@ -116,12 +119,16 @@ void charbuf_flush()
 
   uint32_t r0 = r, c0 = c;
   for (uint32_t r = 0, y0 = 0; r <= rs; r++, y0 += CHAR_H)
-  for (uint32_t c = 0, x0 = 0; c <= cs; c++, x0 += CHAR_W)
+  for (uint32_t c = 0, x0 = 0; c <= cs; c++, x0 += CHAR_W) {
+    bool is_cursor = (r == rs - 1 && c == c0);
+    char ch = (r == rs ? 0 : buf[(r + r0 + 1) % rs][c]);
+    if (!is_cursor && last[fb_bufid][r][c] == ch) continue;
+    last[fb_bufid][r][c] = (is_cursor ? -1 : ch);
+
     for (uint32_t y = 0; y < CHAR_H && y0 + y < h; y++)
     for (uint32_t x = 0; x < CHAR_W && x0 + x < w; x++) {
-      char ch = (r == rs ? 0 : buf[(r + r0 + 1) % rs][c]);
       uint8_t pix = (ch < 32 ? 0 : bitmap[ch - 32][y][x]);
-      if (r == rs - 1 && c == c0) {
+      if (is_cursor) {
         float dx = (float)x + 0.5f - 0.5f * CHAR_W;
         float dy = (float)y + 0.5f - CHAR_H + ycen;
         float dcsq = dx * dx + dy * dy;
@@ -133,4 +140,5 @@ void charbuf_flush()
       }
       put_pixel(x0 + x, y0 + y, blend[pix]);
     }
+  }
 }

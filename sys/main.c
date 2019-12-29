@@ -26,9 +26,8 @@ struct framebuffer {
   uint32_t size;
 };
 
-#define BUF_COUNT 2
 static uint8_t *fb_bufs[BUF_COUNT];
-static uint32_t fb_bufid = 0;
+uint8_t fb_bufid = 0;
 uint8_t *fb_buf;
 uint32_t fb_pitch;
 
@@ -76,7 +75,7 @@ void vsync_callback()
 {
   *(volatile uint32_t *)(PERI_BASE + 0x600000) = 0;
   static uint8_t count = 0;
-  if (++count == 4) {
+  if (++count == 2) {
     charbuf_flush();
     fb_flip_buffer();
     count = 0;

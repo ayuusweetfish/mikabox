@@ -3,8 +3,11 @@
 
 #include <stdint.h>
 
+#define BUF_COUNT 2
+
 extern uint8_t *fb_buf;
 extern uint32_t fb_pitch;
+extern uint8_t fb_bufid;
 
 static inline void put_pixel(uint32_t x, uint32_t y, uint32_t rgb)
 {
