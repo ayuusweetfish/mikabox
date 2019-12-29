@@ -41,11 +41,17 @@ void sys_main()
 
   mem_barrier();
   *GPFSEL4 |= (1 << 21);
+  uint8_t count = 0;
   while (1) {
+    count++;
+    for (uint8_t i = 0; i < count; i++) printf("Pancak");
+    printf("\n");
+    charbuf_flush();
+
     mem_barrier();
     *GPCLR1 = (1 << 15);
-    for (uint32_t i = 0; i < 10000000; i++) __asm__ __volatile__ ("");
+    for (uint32_t i = 0; i < 3000000; i++) __asm__ __volatile__ ("");
     *GPSET1 = (1 << 15);
-    for (uint32_t i = 0; i < 10000000; i++) __asm__ __volatile__ ("");
+    for (uint32_t i = 0; i < 3000000; i++) __asm__ __volatile__ ("");
   }
 }
