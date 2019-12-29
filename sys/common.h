@@ -18,4 +18,37 @@
 void send_mail(uint32_t data, uint8_t channel);
 uint32_t recv_mail(uint8_t channel);
 
+#define prop_tag(__sz)        \
+  volatile struct {           \
+    volatile uint32_t size;   \
+    volatile uint32_t code;   \
+    volatile struct {         \
+      volatile uint32_t id;   \
+      volatile uint32_t size; \
+      volatile uint32_t code; \
+      volatile union {        \
+        volatile uint32_t u32[(__sz + 3) / 4];  \
+        volatile uint16_t u16[(__sz) / 2];      \
+        volatile uint8_t u8[__sz];              \
+      };                      \
+    } tag __attribute__((packed));  \
+    volatile uint32_t end_tag;      \
+  } __attribute__((packed))
+
+typedef prop_tag(4) prop_tag_4;
+typedef prop_tag(8) prop_tag_8;
+
+#define prop_tag_init(__buf) do {   \
+  (__buf)->size = sizeof *(__buf);  \
+  (__buf)->code = 0;                \
+  (__buf)->tag.code = 0;            \
+  (__buf)->tag.size = sizeof (__buf)->tag.u8; \
+  (__buf)->end_tag = 0;             \
+} while (0)
+
+#define prop_tag_emit(__buf) do { \
+  send_mail(((uint32_t)(__buf) | 0x40000000) >> 4, 8); \
+  recv_mail(8); \
+} while (0)
+
 #endif

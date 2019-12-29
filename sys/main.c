@@ -28,6 +28,18 @@ struct framebuffer {
 uint8_t *fb_buf;
 uint32_t fb_pitch;
 
+uint32_t get_clock_rate(uint8_t id)
+{
+  prop_tag_8 *buf = mmu_ord_alloc(sizeof(prop_tag_8), 16);
+  prop_tag_init(buf);
+  buf->tag.id = 0x30002;
+  buf->tag.u32[0] = id;
+  prop_tag_emit(buf);
+  uint32_t ret = buf->tag.u32[1];
+  mmu_ord_pop();
+  return ret;
+}
+
 void sys_main()
 {
   for (uint8_t *p = &_bss_begin; p < &_bss_end; p++) *p = 0;
@@ -47,7 +59,7 @@ void sys_main()
   f.vwidth = 800; f.vheight = 480;
   f.bpp = 24;
   // 1: channel for framebuffer
-  send_mail(((uint32_t)&f + 0xc0000000) >> 4, 1);
+  send_mail(((uint32_t)&f + 0x40000000) >> 4, 1);
   recv_mail(1);
 
   fb_buf = (uint8_t *)(f.buf);
@@ -55,16 +67,28 @@ void sys_main()
 
   charbuf_init(f.pwidth, f.pheight);
   printf("Hello world!\n");
+  printf("ARM clock rate: %u\n", get_clock_rate(3));
   charbuf_flush();
 
   mem_barrier();
   *GPFSEL4 |= (1 << 21);
-  uint8_t count = 0;
-  while (1) {
+  uint8_t count = 99;
+  while (count > 0) {
+    printf("\n");
+    printf("%u bottle%s of beer on the wall\n", count, count == 1 ? "" : "s");
+    printf("%u bottle%s of beer\n", count, count == 1 ? "" : "s");
+    charbuf_flush();
+
     mem_barrier();
     *GPCLR1 = (1 << 15);
-    for (uint32_t i = 0; i < 10000000; i++) __asm__ __volatile__ ("");
+    for (uint32_t i = 0; i < 100000000; i++) __asm__ __volatile__ ("");
+
+    printf("Take one down, pass it around\n");
+    count--;
+    printf("%u bottle%s of beer on the wall\n", count, count == 1 ? "" : "s");
+    charbuf_flush();
+
     *GPSET1 = (1 << 15);
-    for (uint32_t i = 0; i < 10000000; i++) __asm__ __volatile__ ("");
+    for (uint32_t i = 0; i < 100000000; i++) __asm__ __volatile__ ("");
   }
 }

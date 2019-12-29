@@ -15,11 +15,12 @@ static size_t ord_stack[2048], ord_stack_top = 0;
 
 // Reentrancy is not required, since
 // requests for strongly ordered memory cannot be dynamic
-void *mmu_ord_alloc(size_t size)
+void *mmu_ord_alloc(size_t size, size_t align)
 {
-  void *ret = ord_buf + ord_ptr;
-  ord_stack[ord_stack_top++] = size;
-  ord_ptr += size;
+  size_t align_delta = (align - (ord_ptr % align)) % align;
+  void *ret = ord_buf + ord_ptr + align_delta;
+  ord_stack[ord_stack_top++] = size + align_delta;
+  ord_ptr += size + align_delta;
   return ret;
 }
 
