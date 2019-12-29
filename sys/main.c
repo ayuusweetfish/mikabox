@@ -3,6 +3,7 @@
 #include "charbuf.h"
 #include "mmu.h"
 #include "irq.h"
+#include "prop_tag.h"
 
 #include "printf/printf.h"
 
@@ -30,29 +31,6 @@ static uint8_t *fb_bufs[BUF_COUNT];
 uint8_t fb_bufid = 0;
 uint8_t *fb_buf;
 uint32_t fb_pitch;
-
-uint32_t get_clock_rate(uint8_t id)
-{
-  prop_tag_8 *buf = mmu_ord_alloc(sizeof(prop_tag_8), 16);
-  prop_tag_init(buf);
-  buf->tag.id = 0x30002;
-  buf->tag.u32[0] = id;
-  prop_tag_emit(buf);
-  uint32_t ret = buf->tag.u32[1];
-  mmu_ord_pop();
-  return ret;
-}
-
-void set_virtual_offs(uint32_t x, uint32_t y)
-{
-  prop_tag_8 *buf = mmu_ord_alloc(sizeof(prop_tag_8), 16);
-  prop_tag_init(buf);
-  buf->tag.id = 0x48009;
-  buf->tag.u32[0] = x;
-  buf->tag.u32[1] = y;
-  prop_tag_emit(buf);
-  mmu_ord_pop();
-}
 
 void fb_flip_buffer()
 {
