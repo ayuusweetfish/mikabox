@@ -1,6 +1,7 @@
 #include "main.h"
 #include "common.h"
 #include "charbuf.h"
+#include "mmu.h"
 
 #include "printf/printf.h"
 
@@ -24,6 +25,10 @@ uint32_t fb_pitch;
 
 void sys_main()
 {
+  for (uint32_t i = 0; i < 4096; i++)
+    mmu_table_section(mmu_table, i << 20, i << 20, (i < 4 ? (8 | 4) : 0));
+  mmu_enable(mmu_table);
+
   volatile struct framebuffer f __attribute__((aligned(16))) = { 0 };
   f.pwidth = 800; f.pheight = 480;
   f.vwidth = 800; f.vheight = 480;
@@ -50,8 +55,8 @@ void sys_main()
 
     mem_barrier();
     *GPCLR1 = (1 << 15);
-    for (uint32_t i = 0; i < 3000000; i++) __asm__ __volatile__ ("");
+    for (uint32_t i = 0; i < 10000000; i++) __asm__ __volatile__ ("");
     *GPSET1 = (1 << 15);
-    for (uint32_t i = 0; i < 3000000; i++) __asm__ __volatile__ ("");
+    for (uint32_t i = 0; i < 10000000; i++) __asm__ __volatile__ ("");
   }
 }

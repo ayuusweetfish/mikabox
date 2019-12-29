@@ -22,6 +22,7 @@ INCLUDES += -I./printf
 
 OBJS := $(patsubst %.c,%.o,$(SRCS))
 OBJS := $(patsubst %.S,%.o,$(OBJS))
+OBJS := $(sort $(OBJS))
 OBJS := $(addprefix $(BUILD_DIR)/, $(OBJS))
 KERNEL_ELF := $(BUILD_DIR)/kernel.elf
 KERNEL_IMG := $(BUILD_DIR)/kernel.img
@@ -32,22 +33,30 @@ LDFLAGS := $(ARCH_FLAGS) -nostartfiles $(LIBS)
 
 all: $(KERNEL_IMG)  # Default target
 
+$(BUILD_DIR)/%.o: BN = $(basename $<)
+$(BUILD_DIR)/%.o: %.S %.c
+	@ printf "  %-5s %-16s %s\n" AS/CC "$(BN).S/c" "$(C_OPTIONS)"
+	$(V) mkdir -p $(BUILD_DIR)/$(dir $<)
+	$(V) $(CC) -c $(BN).S -o $(BUILD_DIR)/$(BN).S.o $(CFLAGS)
+	$(V) $(CC) -c $(BN).c -o $(BUILD_DIR)/$(BN).c.o $(CFLAGS)
+	$(V) $(LD) -r $(BUILD_DIR)/$(BN).S.o $(BUILD_DIR)/$(BN).c.o -o $@
+
 $(BUILD_DIR)/%.o: %.S
-	@ printf "  %-4s %-16s %s\n" AS $< "$(C_OPTIONS)"
+	@ printf "  %-5s %-16s %s\n" AS $< "$(C_OPTIONS)"
 	$(V) mkdir -p $(BUILD_DIR)/$(dir $<)
 	$(V) $(CC) -c $< -o $@ $(CFLAGS)
 
 $(BUILD_DIR)/%.o: %.c
-	@ printf "  %-4s %-16s %s\n" CC $< "$(C_OPTIONS)"
+	@ printf "  %-5s %-16s %s\n" CC $< "$(C_OPTIONS)"
 	$(V) mkdir -p $(BUILD_DIR)/$(dir $<)
 	$(V) $(CC) -c $< -o $@ $(CFLAGS)
 
 $(KERNEL_ELF): $(OBJS) link.ld
-	@ printf "  %-4s %s\n" LD $@
+	@ printf "  %-5s %s\n" LD $@
 	$(V) $(CC) -Wl,-T,link.ld $(OBJS) -o $@ $(LDFLAGS)
 
 $(KERNEL_IMG): $(KERNEL_ELF)
-	@ printf "  %-4s %-16s %s\n" COPY $< $@
+	@ printf "  %-5s %-16s %s\n" OBJCP $< $@
 	$(V) $(OBJCOPY) $< -O binary $@
 
 clean:
