@@ -66,3 +66,12 @@ void set_virtual_offs(uint32_t x, uint32_t y)
   _put(u32[1], y);
   _emit();
 }
+
+uint32_t enable_vchiq(uint32_t p)
+{
+  uint32_t ret;
+  _setup(4, 0x48010);
+  _put(u32[0], p);
+  _get(u32[0], ret);
+  return ret;
+}

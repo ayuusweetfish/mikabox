@@ -4,3 +4,6 @@
 [submodule "sys/stb"]
 	path = sys/stb
 	url = https://github.com/nothings/stb.git
+[submodule "sys/AMPi"]
+	path = sys/AMPi
+	url = https://github.com/kawa-yoiko/AMPi.git

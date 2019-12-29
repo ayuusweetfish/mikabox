@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-typedef void (*irq_callback_t)();
-void irq_set_callback(uint8_t source, irq_callback_t fn);
+typedef void (*irq_callback_t)(void *);
+void irq_set_callback(uint8_t source, irq_callback_t fn, void *arg);
 
 #endif

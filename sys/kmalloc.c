@@ -2,8 +2,8 @@
 
 #include <stdint.h>
 
-static uint8_t buf[6553600];
-static size_t ptr = 1;  // Change to 0 after .bss is handled
+static uint8_t buf[1048576];
+static size_t ptr = 0;
 
 void *kmalloc(size_t size)
 {

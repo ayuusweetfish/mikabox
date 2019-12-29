@@ -4,6 +4,7 @@
 
 #define IRQ_MAX 72
 static irq_callback_t callbacks[IRQ_MAX] = { NULL };
+static void *args[IRQ_MAX] = { NULL };
 
 void irq_handler(uint32_t ret_addr)
 {
@@ -23,10 +24,10 @@ void irq_handler(uint32_t ret_addr)
   }
   mem_barrier();
 
-  if (callbacks[source]) callbacks[source]();
+  if (callbacks[source]) callbacks[source](args[source]);
 }
 
-void irq_set_callback(uint8_t source, irq_callback_t fn)
+void irq_set_callback(uint8_t source, irq_callback_t fn, void *arg)
 {
   mem_barrier();
   if (source >= IRQ_MAX) return;
@@ -40,4 +41,5 @@ void irq_set_callback(uint8_t source, irq_callback_t fn)
     else *IRQ_DISABASIC = (1 << (source - 64));
   }
   callbacks[source] = fn;
+  args[source] = arg;
 }

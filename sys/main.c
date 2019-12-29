@@ -6,8 +6,15 @@
 #include "prop_tag.h"
 
 #include "printf/printf.h"
+#include "ampi.h"
+#include "ampienv.h"
 
+#include <math.h>
 #include <string.h>
+
+#ifndef M_PI
+#define M_PI  3.1415926535897932384626433832795
+#endif
 
 extern unsigned char _bss_begin;
 extern unsigned char _bss_end;
@@ -39,17 +46,20 @@ void fb_flip_buffer()
   fb_buf = fb_bufs[fb_bufid];
 }
 
-void timer3_callback()
+void (*periodic)() = NULL;
+
+void timer3_callback(void *_unused)
 {
   do *TMR_CS = 8; while (*TMR_CS & 8);
   uint32_t t = *TMR_CLO;
-  t = t - t % 1000000 + 1000000;
+  t = t - t % 10000 + 10000;
   *TMR_C3 = t;
 
-  printf("Timer!\n");
+  // printf("Timer!\n");
+  if (periodic) periodic();
 }
 
-void vsync_callback()
+void vsync_callback(void *_unused)
 {
   *(volatile uint32_t *)(PERI_BASE + 0x600000) = 0;
   static uint8_t count = 0;
@@ -58,6 +68,20 @@ void vsync_callback()
     fb_flip_buffer();
     count = 0;
   }
+}
+
+static unsigned synth(int16_t *buf, unsigned chunk_size)
+{
+  static uint8_t phase = 0;
+  static uint32_t count = 0;
+  if (count >= 131072) { count = 0; return 0; }
+  for (unsigned i = 0; i < chunk_size; i += 2) {
+    int16_t sample = (int16_t)(32767 * sin(phase / 255.0 * M_PI * 2));
+    buf[i] = buf[i + 1] = sample;
+    phase += 2; // Folds over to 0 ~ 255, generates 344.5 Hz (F4 - ~1/4 semitone)
+  }
+  count += (chunk_size >> 1);
+  return chunk_size;
 }
 
 void sys_main()
@@ -74,10 +98,10 @@ void sys_main()
     mmu_table_section(mmu_table, i << 20, i << 20, 0);
   mmu_enable(mmu_table);
 
+  mem_barrier();
   *TMR_CS = 8;
-  *TMR_C3 = 6000000;
-  irq_set_callback(3, timer3_callback);
-  irq_set_callback(48, vsync_callback);
+  *TMR_C3 = *TMR_CLO + 1000000;
+  irq_set_callback(3, timer3_callback, NULL);
 
   struct framebuffer *f = mmu_ord_alloc(sizeof(struct framebuffer), 16);
   memset(f, 0, sizeof(struct framebuffer));
@@ -95,10 +119,28 @@ void sys_main()
     fb_bufs[i] = base + fb_pitch * f->pheight * i;
   fb_buf = fb_bufs[0];
 
+  irq_set_callback(48, vsync_callback, NULL);
+
+  mem_barrier();
   charbuf_init(f->pwidth, f->pheight);
   printf("Hello world!\n");
   printf("ARM clock rate: %u\n", get_clock_rate(3));
   mmu_ord_pop();  // f
+
+  AMPiInitialize(44100, 4000);
+  AMPiSetChunkCallback(synth);
+  bool b = AMPiStart();
+  printf(b ? "Yes\n" : "No\n");
+  while (1) {
+    printf(AMPiIsActive() ? "\rActive  " : "\rInactive");
+    if (!AMPiIsActive()) {
+      MsDelay(1000);
+      AMPiStart();
+    }
+    MsDelay(20);
+    AMPiPoke();
+  }
+
 
   mem_barrier();
   *GPFSEL4 |= (1 << 21);
