@@ -1,6 +1,7 @@
 #include "charbuf.h"
 #include "main.h"
 #include "kmalloc.h"
+#include "common.h"
 #include "utils/font_bitmap.h"
 /*
 #include "utils/FantasqueSansMono-Regular.ttf.h"
@@ -12,9 +13,14 @@
 #include "stb/stb_truetype.h"
 */
 
+#include <math.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
+
+#ifndef M_PI
+#define M_PI  3.1415926535897932384626433832795
+#endif
 
 #define MAX_ROWS  32
 #define MAX_COLS  80
@@ -92,6 +98,11 @@ void _putchar(char character)
   }
 }
 
+static inline float f(float x)
+{
+  return x * x * x * 4;
+}
+
 void charbuf_flush()
 {
   uint32_t blend[256];
@@ -102,6 +113,16 @@ void charbuf_flush()
     blend[i] = (r << 16) | (g << 8) | b;
   }
 
+  uint32_t time = *TMR_CLO;
+  float phase = (float)(time & ((1 << 20) - 1)) / (1 << 20);
+  // float angle = sinf((phase - 0.5f) * M_PI * 2) / 2 + phase * M_PI;
+  float angle = (phase < 0.5 ? f(phase) : (1 - f(1 - phase))) * M_PI;
+  float cos_angle = cos(angle);
+  float sin_angle = sin(angle);
+  const float R = 5;
+  const float T = 1.5;
+  float ycen = phase * (1 - phase) * R * 4 + R + 2;
+
   uint32_t r0 = r, c0 = c;
   for (uint32_t r = 0, y0 = 0; r <= rs; r++, y0 += CHAR_H)
   for (uint32_t c = 0, x0 = 0; c <= cs; c++, x0 += CHAR_W)
@@ -109,7 +130,18 @@ void charbuf_flush()
     for (uint32_t x = 0; x < CHAR_W && x0 + x < w; x++) {
       char ch = (r == rs ? 0 : buf[(r + r0 + 1) % rs][c]);
       uint8_t pix = (ch < 32 ? 0 : bitmap[ch - 32][y][x]);
-      if (r == rs - 1 && c == c0 && y >= CHAR_H - 3) pix = 192;
+      if (r == rs - 1 && c == c0) {
+        float dx = (float)x + 0.5f - 0.5f * CHAR_W;
+        float dy = (float)y + 0.5f - CHAR_H + ycen;
+        float dcsq = dx * dx + dy * dy;
+        float dl = fabsf(dx * cos_angle + dy * sin_angle);
+        if (dcsq <= (R + 1) * (R + 1) && dl <= T + 0.5) {
+          float p = 192;
+          if (dcsq > R * R) p *= (1 - (sqrtf(dcsq) - R));
+          if (dl > T) p *= (1 - (dl - T) * 2);
+          pix = (uint8_t)(p + 0.5f);
+        }
+      }
       put_pixel(x0 + x, y0 + y, blend[pix]);
     }
 }

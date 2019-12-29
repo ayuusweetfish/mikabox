@@ -70,8 +70,17 @@ void timer3_callback()
   *TMR_C3 = t;
 
   printf("Timer!\n");
-  charbuf_flush();
-  fb_flip_buffer();
+}
+
+void vsync_callback()
+{
+  *(volatile uint32_t *)(PERI_BASE + 0x600000) = 0;
+  static uint8_t count = 0;
+  if (++count == 4) {
+    charbuf_flush();
+    fb_flip_buffer();
+    count = 0;
+  }
 }
 
 void sys_main()
@@ -91,6 +100,7 @@ void sys_main()
   *TMR_CS = 8;
   *TMR_C3 = 6000000;
   irq_set_callback(3, timer3_callback);
+  irq_set_callback(48, vsync_callback);
 
   struct framebuffer *f = mmu_ord_alloc(sizeof(struct framebuffer), 16);
   memset(f, 0, sizeof(struct framebuffer));
@@ -111,8 +121,6 @@ void sys_main()
   charbuf_init(f->pwidth, f->pheight);
   printf("Hello world!\n");
   printf("ARM clock rate: %u\n", get_clock_rate(3));
-  charbuf_flush();
-  fb_flip_buffer();
   mmu_ord_pop();  // f
 
   mem_barrier();
@@ -122,8 +130,6 @@ void sys_main()
     printf("\n");
     printf("%u bottle%s of beer on the wall\n", count, count == 1 ? "" : "s");
     printf("%u bottle%s of beer\n", count, count == 1 ? "" : "s");
-    charbuf_flush();
-    fb_flip_buffer();
 
     mem_barrier();
     *GPCLR1 = (1 << 15);
@@ -132,8 +138,6 @@ void sys_main()
     printf("Take one down, pass it around\n");
     count--;
     printf("%u bottle%s of beer on the wall\n", count, count == 1 ? "" : "s");
-    charbuf_flush();
-    fb_flip_buffer();
 
     *GPSET1 = (1 << 15);
     for (uint32_t i = 0; i < 100000000; i++) __asm__ __volatile__ ("");
