@@ -2,6 +2,7 @@
 #include "common.h"
 #include "charbuf.h"
 #include "mmu.h"
+#include "irq.h"
 
 #include "printf/printf.h"
 
@@ -61,6 +62,18 @@ void fb_flip_buffer()
   fb_buf = fb_bufs[fb_bufid];
 }
 
+void timer3_callback()
+{
+  do *TMR_CS = 8; while (*TMR_CS & 8);
+  uint32_t t = *TMR_CLO;
+  t = t - t % 1000000 + 1000000;
+  *TMR_C3 = t;
+
+  printf("Timer!\n");
+  charbuf_flush();
+  fb_flip_buffer();
+}
+
 void sys_main()
 {
   for (uint8_t *p = &_bss_begin; p < &_bss_end; p++) *p = 0;
@@ -74,6 +87,10 @@ void sys_main()
   for (uint32_t i = bss_ord_page_begin; i <= bss_ord_page_end; i++)
     mmu_table_section(mmu_table, i << 20, i << 20, 0);
   mmu_enable(mmu_table);
+
+  *TMR_CS = 8;
+  *TMR_C3 = 6000000;
+  irq_set_callback(3, timer3_callback);
 
   struct framebuffer *f = mmu_ord_alloc(sizeof(struct framebuffer), 16);
   memset(f, 0, sizeof(struct framebuffer));
