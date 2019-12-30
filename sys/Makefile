@@ -5,6 +5,8 @@ CC      = $(TOOLCHAIN_PREFIX)gcc
 LD      = $(TOOLCHAIN_PREFIX)ld
 OBJCOPY = $(TOOLCHAIN_PREFIX)objcopy
 
+HOSTCC  = gcc
+
 # Verbosity
 # Change to empty string for verbose output
 V := @
@@ -33,33 +35,44 @@ LDFLAGS := $(ARCH_FLAGS) -nostartfiles $(LIBS)
 
 all: $(KERNEL_IMG)  # Default target
 
+EXTRA_CLEAN :=
+
+$(BUILD_DIR)/charbuf.o: utils/font_bitmap.h
+utils/font_bitmap.h: utils/font_bitmap_gen
+	@ printf "  %-7s %s\n" RUN utils/font_bitmap_gen
+	$(V) cd utils && ./font_bitmap_gen
+utils/font_bitmap_gen: utils/font_bitmap_gen.c
+	@ printf "  %-7s %-16s %s\n" HOSTCC $<
+	$(V) $(HOSTCC) $< -o $@
+EXTRA_CLEAN += utils/font_bitmap_gen utils/font_bitmap.h
+
 $(BUILD_DIR)/%.o: BN = $(basename $<)
 $(BUILD_DIR)/%.o: %.S %.c
-	@ printf "  %-5s %-16s %s\n" AS/CC "$(BN).S/c" "$(C_OPTIONS)"
+	@ printf "  %-7s %-16s %s\n" AS/CC "$(BN).S/c" "$(C_OPTIONS)"
 	$(V) mkdir -p $(BUILD_DIR)/$(dir $<)
 	$(V) $(CC) -c $(BN).S -o $(BUILD_DIR)/$(BN).S.o $(CFLAGS)
 	$(V) $(CC) -c $(BN).c -o $(BUILD_DIR)/$(BN).c.o $(CFLAGS)
 	$(V) $(LD) -r $(BUILD_DIR)/$(BN).S.o $(BUILD_DIR)/$(BN).c.o -o $@
 
 $(BUILD_DIR)/%.o: %.S
-	@ printf "  %-5s %-16s %s\n" AS $< "$(C_OPTIONS)"
+	@ printf "  %-7s %-16s %s\n" AS $< "$(C_OPTIONS)"
 	$(V) mkdir -p $(BUILD_DIR)/$(dir $<)
 	$(V) $(CC) -c $< -o $@ $(CFLAGS)
 
 $(BUILD_DIR)/%.o: %.c
-	@ printf "  %-5s %-16s %s\n" CC $< "$(C_OPTIONS)"
+	@ printf "  %-7s %-16s %s\n" CC $< "$(C_OPTIONS)"
 	$(V) mkdir -p $(BUILD_DIR)/$(dir $<)
 	$(V) $(CC) -c $< -o $@ $(CFLAGS)
 
 $(KERNEL_ELF): $(OBJS) link.ld
-	@ printf "  %-5s %s\n" LD $@
+	@ printf "  %-7s %s\n" LD $@
 	$(V) $(CC) -Wl,-T,link.ld $(OBJS) -o $@ $(LDFLAGS)
 
 $(KERNEL_IMG): $(KERNEL_ELF)
-	@ printf "  %-5s %-16s %s\n" OBJCP $< $@
+	@ printf "  %-7s %-16s %s\n" OBJCOPY $< $@
 	$(V) $(OBJCOPY) $< -O binary $@
 
 clean:
-	rm -rf $(BUILD_DIR)
+	rm -rf $(BUILD_DIR) $(EXTRA_CLEAN)
 
 .PHONY: clean all

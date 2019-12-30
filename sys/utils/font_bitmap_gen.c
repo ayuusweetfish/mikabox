@@ -47,7 +47,6 @@ int main()
 
   fprintf(fp, "}\n};\n");
   fclose(fp);
-  puts("Done!");
 
   return 0;
 }
