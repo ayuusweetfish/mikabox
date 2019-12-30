@@ -126,13 +126,30 @@ void sys_main()
   printf("Hello world!\n");
   printf("ARM clock rate: %u\n", get_clock_rate(3));
 
-  irq_set_callback(48, vsync_callback, NULL);
+  mem_barrier();
+  *GPFSEL4 |= (1 << 21);
+  *GPCLR1 = (1 << 15);
+
+  //irq_set_callback(48, vsync_callback, NULL);
 
   v3d_init();
 
   v3d_ctx ctx;
   v3d_ctx_init(&ctx, SCR_W, SCR_H, fb_buf);
   v3d_op(&ctx);
+
+  mem_barrier();
+  *GPSET1 = (1 << 15);
+  printf("--");
+  charbuf_flush();
+
+  while (1) {
+    mem_barrier();
+    *GPCLR1 = (1 << 15);
+    for (uint32_t i = 0; i < 100000000; i++) __asm__ __volatile__ ("");
+    *GPSET1 = (1 << 15);
+    for (uint32_t i = 0; i < 100000000; i++) __asm__ __volatile__ ("");
+  }
 
 /*
   AMPiInitialize(44100, 4000);
