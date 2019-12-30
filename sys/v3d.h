@@ -14,5 +14,6 @@ typedef struct {
 
 void v3d_init();
 void v3d_ctx_init(v3d_ctx *ctx, uint32_t w, uint32_t h, void *bufaddr);
+void v3d_op(v3d_ctx *ctx);
 
 #endif

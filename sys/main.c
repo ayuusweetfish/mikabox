@@ -132,6 +132,7 @@ void sys_main()
 
   v3d_ctx ctx;
   v3d_ctx_init(&ctx, SCR_W, SCR_H, fb_buf);
+  v3d_op(&ctx);
 
 /*
   AMPiInitialize(44100, 4000);

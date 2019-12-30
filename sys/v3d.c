@@ -100,6 +100,32 @@
 
 #define V3D_ERRSTAT v3d_reg(0xf20)  // Miscellaneous Error Signals (VPM, VDW, VCD, VCM, L2C)
 
+// Make sure `float` is 32-bit
+typedef char _ensure_float_32[sizeof(float) == 4 ? 1 : -1];
+
+static inline void _putu8(uint8_t **p, uint8_t x)
+{
+  (*p)[0] = x; *p += 1;
+}
+static inline void _putu16(uint8_t **p, uint16_t x)
+{
+  uint8_t *q = (uint8_t *)&x;
+  (*p)[0] = q[0]; (*p)[1] = q[1];
+  *p += 2;
+}
+static inline void _putu32(uint8_t **p, uint32_t x)
+{
+  uint8_t *q = (uint8_t *)&x;
+  (*p)[0] = q[0]; (*p)[1] = q[1]; (*p)[2] = q[2]; (*p)[3] = q[3];
+  *p += 4;
+}
+static inline void _putf32(uint8_t **p, float x)
+{
+  uint8_t *q = (uint8_t *)&x;
+  (*p)[0] = q[0]; (*p)[1] = q[1]; (*p)[2] = q[2]; (*p)[3] = q[3];
+  *p += 4;
+}
+
 void v3d_init()
 {
   set_clock_rate(5, 250 * 1000 * 1000);
@@ -111,16 +137,69 @@ void v3d_init()
   printf("QPUs enabled\n");
 }
 
+#define OFF_VERT    0
+#define OFF_SHADER  0x1000
+#define OFF_TILEBUF 0x10000
+#define OFF_TILEDAT 0x20000
+#define OFF_BIN     0x30000
+
 void v3d_ctx_init(v3d_ctx *ctx, uint32_t w, uint32_t h, void *bufaddr)
 {
   ctx->w = w;
   ctx->h = h;
   ctx->bufaddr = (uint32_t)bufaddr | GPU_BUS_ADDR;
 
-  uint32_t handle = gpumem_alloc(0x800000, 0x1000, MEM_FLAG_COHERENT | MEM_FLAG_ZERO);
+  uint32_t handle = gpumem_alloc(0x40000, 0x1000, MEM_FLAG_COHERENT | MEM_FLAG_ZERO);
   uint32_t p = gpumem_lock(handle);
   ctx->rhandle = handle;
   ctx->rbusaddr = p;
   ctx->rarmaddr = p & ~GPU_BUS_ADDR;
   printf("%08x %08x\n", ctx->rbusaddr, ctx->rarmaddr);
+}
+
+static uint32_t qvqshader[] = {
+  0x958e0dbf, 0xd1724823,   /* mov r0, vary; mov r3.8d, 1.0 */
+  0x818e7176, 0x40024821,   /* fadd r0, r0, r5; mov r1, vary */
+  0x818e7376, 0x10024862,   /* fadd r1, r1, r5; mov r2, vary */
+  0x819e7540, 0x114248a3,   /* fadd r2, r2, r5; mov r3.8a, r0 */
+  0x809e7009, 0x115049e3,   /* nop; mov r3.8b, r1 */
+  0x809e7012, 0x116049e3,   /* nop; mov r3.8c, r2 */
+  0x159e76c0, 0x30020ba7,   /* mov tlbc, r3; nop; thrend */
+  0x009e7000, 0x100009e7,   /* nop; nop; nop */
+  0x009e7000, 0x500009e7,   /* nop; nop; sbdone */
+};
+#define qvqshaderlen (sizeof qvqshader / sizeof qvqshader[0])
+
+void v3d_op(v3d_ctx *ctx)
+{
+  uint32_t w = ctx->w, h = ctx->h;
+  uint8_t *p;
+  
+  // Vertices
+  p = (uint8_t *)(ctx->rarmaddr) + OFF_VERT;
+  printf("Vertices start: %p\n", p);
+
+  _putu16(&p, (uint32_t)(w * 0.3f) << 4);
+  _putu16(&p, (uint32_t)(h * 0.3f) << 4);
+  _putf32(&p, 1.0f); _putf32(&p, 1.0f);
+  _putf32(&p, 1.0f); _putf32(&p, 0.0f); _putf32(&p, 0.0f);
+
+  _putu16(&p, (uint32_t)(w * 0.3f) << 4);
+  _putu16(&p, (uint32_t)(h * 0.7f) << 4);
+  _putf32(&p, 1.0f); _putf32(&p, 1.0f);
+  _putf32(&p, 0.0f); _putf32(&p, 1.0f); _putf32(&p, 0.0f);
+
+  _putu16(&p, (uint32_t)(w * 0.7f) << 4);
+  _putu16(&p, (uint32_t)(h * 0.7f) << 4);
+  _putf32(&p, 1.0f); _putf32(&p, 1.0f);
+  _putf32(&p, 0.0f); _putf32(&p, 0.0f); _putf32(&p, 1.0f);
+  printf("Vertices end: %p\n", p);
+
+  // Shader
+  p = (uint8_t *)(((uint32_t)p + 127) & ~127);
+  uint32_t shader_start = (uint32_t)p | GPU_BUS_ADDR;
+  printf("Shader instructions start: %p\n", p);
+
+  for (size_t i = 0; i < qvqshaderlen; i++)
+    _putu32(&p, qvqshader[i]);
 }
