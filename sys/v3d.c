@@ -181,23 +181,23 @@ void v3d_op(v3d_ctx *ctx)
   uint32_t vertex_start = (uint32_t)p | alias;
   printf("Vertices start: %p %u\n", p, vertex_start);
 
-  _putu16(&p, (uint32_t)(10) << 4);
-  _putu16(&p, (uint32_t)(10) << 4);
+  _putu16(&p, (uint16_t)(w * 0.3) << 4);
+  _putu16(&p, (uint16_t)(h * 0.3) << 4);
   _putf32(&p, 1.0f); _putf32(&p, 1.0f);
   _putf32(&p, 1.0f); _putf32(&p, 0.0f); _putf32(&p, 0.0f);
 
-  _putu16(&p, (uint32_t)(10) << 4);
-  _putu16(&p, (uint32_t)(40) << 4);
+  _putu16(&p, (uint16_t)(w * 0.3) << 4);
+  _putu16(&p, (uint16_t)(h * 0.7) << 4);
   _putf32(&p, 1.0f); _putf32(&p, 1.0f);
   _putf32(&p, 0.0f); _putf32(&p, 1.0f); _putf32(&p, 0.0f);
 
-  _putu16(&p, (uint32_t)(40) << 4);
-  _putu16(&p, (uint32_t)(10) << 4);
+  _putu16(&p, (uint16_t)(w * 0.7) << 4);
+  _putu16(&p, (uint16_t)(h * 0.3) << 4);
   _putf32(&p, 1.0f); _putf32(&p, 1.0f);
   _putf32(&p, 0.0f); _putf32(&p, 1.0f); _putf32(&p, 0.0f);
 
-  _putu16(&p, (uint32_t)(40) << 4);
-  _putu16(&p, (uint32_t)(40) << 4);
+  _putu16(&p, (uint16_t)(w * 0.7) << 4);
+  _putu16(&p, (uint16_t)(h * 0.7) << 4);
   _putf32(&p, 1.0f); _putf32(&p, 1.0f);
   _putf32(&p, 0.0f); _putf32(&p, 0.0f); _putf32(&p, 1.0f);
   printf("Vertices end: %p\n", p);
@@ -238,8 +238,8 @@ void v3d_op(v3d_ctx *ctx)
   printf("Render control start: %p\n", p);
 
   _putu8(&p, 114);  // GL_CLEAR_COLORS
-  _putu32(&p, 0xff000000);
-  _putu32(&p, 0xff000000);
+  _putu32(&p, 0xff5e81ac);
+  _putu32(&p, 0xff5e81ac);
   _putu32(&p, 0);
   _putu8(&p, 0);
 
@@ -322,6 +322,10 @@ void v3d_op(v3d_ctx *ctx)
   _putu8(&p, 0);    // GL_HALT
   uint32_t bin_cfg_end = (uint32_t)p | alias;
   printf("Binning config end: %p\n", p);
+  uint8_t *q = (uint8_t *)(bin_cfg_start & ~GPU_BUS_ADDR);
+  for (int i = 0; i < 4; i++)
+    for (int j = 0; j < 16; j++, q++)
+      printf("%02x%c", *q, j == 15 ? '\n' : ' ');
 
   // Let's rock!
   *V3D_L2CACTL = 4;
@@ -334,12 +338,10 @@ void v3d_op(v3d_ctx *ctx)
   *V3D_CT0EA = bin_cfg_end;
   while (*V3D_BFC == 0) { }
 
-/*
   *V3D_CT1CS = 0x20;
   while (*V3D_CT1CS & 0x20) { }
   *V3D_RFC = 1;
   *V3D_CT1CA = ren_ctrl_start;
   *V3D_CT1EA = ren_ctrl_end;
   while (*V3D_RFC == 0) { }
-*/
 }

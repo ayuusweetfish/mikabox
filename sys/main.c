@@ -108,7 +108,7 @@ void sys_main()
   memset(f, 0, sizeof(struct framebuffer));
   f->pwidth = SCR_W; f->pheight = SCR_H;
   f->vwidth = SCR_W; f->vheight = SCR_H * BUF_COUNT;
-  f->bpp = 24;
+  f->bpp = 32;
   // 1: channel for framebuffer
   send_mail(((uint32_t)f + 0x40000000) >> 4, 1);
   recv_mail(1);
@@ -125,26 +125,30 @@ void sys_main()
   charbuf_init(SCR_W, SCR_H);
   printf("Hello world!\n");
   printf("ARM clock rate: %u\n", get_clock_rate(3));
-
-  mem_barrier();
-  *GPFSEL4 |= (1 << 21);
-  *GPCLR1 = (1 << 15);
+  charbuf_flush();
+  fb_flip_buffer();
+  MsDelay(5000);
 
   //irq_set_callback(48, vsync_callback, NULL);
 
+  mem_barrier();
   v3d_init();
 
+  mem_barrier();
   v3d_ctx ctx;
   v3d_ctx_init(&ctx, SCR_W, SCR_H, fb_buf);
   v3d_op(&ctx);
+  fb_flip_buffer();
 
   mem_barrier();
-  *GPSET1 = (1 << 15);
-  printf("--");
+  MsDelay(10000);
+  printf("All done batman, we have triangles!\n");
   charbuf_flush();
+  fb_flip_buffer();
 
+  mem_barrier();
+  *GPFSEL4 |= (1 << 21);
   while (1) {
-    mem_barrier();
     *GPCLR1 = (1 << 15);
     for (uint32_t i = 0; i < 100000000; i++) __asm__ __volatile__ ("");
     *GPSET1 = (1 << 15);
