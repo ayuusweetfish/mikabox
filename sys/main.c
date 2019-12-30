@@ -41,7 +41,7 @@ uint32_t fb_pitch;
 
 void fb_flip_buffer()
 {
-  set_virtual_offs(0, 480 * fb_bufid);
+  set_virtual_offs(0, SCR_H * fb_bufid);
   fb_bufid = (fb_bufid + 1) % BUF_COUNT;
   fb_buf = fb_bufs[fb_bufid];
 }
@@ -105,8 +105,8 @@ void sys_main()
 
   struct framebuffer *f = mmu_ord_alloc(sizeof(struct framebuffer), 16);
   memset(f, 0, sizeof(struct framebuffer));
-  f->pwidth = 800; f->pheight = 480;
-  f->vwidth = 800; f->vheight = 480 * BUF_COUNT;
+  f->pwidth = SCR_W; f->pheight = SCR_H;
+  f->vwidth = SCR_W; f->vheight = SCR_H * BUF_COUNT;
   f->bpp = 24;
   // 1: channel for framebuffer
   send_mail(((uint32_t)f + 0x40000000) >> 4, 1);
@@ -118,15 +118,16 @@ void sys_main()
   for (uint32_t i = 0; i < BUF_COUNT; i++)
     fb_bufs[i] = base + fb_pitch * f->pheight * i;
   fb_buf = fb_bufs[0];
+  mmu_ord_pop();  // f
+
+  mem_barrier();
+  charbuf_init(SCR_W, SCR_H);
+  printf("Hello world!\n");
+  printf("ARM clock rate: %u\n", get_clock_rate(3));
 
   irq_set_callback(48, vsync_callback, NULL);
 
-  mem_barrier();
-  charbuf_init(f->pwidth, f->pheight);
-  printf("Hello world!\n");
-  printf("ARM clock rate: %u\n", get_clock_rate(3));
-  mmu_ord_pop();  // f
-
+/*
   AMPiInitialize(44100, 4000);
   AMPiSetChunkCallback(synth);
   bool b = AMPiStart();
@@ -161,4 +162,5 @@ void sys_main()
     *GPSET1 = (1 << 15);
     for (uint32_t i = 0; i < 100000000; i++) __asm__ __volatile__ ("");
   }
+*/
 }

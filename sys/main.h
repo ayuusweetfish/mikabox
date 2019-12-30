@@ -3,6 +3,8 @@
 
 #include <stdint.h>
 
+#define SCR_W 800
+#define SCR_H 480
 #define BUF_COUNT 2
 
 extern uint8_t *fb_buf;
