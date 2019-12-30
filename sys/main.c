@@ -4,6 +4,7 @@
 #include "mmu.h"
 #include "irq.h"
 #include "prop_tag.h"
+#include "v3d.h"
 
 #include "printf/printf.h"
 #include "ampi.h"
@@ -126,6 +127,8 @@ void sys_main()
   printf("ARM clock rate: %u\n", get_clock_rate(3));
 
   irq_set_callback(48, vsync_callback, NULL);
+
+  v3d_init();
 
 /*
   AMPiInitialize(44100, 4000);

@@ -32,6 +32,8 @@
 #define TMR_C2  (volatile uint32_t *)(PERI_BASE + 0x3000 + 0x14)
 #define TMR_C3  (volatile uint32_t *)(PERI_BASE + 0x3000 + 0x18)
 
+#define V3D_IDENT0  (volatile uint32_t *)(PERI_BASE + 0xc00000 + 0x000)
+
 void send_mail(uint32_t data, uint8_t channel);
 uint32_t recv_mail(uint8_t channel);
 

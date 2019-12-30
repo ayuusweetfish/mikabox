@@ -59,6 +59,14 @@ uint32_t get_clock_rate(uint8_t id)
   return ret;
 }
 
+void set_clock_rate(uint8_t id, uint32_t hz)
+{
+  _setup(8, 0x38002);
+  _put(u32[0], id);
+  _put(u32[1], hz);
+  _emit();
+}
+
 void set_virtual_offs(uint32_t x, uint32_t y)
 {
   _setup(8, 0x48009);
@@ -74,4 +82,12 @@ uint32_t enable_vchiq(uint32_t p)
   _put(u32[0], p);
   _get(u32[0], ret);
   return ret;
+}
+
+bool enable_qpu()
+{
+  _setup(4, 0x30012);
+  _put(u32[0], 1);
+  _emit();
+  return (*V3D_IDENT0 == 0x02443356);
 }
