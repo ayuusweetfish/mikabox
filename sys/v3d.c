@@ -7,6 +7,7 @@
 #include <math.h>
 
 #define GPU_BUS_ADDR  0x40000000  // TODO: Unify all occurrences
+#define v3d_printf(...)
 
 #define v3d_reg(_offs) (volatile uint32_t *)(PERI_BASE + 0xc00000 + (_offs))
 
@@ -133,16 +134,16 @@ void v3d_init()
   set_clock_rate(5, 250 * 1000 * 1000);
   enable_qpu();
   if (*V3D_IDENT0 != 0x02443356) {
-    printf("Cannot enable QPUs, what can go wrong?\n");
+    v3d_printf("Cannot enable QPUs, what can go wrong?\n");
     return;
   }
-  printf("QPUs enabled\n");
+  v3d_printf("QPUs enabled\n");
 }
 
 #define OFF_VERT    0
-#define OFF_TILESTA 0x10000
-#define OFF_TILEDAT 0x20000
-#define OFF_BIN     0x30000
+#define OFF_TILESTA 0x30000
+#define OFF_TILEDAT 0x40000
+#define OFF_BIN     0x50000
 
 void v3d_ctx_init(v3d_ctx *ctx, uint32_t w, uint32_t h, void *bufaddr)
 {
@@ -150,12 +151,12 @@ void v3d_ctx_init(v3d_ctx *ctx, uint32_t w, uint32_t h, void *bufaddr)
   ctx->h = h;
   ctx->bufaddr = (uint32_t)bufaddr;
 
-  uint32_t handle = gpumem_alloc(0x40000, 0x1000, MEM_FLAG_COHERENT | MEM_FLAG_ZERO);
+  uint32_t handle = gpumem_alloc(0x60000, 0x1000, MEM_FLAG_COHERENT | MEM_FLAG_ZERO);
   uint32_t p = gpumem_lock(handle);
   ctx->rhandle = handle;
   ctx->rbusaddr = p;
   ctx->rarmaddr = p & ~GPU_BUS_ADDR;
-  printf("%08x %08x\n", ctx->rbusaddr, ctx->rarmaddr);
+  v3d_printf("%08x %08x\n", ctx->rbusaddr, ctx->rarmaddr);
 }
 
 static uint32_t qvqshader[] = {
@@ -181,54 +182,59 @@ void v3d_op(v3d_ctx *ctx)
   // Vertices
   p = (uint8_t *)(ctx->rarmaddr) + OFF_VERT;
   uint32_t vertex_start = (uint32_t)p | alias;
-  printf("Vertices start: %p %u\n", p, vertex_start);
+  v3d_printf("Vertices start: %p %u\n", p, vertex_start);
 
   uint32_t t = *TMR_CLO;
-  float angle = (float)(t & ((1 << 22) - 1)) / (1 << 22) * acosf(-1) * 2;
-  float dx = cos(angle) * 0.6;
-  float dy = sin(angle) * 0.6;
+  float angle = (float)t / 4e6f * acosf(-1) * 2;
 
-  _putu16(&p, (uint16_t)(w * 0.5 * (1 + dx)) << 4);
-  _putu16(&p, (uint16_t)(h * 0.5 * (1 + dy)) << 4);
-  _putf32(&p, 1.0f); _putf32(&p, 1.0f);
-  _putf32(&p, 1.0f); _putf32(&p, 0.0f); _putf32(&p, 0.0f);
+  uint32_t aurora[7] = {
+    0xbf616a, 0xd08770, 0xebcb8b, 0xa3be8c, 0xb48ead,
+    0x88c0d0, 0x5e81ac
+  };
 
-  _putu16(&p, (uint16_t)(w * 0.5 * (1 - dy)) << 4);
-  _putu16(&p, (uint16_t)(h * 0.5 * (1 + dx)) << 4);
-  _putf32(&p, 1.0f); _putf32(&p, 1.0f);
-  _putf32(&p, 0.0f); _putf32(&p, 1.0f); _putf32(&p, 0.0f);
+  for (int i = 0; i < 40; i++) {
+    for (int j = 0; j < 66; j++) {
+      float dx = cos(angle * (1 + i * 0.06f + j * 0.005f)) * 4;
+      float dy = sin(angle * (1 + i * 0.06f + j * 0.005f)) * 4;
+      _putu16(&p, (uint16_t)((j * 11 + 5 + dx) * 16 + 0.5f));
+      _putu16(&p, (uint16_t)((i * 11 + 5 + dy) * 16 + 0.5f));
+      _putf32(&p, 1.0f); _putf32(&p, 1.0f);
+      int c = aurora[(i + j) * (i - j + i * j + 332) % 7];
+      _putf32(&p, (c >> 16) / 255.0f);
+      _putf32(&p, ((c >> 8) & 0xff) / 255.0f);
+      _putf32(&p, (c & 0xff) / 255.0f);
+    }
+  }
 
-  _putu16(&p, (uint16_t)(w * 0.5 * (1 + dy)) << 4);
-  _putu16(&p, (uint16_t)(h * 0.5 * (1 - dx)) << 4);
-  _putf32(&p, 1.0f); _putf32(&p, 1.0f);
-  _putf32(&p, 0.0f); _putf32(&p, 1.0f); _putf32(&p, 0.0f);
-
-  _putu16(&p, (uint16_t)(w * 0.5 * (1 - dx)) << 4);
-  _putu16(&p, (uint16_t)(h * 0.5 * (1 - dy)) << 4);
-  _putf32(&p, 1.0f); _putf32(&p, 1.0f);
-  _putf32(&p, 0.0f); _putf32(&p, 0.0f); _putf32(&p, 1.0f);
-  printf("Vertices end: %p\n", p);
+  v3d_printf("Vertices end: %p\n", p);
 
   p = (uint8_t *)(((uint32_t)p + 127) & ~127);
   uint32_t vertex_idx_start = (uint32_t)p | alias;
-  printf("Vertex indices start: %p\n", p);
+  v3d_printf("Vertex indices start: %p\n", p);
 
-  _putu8(&p, 0); _putu8(&p, 1); _putu8(&p, 3);
-  _putu8(&p, 0); _putu8(&p, 2); _putu8(&p, 3);
-  printf("Vertex indices end: %p\n", p);
+  for (int16_t i = 0; i < 39; i++)
+    for (int16_t j = 0; j < 65; j++) {
+      _putu16(&p, i * 66 + j);
+      _putu16(&p, i * 66 + j + 1);
+      _putu16(&p, (i + 1) * 66 + j);
+      _putu16(&p, (i + 1) * 66 + (j + 1));
+      _putu16(&p, i * 66 + j + 1);
+      _putu16(&p, (i + 1) * 66 + j);
+    }
+  v3d_printf("Vertex indices end: %p\n", p);
 
   // Shader
   p = (uint8_t *)(((uint32_t)p + 127) & ~127);
   uint32_t shader_start = (uint32_t)p | alias;
-  printf("Shader instructions start: %p\n", p);
+  v3d_printf("Shader instructions start: %p\n", p);
 
   for (size_t i = 0; i < qvqshaderlen; i++)
     _putu32(&p, qvqshader[i]);
-  printf("Shader instructions end: %p\n", p);
+  v3d_printf("Shader instructions end: %p\n", p);
 
   p = (uint8_t *)(((uint32_t)p + 127) & ~127);
   uint32_t shader_rcd_start = (uint32_t)p | alias;
-  printf("Shader record start: %p\n", p);
+  v3d_printf("Shader record start: %p\n", p);
 
   _putu8(&p, 1);
   _putu8(&p, 6 * 4);
@@ -237,16 +243,16 @@ void v3d_op(v3d_ctx *ctx)
   _putu32(&p, shader_start);
   _putu32(&p, 0);
   _putu32(&p, vertex_start);
-  printf("Shader record end: %p\n", p);
+  v3d_printf("Shader record end: %p\n", p);
 
   // Render control
   p = (uint8_t *)(((uint32_t)p + 127) & ~127);
   uint32_t ren_ctrl_start = (uint32_t)p | alias;
-  printf("Render control start: %p\n", p);
+  v3d_printf("Render control start: %p\n", p);
 
   _putu8(&p, 114);  // GL_CLEAR_COLORS
-  _putu32(&p, 0xff5e81ac);
-  _putu32(&p, 0xff5e81ac);
+  _putu32(&p, 0xff2e3440);
+  _putu32(&p, 0xff2e3440);
   _putu32(&p, 0);
   _putu8(&p, 0);
 
@@ -280,12 +286,12 @@ void v3d_op(v3d_ctx *ctx)
     _putu8(&p, (x == bin_cols - 1 && y == bin_rows - 1) ? 25 : 24);
   }
   uint32_t ren_ctrl_end = (uint32_t)p | alias;
-  printf("Render control end: %p\n", p);
+  v3d_printf("Render control end: %p\n", p);
 
   // Binning configuration
   p = (uint8_t *)(ctx->rarmaddr) + OFF_BIN;
   uint32_t bin_cfg_start = (uint32_t)p | alias;
-  printf("Binning config start: %p\n", p);
+  v3d_printf("Binning config start: %p\n", p);
 
   _putu8(&p, 112);  // GL_TILE_BINNING_CONFIG
   _putu32(&p, ctx->rbusaddr + OFF_TILEDAT);
@@ -319,16 +325,16 @@ void v3d_op(v3d_ctx *ctx)
   _putu32(&p, shader_rcd_start);
 
   _putu8(&p, 32);   // GL_INDEXED_PRIMITIVE_LIST
-  _putu8(&p, 4);    // PRIM_TRIANGLE
-  _putu32(&p, 6);
+  _putu8(&p, 20);   // PRIM_TRIANGLE | 16-bit
+  _putu32(&p, 39 * 65 * 6);
   _putu32(&p, vertex_idx_start);
-  _putu32(&p, 3);
+  _putu32(&p, 40 * 66 - 1);
 
   _putu8(&p, 5);    // GL_FLUSH_ALL_STATE
   _putu8(&p, 1);    // GL_NOP
   _putu8(&p, 0);    // GL_HALT
   uint32_t bin_cfg_end = (uint32_t)p | alias;
-  printf("Binning config end: %p\n", p);
+  v3d_printf("Binning config end: %p\n", p);
 
   // Let's rock!
   *V3D_L2CACTL = 4;

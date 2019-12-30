@@ -65,19 +65,19 @@ static volatile int frame_count = 0;
 
 void vsync_callback(void *_unused)
 {
+/*
   *(volatile uint32_t *)(PERI_BASE + 0x600000) = 0;
   ctx.bufaddr = (uint32_t)fb_buf;
   v3d_op(&ctx);
   fb_flip_buffer();
   frame_count++;
-/*
+*/
   static uint8_t count = 0;
   if (++count == 2) {
     charbuf_flush();
     fb_flip_buffer();
     count = 0;
   }
-*/
 }
 
 static unsigned synth(int16_t *buf, unsigned chunk_size)
@@ -134,7 +134,6 @@ void sys_main()
   charbuf_init(SCR_W, SCR_H);
   printf("Hello world!\n");
   printf("ARM clock rate: %u\n", get_clock_rate(3));
-  charbuf_flush();
   fb_flip_buffer();
 
   mem_barrier();
@@ -142,12 +141,9 @@ void sys_main()
   v3d_ctx_init(&ctx, SCR_W, SCR_H, fb_buf);
 
   mem_barrier();
-  //irq_set_callback(48, vsync_callback, NULL);
-
   printf("All done batman, we have triangles!\n");
-  charbuf_flush();
 
-  uint32_t t = *TMR_CLO, t0;
+  uint32_t t = *TMR_CLO;
   uint32_t frame_count = 0;
   do {
     mem_barrier();
@@ -156,11 +152,10 @@ void sys_main()
     fb_flip_buffer();
     frame_count++;
     mem_barrier();
-  } while (*TMR_CLO < t + 10 * 1000000);
+  } while (*TMR_CLO < t + 15 * 1000000);
 
-  printf("Frames: %d\n", frame_count);
-  charbuf_flush();
-  fb_flip_buffer();
+  printf("Frames: %d (%.2f FPS)\n", frame_count, frame_count / 15.0f);
+  irq_set_callback(48, vsync_callback, NULL);
 
   mem_barrier();
   *GPFSEL4 |= (1 << 21);
