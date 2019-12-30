@@ -4,6 +4,8 @@
 #include "prop_tag.h"
 #include "printf/printf.h"
 
+#define GPU_BUS_ADDR  0x40000000  // TODO: Unify all occurrences
+
 #define v3d_reg(_offs) (volatile uint32_t *)(PERI_BASE + 0xc00000 + (_offs))
 
 #define V3D_IDENT0  v3d_reg(0x000)  // V3D Identification 0 (V3D block identity)
@@ -107,4 +109,18 @@ void v3d_init()
     return;
   }
   printf("QPUs enabled\n");
+}
+
+void v3d_ctx_init(v3d_ctx *ctx, uint32_t w, uint32_t h, void *bufaddr)
+{
+  ctx->w = w;
+  ctx->h = h;
+  ctx->bufaddr = (uint32_t)bufaddr | GPU_BUS_ADDR;
+
+  uint32_t handle = gpumem_alloc(0x800000, 0x1000, MEM_FLAG_COHERENT | MEM_FLAG_ZERO);
+  uint32_t p = gpumem_lock(handle);
+  ctx->rhandle = handle;
+  ctx->rbusaddr = p;
+  ctx->rarmaddr = p & ~GPU_BUS_ADDR;
+  printf("%08x %08x\n", ctx->rbusaddr, ctx->rarmaddr);
 }

@@ -35,27 +35,28 @@
 // Convenience macros, not for use outside
 
 #define _setup(__sz, __tag) \
+  uint32_t ret; \
   prop_tag(__sz) *buf = mmu_ord_alloc(sizeof(prop_tag(__sz)), 16); \
   prop_tag_init(buf); \
   buf->tag.id = (__tag)
 
 #define _put(__field, __val) (buf->tag.__field = (__val))
 
-#define _get(__field, __var) \
+#define _get(__field) \
   prop_tag_emit(buf); \
-  (__var) = buf->tag.__field; \
+  ret = buf->tag.__field; \
   mmu_ord_pop()
 
 #define _emit() \
   prop_tag_emit(buf); \
+  (void)ret; \
   mmu_ord_pop()
 
 uint32_t get_clock_rate(uint8_t id)
 {
-  uint32_t ret;
   _setup(8, 0x30002);
   _put(u32[0], id);
-  _get(u32[1], ret);
+  _get(u32[1]);
   return ret;
 }
 
@@ -77,10 +78,9 @@ void set_virtual_offs(uint32_t x, uint32_t y)
 
 uint32_t enable_vchiq(uint32_t p)
 {
-  uint32_t ret;
   _setup(4, 0x48010);
   _put(u32[0], p);
-  _get(u32[0], ret);
+  _get(u32[0]);
   return ret;
 }
 
@@ -88,5 +88,37 @@ void enable_qpu()
 {
   _setup(4, 0x30012);
   _put(u32[0], 1);
+  _emit();
+}
+
+uint32_t gpumem_alloc(uint32_t size, uint32_t align, uint32_t flags)
+{
+  _setup(12, 0x3000c);
+  _put(u32[0], size);
+  _put(u32[1], align);
+  _put(u32[2], flags);
+  _get(u32[0]);
+  return ret;
+}
+
+uint32_t gpumem_lock(uint32_t handle)
+{
+  _setup(4, 0x3000d);
+  _put(u32[0], handle);
+  _get(u32[0]);
+  return ret;
+}
+
+void gpumem_unlock(uint32_t handle)
+{
+  _setup(4, 0x3000e);
+  _put(u32[0], handle);
+  _emit();
+}
+
+void gpumem_release(uint32_t handle)
+{
+  _setup(4, 0x3000f);
+  _put(u32[0], handle);
   _emit();
 }

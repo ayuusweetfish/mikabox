@@ -130,6 +130,9 @@ void sys_main()
 
   v3d_init();
 
+  v3d_ctx ctx;
+  v3d_ctx_init(&ctx, SCR_W, SCR_H, fb_buf);
+
 /*
   AMPiInitialize(44100, 4000);
   AMPiSetChunkCallback(synth);
