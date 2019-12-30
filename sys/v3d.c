@@ -4,6 +4,8 @@
 #include "prop_tag.h"
 #include "printf/printf.h"
 
+#include <math.h>
+
 #define GPU_BUS_ADDR  0x40000000  // TODO: Unify all occurrences
 
 #define v3d_reg(_offs) (volatile uint32_t *)(PERI_BASE + 0xc00000 + (_offs))
@@ -181,23 +183,28 @@ void v3d_op(v3d_ctx *ctx)
   uint32_t vertex_start = (uint32_t)p | alias;
   printf("Vertices start: %p %u\n", p, vertex_start);
 
-  _putu16(&p, (uint16_t)(w * 0.3) << 4);
-  _putu16(&p, (uint16_t)(h * 0.3) << 4);
+  uint32_t t = *TMR_CLO;
+  float angle = (float)(t & ((1 << 22) - 1)) / (1 << 22) * acosf(-1) * 2;
+  float dx = cos(angle) * 0.6;
+  float dy = sin(angle) * 0.6;
+
+  _putu16(&p, (uint16_t)(w * 0.5 * (1 + dx)) << 4);
+  _putu16(&p, (uint16_t)(h * 0.5 * (1 + dy)) << 4);
   _putf32(&p, 1.0f); _putf32(&p, 1.0f);
   _putf32(&p, 1.0f); _putf32(&p, 0.0f); _putf32(&p, 0.0f);
 
-  _putu16(&p, (uint16_t)(w * 0.3) << 4);
-  _putu16(&p, (uint16_t)(h * 0.7) << 4);
+  _putu16(&p, (uint16_t)(w * 0.5 * (1 - dy)) << 4);
+  _putu16(&p, (uint16_t)(h * 0.5 * (1 + dx)) << 4);
   _putf32(&p, 1.0f); _putf32(&p, 1.0f);
   _putf32(&p, 0.0f); _putf32(&p, 1.0f); _putf32(&p, 0.0f);
 
-  _putu16(&p, (uint16_t)(w * 0.7) << 4);
-  _putu16(&p, (uint16_t)(h * 0.3) << 4);
+  _putu16(&p, (uint16_t)(w * 0.5 * (1 + dy)) << 4);
+  _putu16(&p, (uint16_t)(h * 0.5 * (1 - dx)) << 4);
   _putf32(&p, 1.0f); _putf32(&p, 1.0f);
   _putf32(&p, 0.0f); _putf32(&p, 1.0f); _putf32(&p, 0.0f);
 
-  _putu16(&p, (uint16_t)(w * 0.7) << 4);
-  _putu16(&p, (uint16_t)(h * 0.7) << 4);
+  _putu16(&p, (uint16_t)(w * 0.5 * (1 - dx)) << 4);
+  _putu16(&p, (uint16_t)(h * 0.5 * (1 - dy)) << 4);
   _putf32(&p, 1.0f); _putf32(&p, 1.0f);
   _putf32(&p, 0.0f); _putf32(&p, 0.0f); _putf32(&p, 1.0f);
   printf("Vertices end: %p\n", p);
@@ -322,10 +329,6 @@ void v3d_op(v3d_ctx *ctx)
   _putu8(&p, 0);    // GL_HALT
   uint32_t bin_cfg_end = (uint32_t)p | alias;
   printf("Binning config end: %p\n", p);
-  uint8_t *q = (uint8_t *)(bin_cfg_start & ~GPU_BUS_ADDR);
-  for (int i = 0; i < 4; i++)
-    for (int j = 0; j < 16; j++, q++)
-      printf("%02x%c", *q, j == 15 ? '\n' : ' ');
 
   // Let's rock!
   *V3D_L2CACTL = 4;
