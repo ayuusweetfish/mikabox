@@ -84,10 +84,9 @@ uint32_t enable_vchiq(uint32_t p)
   return ret;
 }
 
-bool enable_qpu()
+void enable_qpu()
 {
   _setup(4, 0x30012);
   _put(u32[0], 1);
   _emit();
-  return (*V3D_IDENT0 == 0x02443356);
 }
