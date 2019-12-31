@@ -191,19 +191,17 @@ void v3d_ctx_init(v3d_ctx *ctx, uint32_t w, uint32_t h, void *bufaddr)
 }
 
 static uint32_t qvqshader[] = {
-  // JayStation
-  // test_harness/source/v3d_sample_cmd_buf_NV_VA_texture.inc
-  0x009E7000, 0x100009E7,
-  0x203E3DF7, 0x110059E0,
-  0x213E3177, 0x11024821,
-  0x013E3377, 0x11020E67,
-  0x159E7000, 0x10020E27,
-  0x009E7000, 0xA00009E7,
-  0x159E7924, 0x10020BA7,
-  0x009E7000, 0x500009E7,
-  0x009E7000, 0x300009E7,
-  0x009E7000, 0x100009E7,
-  0x009E7000, 0x100009E7,
+  /* 0x00000000: */ 0x203e303e, 0x100049e0, /* nop; fmul r0, vary, ra15 */
+  /* 0x00000008: */ 0x019e7140, 0x10020827, /* fadd r0, r0, r5; nop */
+  /* 0x00000010: */ 0x203e303e, 0x100049e1, /* nop; fmul r1, vary, ra15 */
+  /* 0x00000018: */ 0x019e7340, 0x10020867, /* fadd r1, r1, r5; nop */
+  /* 0x00000020: */ 0x159e7240, 0x10020e67, /* mov t0t, r1; nop */
+  /* 0x00000028: */ 0x159e7000, 0x10020e27, /* mov t0s, r0; nop */
+  /* 0x00000030: */ 0x009e7000, 0xa00009e7, /* nop; nop; ldtmu0 */
+  /* 0x00000038: */ 0x009e7000, 0x400009e7, /* nop; nop; sbwait */
+  /* 0x00000040: */ 0x159e7900, 0x30020ba7, /* mov tlbc, r4; nop; thrend */
+  /* 0x00000048: */ 0x009e7000, 0x100009e7, /* nop; nop */
+  /* 0x00000050: */ 0x009e7000, 0x500009e7, /* nop; nop; sbdone */
 };
 #define qvqshaderlen (sizeof qvqshader / sizeof qvqshader[0])
 
@@ -224,7 +222,6 @@ void v3d_op(v3d_ctx *ctx)
   uint32_t t = *TMR_CLO;
   float angle = (float)t / 4e6f * acosf(-1) * 2;
 
-/*
   for (int i = 0; i < 40; i++) {
     for (int j = 0; j < 66; j++) {
       float dx = cos(angle * (1 + i * 0.06f + j * 0.005f)) * 4;
@@ -232,14 +229,18 @@ void v3d_op(v3d_ctx *ctx)
       _putu16(&p, (uint16_t)((j * 11 + 5 + dx) * 16 + 0.5f));
       _putu16(&p, (uint16_t)((i * 11 + 5 + dy) * 16 + 0.5f));
       _putf32(&p, 1.0f); _putf32(&p, 1.0f);
+/*
       int c = aurora[(i + j) * (i - j + i * j + 332) % 7];
       _putf32(&p, (c >> 16) / 255.0f);
       _putf32(&p, ((c >> 8) & 0xff) / 255.0f);
       _putf32(&p, (c & 0xff) / 255.0f);
+*/
+      _putf32(&p, j / 65.0f);
+      _putf32(&p, i / 39.0f);
     }
   }
-*/
 
+/*
   _putu16(&p, (uint16_t)(w * (0.2f + 0.07f * cos(angle)) * 16 + 0.5f));
   _putu16(&p, (uint16_t)(h * (0.2f + 0.07f * sin(angle)) * 16 + 0.5f));
   _putf32(&p, 1.0f); _putf32(&p, 1.0f);
@@ -263,6 +264,7 @@ void v3d_op(v3d_ctx *ctx)
   _putf32(&p, 1.0f); _putf32(&p, 1.0f);
   //_putf32(&p, 1.0f); _putf32(&p, 1.0f); _putf32(&p, 1.0f); _putf32(&p, 1.0f);
   _putf32(&p, 0.8f); _putf32(&p, 0.8f);
+*/
 
   v3d_printf("Vertices end: %p\n", p);
 
@@ -270,7 +272,6 @@ void v3d_op(v3d_ctx *ctx)
   uint32_t vertex_idx_start = (uint32_t)p | alias;
   v3d_printf("Vertex indices start: %p\n", p);
 
-/*
   for (int16_t i = 0; i < 39; i++)
     for (int16_t j = 0; j < 65; j++) {
       _putu16(&p, i * 66 + j);
@@ -280,10 +281,11 @@ void v3d_op(v3d_ctx *ctx)
       _putu16(&p, i * 66 + j + 1);
       _putu16(&p, (i + 1) * 66 + j);
     }
-*/
 
+/*
   _putu16(&p, 0); _putu16(&p, 1); _putu16(&p, 3);
   _putu16(&p, 0); _putu16(&p, 2); _putu16(&p, 3);
+*/
   v3d_printf("Vertex indices end: %p\n", p);
 
   // Shader
@@ -397,9 +399,9 @@ void v3d_op(v3d_ctx *ctx)
 
   _putu8(&p, 32);   // GL_INDEXED_PRIMITIVE_LIST
   _putu8(&p, 20);   // PRIM_TRIANGLE | 16-bit
-  _putu32(&p, 6);
+  _putu32(&p, 65 * 39 * 6);
   _putu32(&p, vertex_idx_start);
-  _putu32(&p, 3);
+  _putu32(&p, 66 * 40 - 1);
 
   _putu8(&p, 5);    // GL_FLUSH_ALL_STATE
   _putu8(&p, 1);    // GL_NOP
