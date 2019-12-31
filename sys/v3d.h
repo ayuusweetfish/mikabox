@@ -10,6 +10,10 @@ typedef struct {
   uint32_t rhandle;
   uint32_t rbusaddr;
   uint32_t rarmaddr;
+
+  uint32_t thandle;
+  uint32_t tbusaddr;
+  uint32_t tarmaddr;
 } v3d_ctx;
 
 void v3d_init();
