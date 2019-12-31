@@ -157,6 +157,7 @@ void sys_main()
 
   uint32_t t = *TMR_CLO;
   uint32_t frame_count = 0;
+  uint32_t seconds = 0;
   do {
     mem_barrier();
     ctx.bufaddr = (uint32_t)fb_buf;
@@ -164,7 +165,12 @@ void sys_main()
     fb_flip_buffer();
     frame_count++;
     mem_barrier();
-  } while (*TMR_CLO < t + 8 * 1000000);
+    uint32_t t1 = *TMR_CLO;
+    if (t1 > t + (seconds + 1) * 1000000) {
+      seconds++;
+      printf("%2u s: %4u frames\n", seconds, frame_count);
+    }
+  } while (seconds < 15);
 
   mem_barrier();
   printf("Frames: %d (%.2f FPS)\n", frame_count, frame_count / 15.0f);

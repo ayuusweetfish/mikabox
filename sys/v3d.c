@@ -141,11 +141,11 @@ void v3d_init()
 }
 
 #define OFF_VERT    0
-#define OFF_TILESTA 0x40000
-#define OFF_TILEDAT 0x70000
-#define OFF_BIN     0xa0000
+#define OFF_TILESTA 0x200000
+#define OFF_TILEDAT 0x240000
+#define OFF_BIN     0x280000
 
-#define TEX_W 256
+#define TEX_W 512
 #define TEX_H 128
 
 static const uint32_t aurora[7] = {
@@ -159,7 +159,7 @@ void v3d_ctx_init(v3d_ctx *ctx, uint32_t w, uint32_t h, void *bufaddr)
   ctx->h = h;
   ctx->bufaddr = (uint32_t)bufaddr;
 
-  uint32_t handle = gpumem_alloc(0x100000, 0x1000, MEM_FLAG_COHERENT | MEM_FLAG_ZERO);
+  uint32_t handle = gpumem_alloc(0x300000, 0x1000, MEM_FLAG_COHERENT | MEM_FLAG_ZERO);
   uint32_t p = gpumem_lock(handle);
   ctx->rhandle = handle;
   ctx->rbusaddr = p;
@@ -190,7 +190,15 @@ void v3d_ctx_init(v3d_ctx *ctx, uint32_t w, uint32_t h, void *bufaddr)
   gpumem_unlock(ctx->rhandle);
 }
 
+/*
+  Benchmark results with current suboptimal approach:
+  >= 1e6 triangles/sec
+  >= 5e8 instruction cycles/sec
+*/
+
 static uint32_t qvqshader[] = {
+#if 1
+  // Texture sampling
   /* 0x00000000: */ 0x203e303e, 0x100049e0, /* nop; fmul r0, vary, ra15 */
   /* 0x00000008: */ 0x019e7140, 0x10020827, /* fadd r0, r0, r5; nop */
   /* 0x00000010: */ 0x203e303e, 0x100049e1, /* nop; fmul r1, vary, ra15 */
@@ -202,8 +210,29 @@ static uint32_t qvqshader[] = {
   /* 0x00000040: */ 0x159e7900, 0x30020ba7, /* mov tlbc, r4; nop; thrend */
   /* 0x00000048: */ 0x009e7000, 0x100009e7, /* nop; nop */
   /* 0x00000050: */ 0x009e7000, 0x500009e7, /* nop; nop; sbdone */
+#else
+  // Pure colour
+  /* 0x00000000: */ 0x009e7000, 0x100009e7, /* nop */
+  /* 0x00000008: */ 0xffffffff, 0xe0020ba7, /* ldi tlbc, 0xffffffff */
+  /* 0x00000010: */ 0x009e7000, 0x500009e7, /* nop; nop; sbdone */
+  /* 0x00000018: */ 0x009e7000, 0x300009e7, /* nop; nop; thrend */
+  /* 0x00000020: */ 0x009e7000, 0x100009e7, /* nop */
+  /* 0x00000028: */ 0x009e7000, 0x100009e7, /* nop */
+#endif
 };
 #define qvqshaderlen (sizeof qvqshader / sizeof qvqshader[0])
+
+#if 0
+#define GRID_W 10
+#define GRID_H 6
+#define LAYERS 20
+#else
+#define GRID_W 110
+#define GRID_H 72
+#define LAYERS 1
+#endif
+#define CELL_W (800.0f / GRID_W)
+#define CELL_H (480.0f / GRID_H)
 
 void v3d_op(v3d_ctx *ctx)
 {
@@ -222,12 +251,12 @@ void v3d_op(v3d_ctx *ctx)
   uint32_t t = *TMR_CLO;
   float angle = (float)t / 4e6f * acosf(-1) * 2;
 
-  for (int i = 0; i < 40; i++) {
-    for (int j = 0; j < 66; j++) {
-      float dx = cos(angle * (1 + i * 0.06f + j * 0.005f)) * 4;
-      float dy = sin(angle * (1 + i * 0.06f + j * 0.005f)) * 4;
-      _putu16(&p, (uint16_t)((j * 12 + 5 + dx) * 16 + 0.5f));
-      _putu16(&p, (uint16_t)((i * 12 + 5 + dy) * 16 + 0.5f));
+  for (int i = 0; i < GRID_H; i++) {
+    for (int j = 0; j < GRID_W; j++) {
+      float dx = cos(angle * (1 + i * 0.06f + j * 0.005f)) * CELL_W * 0.3f;
+      float dy = sin(angle * (1 + i * 0.06f + j * 0.005f)) * CELL_H * 0.3f;
+      _putu16(&p, (uint16_t)((j * CELL_W + CELL_W / 2 + dx) * 16 + 0.5f));
+      _putu16(&p, (uint16_t)((i * CELL_H + CELL_H / 2 + dy) * 16 + 0.5f));
       _putf32(&p, 1.0f); _putf32(&p, 1.0f);
 /*
       int c = aurora[(i + j) * (i - j + i * j + 332) % 7];
@@ -235,8 +264,8 @@ void v3d_op(v3d_ctx *ctx)
       _putf32(&p, ((c >> 8) & 0xff) / 255.0f);
       _putf32(&p, (c & 0xff) / 255.0f);
 */
-      _putf32(&p, j / 65.0f);
-      _putf32(&p, i / 39.0f);
+      _putf32(&p, (float)j / (GRID_W - 1));
+      _putf32(&p, (float)i / (GRID_H - 1));
     }
   }
 
@@ -272,15 +301,16 @@ void v3d_op(v3d_ctx *ctx)
   uint32_t vertex_idx_start = (uint32_t)p | alias;
   v3d_printf("Vertex indices start: %p\n", p);
 
-  for (int16_t i = 0; i < 39; i++)
-    for (int16_t j = 0; j < 65; j++) {
-      _putu16(&p, i * 66 + j);
-      _putu16(&p, i * 66 + j + 1);
-      _putu16(&p, (i + 1) * 66 + j);
-      _putu16(&p, (i + 1) * 66 + (j + 1));
-      _putu16(&p, i * 66 + j + 1);
-      _putu16(&p, (i + 1) * 66 + j);
-    }
+  for (int layer = 0; layer < LAYERS; layer++)
+    for (int16_t i = 0; i < GRID_H - 1; i++)
+      for (int16_t j = 0; j < GRID_W - 1; j++) {
+        _putu16(&p, i * GRID_W + j);
+        _putu16(&p, i * GRID_W + j + 1);
+        _putu16(&p, (i + 1) * GRID_W + j);
+        _putu16(&p, (i + 1) * GRID_W + (j + 1));
+        _putu16(&p, i * GRID_W + j + 1);
+        _putu16(&p, (i + 1) * GRID_W + j);
+      }
 
 /*
   _putu16(&p, 0); _putu16(&p, 1); _putu16(&p, 3);
@@ -386,7 +416,7 @@ void v3d_op(v3d_ctx *ctx)
   _putu16(&p, h);
 
   _putu8(&p, 96);   // GL_CONFIG_STATE
-  _putu8(&p, 0x3);
+  _putu8(&p, 3 | (1 << 6));
   _putu8(&p, 0x0);
   _putu8(&p, 0x2);
 
@@ -399,9 +429,9 @@ void v3d_op(v3d_ctx *ctx)
 
   _putu8(&p, 32);   // GL_INDEXED_PRIMITIVE_LIST
   _putu8(&p, 20);   // PRIM_TRIANGLE | 16-bit
-  _putu32(&p, 65 * 39 * 6);
+  _putu32(&p, (GRID_W - 1) * (GRID_H - 1) * LAYERS * 6);
   _putu32(&p, vertex_idx_start);
-  _putu32(&p, 66 * 40 - 1);
+  _putu32(&p, GRID_W * GRID_H - 1);
 
   _putu8(&p, 5);    // GL_FLUSH_ALL_STATE
   _putu8(&p, 1);    // GL_NOP
