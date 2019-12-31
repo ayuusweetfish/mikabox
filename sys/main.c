@@ -60,24 +60,34 @@ void timer3_callback(void *_unused)
   if (periodic) periodic();
 }
 
+void timer2_callback(void *_unused)
+{
+  do *TMR_CS = 4; while (*TMR_CS & 4);
+  uint32_t t = *TMR_CLO;
+  t = t - t % 500000 + 500000;
+  *TMR_C2 = t;
+
+  mem_barrier();
+  static bool on = false;
+  on = !on;
+  *(on ? GPCLR1 : GPSET1) = (1 << 15);
+  mem_barrier();
+}
+
 static v3d_ctx ctx;
 static volatile int frame_count = 0;
 
 void vsync_callback(void *_unused)
 {
-/*
   *(volatile uint32_t *)(PERI_BASE + 0x600000) = 0;
+/*
   ctx.bufaddr = (uint32_t)fb_buf;
   v3d_op(&ctx);
   fb_flip_buffer();
   frame_count++;
 */
-  static uint8_t count = 0;
-  if (++count == 2) {
-    charbuf_flush();
-    fb_flip_buffer();
-    count = 0;
-  }
+  charbuf_flush();
+  fb_flip_buffer();
 }
 
 static unsigned synth(int16_t *buf, unsigned chunk_size)
@@ -109,9 +119,11 @@ void sys_main()
   mmu_enable(mmu_table);
 
   mem_barrier();
-  *TMR_CS = 8;
+  *TMR_CS = 8 | 4;
   *TMR_C3 = *TMR_CLO + 1000000;
+  *TMR_C2 = *TMR_CLO + 1000000;
   irq_set_callback(3, timer3_callback, NULL);
+  //irq_set_callback(2, timer2_callback, NULL);
 
   struct framebuffer *f = mmu_ord_alloc(sizeof(struct framebuffer), 16);
   memset(f, 0, sizeof(struct framebuffer));
@@ -152,9 +164,12 @@ void sys_main()
     fb_flip_buffer();
     frame_count++;
     mem_barrier();
-  } while (*TMR_CLO < t + 15 * 1000000);
+  } while (*TMR_CLO < t + 8 * 1000000);
 
+  mem_barrier();
   printf("Frames: %d (%.2f FPS)\n", frame_count, frame_count / 15.0f);
+
+  mem_barrier();
   irq_set_callback(48, vsync_callback, NULL);
 
   mem_barrier();

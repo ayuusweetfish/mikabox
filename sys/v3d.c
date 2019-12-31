@@ -141,9 +141,9 @@ void v3d_init()
 }
 
 #define OFF_VERT    0
-#define OFF_TILESTA 0x30000
-#define OFF_TILEDAT 0x40000
-#define OFF_BIN     0x50000
+#define OFF_TILESTA 0x40000
+#define OFF_TILEDAT 0x70000
+#define OFF_BIN     0xa0000
 
 #define TEX_W 256
 #define TEX_H 128
@@ -159,7 +159,7 @@ void v3d_ctx_init(v3d_ctx *ctx, uint32_t w, uint32_t h, void *bufaddr)
   ctx->h = h;
   ctx->bufaddr = (uint32_t)bufaddr;
 
-  uint32_t handle = gpumem_alloc(0x60000, 0x1000, MEM_FLAG_COHERENT | MEM_FLAG_ZERO);
+  uint32_t handle = gpumem_alloc(0x100000, 0x1000, MEM_FLAG_COHERENT | MEM_FLAG_ZERO);
   uint32_t p = gpumem_lock(handle);
   ctx->rhandle = handle;
   ctx->rbusaddr = p;
@@ -226,8 +226,8 @@ void v3d_op(v3d_ctx *ctx)
     for (int j = 0; j < 66; j++) {
       float dx = cos(angle * (1 + i * 0.06f + j * 0.005f)) * 4;
       float dy = sin(angle * (1 + i * 0.06f + j * 0.005f)) * 4;
-      _putu16(&p, (uint16_t)((j * 11 + 5 + dx) * 16 + 0.5f));
-      _putu16(&p, (uint16_t)((i * 11 + 5 + dy) * 16 + 0.5f));
+      _putu16(&p, (uint16_t)((j * 12 + 5 + dx) * 16 + 0.5f));
+      _putu16(&p, (uint16_t)((i * 12 + 5 + dy) * 16 + 0.5f));
       _putf32(&p, 1.0f); _putf32(&p, 1.0f);
 /*
       int c = aurora[(i + j) * (i - j + i * j + 332) % 7];
