@@ -148,6 +148,11 @@ void v3d_init()
 #define TEX_W 256
 #define TEX_H 128
 
+static const uint32_t aurora[7] = {
+  0xbf616a, 0xd08770, 0xebcb8b, 0xa3be8c, 0xb48ead,
+  0x88c0d0, 0x5e81ac
+};
+
 void v3d_ctx_init(v3d_ctx *ctx, uint32_t w, uint32_t h, void *bufaddr)
 {
   ctx->w = w;
@@ -177,22 +182,28 @@ void v3d_ctx_init(v3d_ctx *ctx, uint32_t w, uint32_t h, void *bufaddr)
   uint32_t *tex = (uint32_t *)(ctx->tarmaddr + 0x1000);
   for (uint16_t y = 0; y < TEX_H; y++)
   for (uint16_t x = 0; x < TEX_W; x++)
-    tex[y * TEX_W + x] = 0xccffccff;
+    tex[y * TEX_W + x] = aurora[
+      ((x + y * 31 + (x + 2019) % (y + 17)) * (x * 97 + y) + x - y + 19) % 7
+    ];
 
   gpumem_unlock(ctx->thandle);
   gpumem_unlock(ctx->rhandle);
 }
 
 static uint32_t qvqshader[] = {
-  /* 0x00000000: */ 0x958e0dbf, 0xd1724823, /* mov r0, vary; mov r3.8d, 1.0 */
-  /* 0x00000008: */ 0x818e7176, 0x10024821, /* fadd r0, r0, r5; mov r1, vary */
-  /* 0x00000010: */ 0x81827376, 0x40024862, /* fadd r1, r1, r5; mov r2, unif; sbwait */
-  /* 0x00000018: */ 0x809e7000, 0x114049e3, /* nop; mov r3.8a, r0 */
-  /* 0x00000020: */ 0x809e7009, 0x115049e3, /* nop; mov r3.8b, r1 */
-  /* 0x00000028: */ 0x809e7012, 0x116049e3, /* nop; mov r3.8c, r2 */
-  /* 0x00000030: */ 0x159e76c0, 0x30020ba7, /* mov tlbc, r3; nop; thrend */
-  /* 0x00000038: */ 0x009e7000, 0x100009e7, /* nop; nop; nop */
-  /* 0x00000040: */ 0x009e7000, 0x500009e7, /* nop; nop; sbdone */
+  // JayStation
+  // test_harness/source/v3d_sample_cmd_buf_NV_VA_texture.inc
+  0x009E7000, 0x100009E7,
+  0x203E3DF7, 0x110059E0,
+  0x213E3177, 0x11024821,
+  0x013E3377, 0x11020E67,
+  0x159E7000, 0x10020E27,
+  0x009E7000, 0xA00009E7,
+  0x159E7924, 0x10020BA7,
+  0x009E7000, 0x500009E7,
+  0x009E7000, 0x300009E7,
+  0x009E7000, 0x100009E7,
+  0x009E7000, 0x100009E7,
 };
 #define qvqshaderlen (sizeof qvqshader / sizeof qvqshader[0])
 
@@ -213,11 +224,6 @@ void v3d_op(v3d_ctx *ctx)
   uint32_t t = *TMR_CLO;
   float angle = (float)t / 4e6f * acosf(-1) * 2;
 
-  uint32_t aurora[7] = {
-    0xbf616a, 0xd08770, 0xebcb8b, 0xa3be8c, 0xb48ead,
-    0x88c0d0, 0x5e81ac
-  };
-
 /*
   for (int i = 0; i < 40; i++) {
     for (int j = 0; j < 66; j++) {
@@ -237,26 +243,26 @@ void v3d_op(v3d_ctx *ctx)
   _putu16(&p, (uint16_t)(w * (0.2f + 0.07f * cos(angle)) * 16 + 0.5f));
   _putu16(&p, (uint16_t)(h * (0.2f + 0.07f * sin(angle)) * 16 + 0.5f));
   _putf32(&p, 1.0f); _putf32(&p, 1.0f);
-  _putf32(&p, 0.4f); _putf32(&p, 0.7f); _putf32(&p, 1.0f); _putf32(&p, 1.0f);
-  _putf32(&p, 0.0f); _putf32(&p, 0.0f);
+  //_putf32(&p, 0.4f); _putf32(&p, 0.7f); _putf32(&p, 1.0f); _putf32(&p, 1.0f);
+  _putf32(&p, 0.2f); _putf32(&p, 0.2f);
 
   _putu16(&p, (uint16_t)(w * 0.2 * 16 + 0.5f));
   _putu16(&p, (uint16_t)(h * 0.8 * 16 + 0.5f));
   _putf32(&p, 1.0f); _putf32(&p, 1.0f);
-  _putf32(&p, 1.0f); _putf32(&p, 1.0f); _putf32(&p, 1.0f); _putf32(&p, 1.0f);
-  _putf32(&p, 1.0f); _putf32(&p, 0.0f);
+  //_putf32(&p, 1.0f); _putf32(&p, 1.0f); _putf32(&p, 1.0f); _putf32(&p, 1.0f);
+  _putf32(&p, 0.8f); _putf32(&p, 0.2f);
 
   _putu16(&p, (uint16_t)(w * 0.8 * 16 + 0.5f));
   _putu16(&p, (uint16_t)(h * 0.2 * 16 + 0.5f));
   _putf32(&p, 1.0f); _putf32(&p, 1.0f);
-  _putf32(&p, 1.0f); _putf32(&p, 1.0f); _putf32(&p, 1.0f); _putf32(&p, 1.0f);
-  _putf32(&p, 0.0f); _putf32(&p, 1.0f);
+  //_putf32(&p, 1.0f); _putf32(&p, 1.0f); _putf32(&p, 1.0f); _putf32(&p, 1.0f);
+  _putf32(&p, 0.2f); _putf32(&p, 0.8f);
 
   _putu16(&p, (uint16_t)(w * 0.8 * 16 + 0.5f));
   _putu16(&p, (uint16_t)(h * 0.8 * 16 + 0.5f));
   _putf32(&p, 1.0f); _putf32(&p, 1.0f);
-  _putf32(&p, 1.0f); _putf32(&p, 1.0f); _putf32(&p, 1.0f); _putf32(&p, 1.0f);
-  _putf32(&p, 1.0f); _putf32(&p, 1.0f);
+  //_putf32(&p, 1.0f); _putf32(&p, 1.0f); _putf32(&p, 1.0f); _putf32(&p, 1.0f);
+  _putf32(&p, 0.8f); _putf32(&p, 0.8f);
 
   v3d_printf("Vertices end: %p\n", p);
 
@@ -291,8 +297,8 @@ void v3d_op(v3d_ctx *ctx)
 
   p = (uint8_t *)(((uint32_t)p + 127) & ~127);
   uint32_t shader_unif_start = (uint32_t)p | alias;
-  //_putu32(&p, ctx->tbusaddr);
-  _putf32(&p, 0.5f);
+  _putu32(&p, ctx->tbusaddr);
+  //_putf32(&p, 0.5f);
   _putu32(&p, 0xff00ff00);
   _putu32(&p, 0xffffff00);
   _putu32(&p, 0xffffffff);
@@ -302,11 +308,11 @@ void v3d_op(v3d_ctx *ctx)
   v3d_printf("Shader record start: %p\n", p);
 
   _putu8(&p, 1);
-  _putu8(&p, 8 * 4 + 2 * 2);
+  _putu8(&p, 4 * 4 + 2 * 2);
   _putu8(&p, 0xcc);
-  _putu8(&p, 6);
+  _putu8(&p, 2);    // Number of varyings
   _putu32(&p, shader_start);
-  _putu32(&p, shader_unif_start);
+  _putu32(&p, ctx->tbusaddr);
   _putu32(&p, vertex_start);
   v3d_printf("Shader record end: %p\n", p);
 
