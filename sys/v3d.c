@@ -363,7 +363,8 @@ void v3d_op(v3d_ctx *ctx)
   _putu32(&p, ctx->bufaddr);
   _putu16(&p, ctx->w);
   _putu16(&p, ctx->h);
-  _putu8(&p, 4);
+  // _putu8(&p, (1 << 2) | (1 << 6)); // T-format for render-to-texture
+  _putu8(&p, (1 << 2) | (1 << 0));
   _putu8(&p, 0);
 
   _putu8(&p, 115);  // GL_TILE_COORDINATES
@@ -374,8 +375,9 @@ void v3d_op(v3d_ctx *ctx)
   _putu16(&p, 0);
   _putu32(&p, 0);
 
-  uint8_t bin_cols = (w + 63) / 64;
-  uint8_t bin_rows = (h + 63) / 64;
+  uint16_t tile_size = 32;
+  uint8_t bin_cols = (w + tile_size - 1) / tile_size;
+  uint8_t bin_rows = (h + tile_size - 1) / tile_size;
   for (uint8_t x = 0; x < bin_cols; x++)
   for (uint8_t y = 0; y < bin_rows; y++) {
     _putu8(&p, 115);  // GL_TILE_COORDINATES
@@ -402,7 +404,7 @@ void v3d_op(v3d_ctx *ctx)
   _putu32(&p, ctx->rbusaddr + OFF_TILESTA);
   _putu8(&p, bin_cols);
   _putu8(&p, bin_rows);
-  _putu8(&p, 4);
+  _putu8(&p, (1 << 2) | (1 << 0));
 
   _putu8(&p, 6);    // GL_START_TILE_BINNING
 
@@ -416,7 +418,7 @@ void v3d_op(v3d_ctx *ctx)
   _putu16(&p, h);
 
   _putu8(&p, 96);   // GL_CONFIG_STATE
-  _putu8(&p, 3 | (1 << 6));
+  _putu8(&p, 3 | (1 << 6)); // Forward/backward polygons, oversample 4x
   _putu8(&p, 0x0);
   _putu8(&p, 0x2);
 
