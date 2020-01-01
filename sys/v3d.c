@@ -182,14 +182,33 @@ void v3d_ctx_init(v3d_ctx *ctx, uint32_t w, uint32_t h, void *bufaddr)
   q[3] = 0;
 
   uint32_t *tex = (uint32_t *)(ctx->tarmaddr + 0x1000);
-  uint8_t *texture = &_binary_utils_nanikore_bin_start;
-  uint32_t offs = 0;
-  for (uint16_t y = 0; y < TEX_H; y++)
-  for (uint16_t x = 0; x < TEX_W; x++, offs += 3) {
-    uint32_t idx = y * TEX_W + x;
-    uint32_t value = ((uint32_t)texture[offs] << 16) |
-      ((uint32_t)texture[offs + 1] << 8) | (uint32_t)texture[offs + 2];
-    tex[idx] = value;
+  uint8_t *img = &_binary_utils_nanikore_bin_start;
+  uint32_t ptr = 0;
+  // 4K tiles
+  for (uint16_t y0i = 0; y0i < TEX_H / 32; y0i++) {
+    uint16_t y0 = TEX_H - 32 * (y0i + 1);
+    for (uint16_t x0i = 0; x0i < TEX_W / 32; x0i++) {
+      uint16_t x0 = ((y0i & 1) ? TEX_W - 32 * (x0i + 1) : 32 * x0i);
+      // Four 1K subtiles
+      static const uint8_t subt[4] = {1, 0, 2, 3};
+      for (uint8_t k = 0; k < 4; k++) {
+        uint16_t x1 = x0 + ((subt[k] >> 1) ^ (y0i & 1)) * 16;
+        uint16_t y1 = y0 + ((subt[k] & 1) ^ (y0i & 1)) * 16;
+        // A subtile at (y1, x1)
+        // Emit the subtile
+        for (uint16_t y2 = 0; y2 < 4; y2++)
+        for (uint16_t x2 = 0; x2 < 4; x2++)
+          for (uint16_t y3 = 0; y3 < 4; y3++)
+          for (uint16_t x3 = 0; x3 < 4; x3++) {
+            uint16_t x4 = x1 + (x2 * 4 + x3 + 1);
+            uint16_t y4 = y1 + (16 - (y2 * 4 + y3 + 1));
+            uint32_t p = ((uint32_t)y4 * TEX_W + x4) * 3;
+            uint32_t value = ((uint32_t)img[p] << 16) |
+              ((uint32_t)img[p + 1] << 8) | (uint32_t)img[p + 2];
+            tex[ptr++] = value;
+          }
+      }
+    }
   }
 
   gpumem_unlock(ctx->thandle);
@@ -271,7 +290,7 @@ void v3d_op(v3d_ctx *ctx)
       _putf32(&p, (c & 0xff) / 255.0f);
 */
       _putf32(&p, (float)j / (GRID_W - 1));
-      _putf32(&p, (float)i / (GRID_H - 1));
+      _putf32(&p, (float)(GRID_H - 1 - i) / (GRID_H - 1));
     }
   }
 
