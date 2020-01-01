@@ -146,7 +146,9 @@ void v3d_init()
 #define OFF_BIN     0x280000
 
 #define TEX_W 512
-#define TEX_H 128
+#define TEX_H 256
+extern uint8_t _binary_utils_nanikore_bin_start;
+extern uint8_t _binary_utils_nanikore_bin_end;
 
 static const uint32_t aurora[7] = {
   0xbf616a, 0xd08770, 0xebcb8b, 0xa3be8c, 0xb48ead,
@@ -180,11 +182,15 @@ void v3d_ctx_init(v3d_ctx *ctx, uint32_t w, uint32_t h, void *bufaddr)
   q[3] = 0;
 
   uint32_t *tex = (uint32_t *)(ctx->tarmaddr + 0x1000);
+  uint8_t *texture = &_binary_utils_nanikore_bin_start;
+  uint32_t offs = 0;
   for (uint16_t y = 0; y < TEX_H; y++)
-  for (uint16_t x = 0; x < TEX_W; x++)
-    tex[y * TEX_W + x] = aurora[
-      ((x + y * 31 + (x + 2019) % (y + 17)) * (x * 97 + y) + x - y + 19) % 7
-    ];
+  for (uint16_t x = 0; x < TEX_W; x++, offs += 3) {
+    uint32_t idx = y * TEX_W + x;
+    uint32_t value = ((uint32_t)texture[offs] << 16) |
+      ((uint32_t)texture[offs + 1] << 8) | (uint32_t)texture[offs + 2];
+    tex[idx] = value;
+  }
 
   gpumem_unlock(ctx->thandle);
   gpumem_unlock(ctx->rhandle);

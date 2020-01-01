@@ -35,6 +35,7 @@ LDFLAGS := $(ARCH_FLAGS) -nostartfiles $(LIBS)
 
 all: $(KERNEL_IMG)  # Default target
 
+EXTRA_OBJS :=
 EXTRA_CLEAN :=
 
 $(BUILD_DIR)/charbuf.o: utils/font_bitmap.h
@@ -45,6 +46,14 @@ utils/font_bitmap_gen: utils/font_bitmap_gen.c
 	@ printf "  %-7s %-16s %s\n" HOSTCC $<
 	$(V) $(HOSTCC) $< -o $@
 EXTRA_CLEAN += utils/font_bitmap_gen utils/font_bitmap.h
+
+utils/nanikore.o: utils/nanikore.png
+	@ printf "  %-7s %-16s %s\n" FFMPEG $< utils/nanikore.bin
+	$(V) ffmpeg -f rawvideo -pix_fmt rgb24 - -i $< > utils/nanikore.bin 2> /dev/null
+	@ printf "  %-7s %s\n" LD utils/nanikore.bin
+	$(V) $(LD) -b binary utils/nanikore.bin -o $@ 2> /dev/null
+EXTRA_OBJS += utils/nanikore.o
+EXTRA_CLEAN += utils/nanikore.bin utils/nanikore.o
 
 $(BUILD_DIR)/%.o: BN = $(basename $<)
 $(BUILD_DIR)/%.o: %.S %.c
@@ -64,9 +73,9 @@ $(BUILD_DIR)/%.o: %.c
 	$(V) mkdir -p $(BUILD_DIR)/$(dir $<)
 	$(V) $(CC) -c $< -o $@ $(CFLAGS)
 
-$(KERNEL_ELF): $(OBJS) link.ld
+$(KERNEL_ELF): $(OBJS) $(EXTRA_OBJS) link.ld
 	@ printf "  %-7s %s\n" LD $@
-	$(V) $(CC) -Wl,-T,link.ld $(OBJS) -o $@ $(LDFLAGS)
+	$(V) $(CC) -Wl,-T,link.ld $(OBJS) $(EXTRA_OBJS) -o $@ $(LDFLAGS)
 
 $(KERNEL_IMG): $(KERNEL_ELF)
 	@ printf "  %-7s %-16s %s\n" OBJCOPY $< $@
