@@ -13,8 +13,9 @@ V := @
 
 BUILD_DIR := build
 C_OPTIONS := -std=c99 -Wall -O2
-INCLUDES := -I. -I./AMPi/ampi
-LIBS := -lm AMPi/ampi/libampi.a
+INCLUDES := -I. -I./AMPi/ampi -I./uspi/include
+STATIC_LIBS := AMPi/ampi/libampi.a uspi/lib/libuspi.a
+LIBS := -lm $(STATIC_LIBS)
 
 SRCS := $(wildcard *.[Sc])
 
@@ -73,7 +74,7 @@ $(BUILD_DIR)/%.o: %.c
 	$(V) mkdir -p $(BUILD_DIR)/$(dir $<)
 	$(V) $(CC) -c $< -o $@ $(CFLAGS)
 
-$(KERNEL_ELF): $(OBJS) $(EXTRA_OBJS) link.ld
+$(KERNEL_ELF): $(OBJS) $(EXTRA_OBJS) $(STATIC_LIBS) link.ld
 	@ printf "  %-7s %s\n" LD $@
 	$(V) $(CC) -Wl,-T,link.ld $(OBJS) $(EXTRA_OBJS) -o $@ $(LDFLAGS)
 

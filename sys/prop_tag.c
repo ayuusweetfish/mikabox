@@ -2,6 +2,8 @@
 #include "common.h"
 #include "mmu.h"
 
+#include <string.h>
+
 #define prop_tag(__sz)        \
   volatile struct {           \
     volatile uint32_t size;   \
@@ -47,6 +49,12 @@
   ret = buf->tag.__field; \
   mmu_ord_pop()
 
+#define _copy(__size, __dest) \
+  prop_tag_emit(buf); \
+  memcpy((__dest), (void *)buf->tag.u8, (__size)); \
+  (void)ret; \
+  mmu_ord_pop()
+
 #define _emit() \
   prop_tag_emit(buf); \
   (void)ret; \
@@ -89,6 +97,21 @@ void enable_qpu()
   _setup(4, 0x30012);
   _put(u32[0], 1);
   _emit();
+}
+
+bool set_power_state(uint32_t device, uint32_t state)
+{
+  _setup(8, 0x28001);
+  _put(u32[0], device);
+  _put(u32[1], state);
+  _get(u32[0]);
+  return (ret & 1);
+}
+
+void get_mac_addr(uint8_t *addr)
+{
+  _setup(6, 0x10003);
+  _copy(6, addr);
 }
 
 uint32_t gpumem_alloc(uint32_t size, uint32_t align, uint32_t flags)

@@ -9,6 +9,8 @@ void set_clock_rate(uint8_t id, uint32_t hz);
 void set_virtual_offs(uint32_t x, uint32_t y);
 uint32_t enable_vchiq(uint32_t p);
 void enable_qpu();
+bool set_power_state(uint32_t device, uint32_t state);
+void get_mac_addr(uint8_t *addr);
 
 // Taken from https://github.com/raspberrypi/firmware/wiki/Mailbox-property-interface
 enum {

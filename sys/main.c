@@ -9,6 +9,8 @@
 #include "printf/printf.h"
 #include "ampi.h"
 #include "ampienv.h"
+#include "uspi.h"
+#include "uspios.h"
 
 #include <math.h>
 #include <string.h>
@@ -104,6 +106,12 @@ static unsigned synth(int16_t *buf, unsigned chunk_size)
   return chunk_size;
 }
 
+static void kbd_upd_callback(uint8_t mod, const uint8_t k[6])
+{
+  printf("\r%02x %02x %02x %02x %02x %02x | mod = %02x",
+    k[0], k[1], k[2], k[3], k[4], k[5], mod);
+}
+
 void sys_main()
 {
   for (uint8_t *p = &_bss_begin; p < &_bss_end; p++) *p = 0;
@@ -148,6 +156,21 @@ void sys_main()
   printf("ARM clock rate: %u\n", get_clock_rate(3));
   fb_flip_buffer();
 
+  irq_set_callback(48, vsync_callback, NULL);
+
+  uint8_t mac[6];
+  get_mac_addr(mac);
+  printf("MAC address: %02x %02x %02x %02x %02x %02x\n",
+    mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+
+  bool result = USPiInitialize();
+  printf("USPi initialization %s\n", result ? "succeeded" : "failed");
+  printf("Keyboard %savailable\n", USPiKeyboardAvailable() ? "" : "un");
+
+  if (USPiKeyboardAvailable())
+    USPiKeyboardRegisterKeyStatusHandlerRaw(kbd_upd_callback);
+
+/*
   mem_barrier();
   v3d_init();
   v3d_ctx_init(&ctx, SCR_W, SCR_H, fb_buf);
@@ -186,6 +209,7 @@ void sys_main()
     *GPSET1 = (1 << 15);
     for (uint32_t i = 0; i < 100000000; i++) __asm__ __volatile__ ("");
   }
+*/
 
 /*
   AMPiInitialize(44100, 4000);

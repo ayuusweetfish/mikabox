@@ -7,3 +7,6 @@
 [submodule "sys/AMPi"]
 	path = sys/AMPi
 	url = https://github.com/kawa-yoiko/AMPi.git
+[submodule "sys/uspi"]
+	path = sys/uspi
+	url = https://github.com/kawa-yoiko/uspi.git
