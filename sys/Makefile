@@ -13,8 +13,8 @@ V := @
 
 BUILD_DIR := build
 C_OPTIONS := -std=c99 -Wall -O2
-INCLUDES := -I. -I./ampi/ampi
-LIBS := -lm ampi/ampi/libampi.a
+INCLUDES := -I. -I./AMPi/ampi
+LIBS := -lm AMPi/ampi/libampi.a
 
 SRCS := $(wildcard *.[Sc])
 
