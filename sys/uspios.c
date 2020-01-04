@@ -28,7 +28,7 @@ unsigned StartKernelTimer(
 {
   // TODO
 	unsigned r = TimerStartKernelTimer (TimerGet (), nHzDelay, pHandler, pParam, pContext);
-  printf("%u <- %u | %p %p %p\n", r, nHzDelay, pHandler, pParam, pContext);
+  //printf("%u <- %u | %p %p %p\n", r, nHzDelay, pHandler, pParam, pContext);
   return r;
 }
 

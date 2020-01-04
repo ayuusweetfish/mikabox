@@ -11,8 +11,15 @@ void irq_handler(uint32_t ret_addr)
 {
   // Check interrupt source
   static int count = 0;
-  if (++count == 20) { printf("IRQ!\n"); count = 0; }
+  //if (++count == 20) { printf("IRQ!\n"); count = 0; }
 /*
+  if (++count % 1000 == 0) {
+    printf("...\n");
+    charbuf_flush();
+    fb_flip_buffer();
+  }
+*/
+redo:
   mem_barrier();
   uint32_t pend_base = *IRQ_PENDBASIC;
   uint32_t pend_1 = *IRQ_PEND1;
@@ -30,16 +37,29 @@ void irq_handler(uint32_t ret_addr)
   }
   mem_barrier();
 
-  if (source == 9) printf("IRQ %u\n", source);
-  else if (pend_1 & (1 << 9)) printf("OvO\n");
   if (callbacks[source]) {
-  printf("IRQ %u\n", source);
-  charbuf_flush();
-  fb_flip_buffer();
+    if (source == 9) {
+      //printf("IRQ %u\n", source);
+    }
     callbacks[source](args[source] != NULL ? args[source] : (void *)ret_addr);
+    //printf("> %p\n", callbacks[source]);
     mem_barrier();
+  } else {
+    //irq_set_callback(source, NULL, NULL);
+  }
+  //if (++count == 30 || source == 9) {
+/*
+  if (++count <= 10) {
+    printf("%u %u %u %u\n", pend_1, pend_2, pend_base, source);
+    charbuf_flush();
+    fb_flip_buffer();
+    //count = 0;
   }
 */
+  //printf("%u %u %u | ", pend_1, pend_2, pend_base);
+  //printf("%u %u %u %u %p\n", *IRQ_PEND1, *IRQ_PEND2, *IRQ_PENDBASIC, source, callbacks[source]);
+  mem_barrier();
+  //goto redo;
 }
 
 void irq_set_callback(uint8_t source, irq_callback_t fn, void *arg)

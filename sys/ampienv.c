@@ -46,7 +46,7 @@ void RegisterPeriodicHandler (TPeriodicTimerHandler *pHandler)
 void ConnectInterrupt (unsigned nIRQ, TInterruptHandler *pHandler, void *pParam)
 {
   irq_set_callback(nIRQ, pHandler, pParam);
-  InterruptSystemConnectIRQ(InterruptSystemGet(), nIRQ, pHandler, pParam);
+  //InterruptSystemConnectIRQ(InterruptSystemGet(), nIRQ, pHandler, pParam);
 }
 
 uint32_t EnableVCHIQ (uint32_t p)

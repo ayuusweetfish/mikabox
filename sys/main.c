@@ -124,7 +124,7 @@ void sys_main()
     mmu_table_section(mmu_table, i << 20, i << 20, (i < 64 ? (8 | 4) : 0));
   for (uint32_t i = bss_ord_page_begin; i <= bss_ord_page_end; i++)
     mmu_table_section(mmu_table, i << 20, i << 20, 0);
-  //mmu_enable(mmu_table);
+  mmu_enable(mmu_table);
 
   mem_barrier();
   *TMR_CS = 8 | 4;
@@ -181,11 +181,9 @@ void sys_main()
   *GPFSEL4 |= (1 << 21);
   while (1) {
     *GPCLR1 = (1 << 15);
-    for (uint32_t i = 0; i < 2000000; i++) __asm__ __volatile__ ("");
+    for (uint32_t i = 0; i < 1000000; i++) __asm__ __volatile__ ("");
     *GPSET1 = (1 << 15);
-    for (uint32_t i = 0; i < 2000000; i++) __asm__ __volatile__ ("");
-    extern int zzz, yyy;
-    printf("%d / %d\n", zzz, yyy);
+    for (uint32_t i = 0; i < 1000000; i++) __asm__ __volatile__ ("");
   charbuf_flush();
   fb_flip_buffer();
   }
