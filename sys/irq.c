@@ -27,8 +27,10 @@ void irq_handler(uint32_t ret_addr)
   }
   mem_barrier();
 
+  if (source == 9) printf("IRQ %u\n", source);
+  else if (pend_1 & (1 << 9)) printf("OvO\n");
   if (callbacks[source]) {
-    callbacks[source](args[source]);
+    callbacks[source](args[source] != NULL ? args[source] : (void *)ret_addr);
     mem_barrier();
   }
 }

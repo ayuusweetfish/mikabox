@@ -10,9 +10,12 @@ static size_t ptr = 0;
 
 void *kmalloc(size_t size)
 {
+  uspi_EnterCritical();
   size = (size + 15) & ~15;
   ptr += size;
-  return buf + (ptr - size);
+  void *ret = buf + (ptr - size);
+  uspi_LeaveCritical();
+  return ret;
 }
 
 void kfree(void *ptr)
