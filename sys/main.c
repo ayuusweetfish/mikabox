@@ -92,17 +92,16 @@ void vsync_callback(void *_unused)
   fb_flip_buffer();
 }
 
+static bool has_key = false;
+
 static unsigned synth(int16_t *buf, unsigned chunk_size)
 {
   static uint8_t phase = 0;
-  static uint32_t count = 0;
-  if (count >= 131072) { count = 0; return 0; }
   for (unsigned i = 0; i < chunk_size; i += 2) {
-    int16_t sample = (int16_t)(32767 * sin(phase / 255.0 * M_PI * 2));
+    int16_t sample = (has_key ? (int16_t)(32767 * sin(phase / 255.0 * M_PI * 2)) : 0);
     buf[i] = buf[i + 1] = sample;
     phase += 2; // Folds over to 0 ~ 255, generates 344.5 Hz (F4 - ~1/4 semitone)
   }
-  count += (chunk_size >> 1);
   return chunk_size;
 }
 
@@ -110,6 +109,7 @@ static void kbd_upd_callback(uint8_t mod, const uint8_t k[6])
 {
   printf("\r%02x %02x %02x %02x %02x %02x | mod = %02x",
     k[0], k[1], k[2], k[3], k[4], k[5], mod);
+  has_key = (k[0] || k[1] || k[2] || k[3] || k[4] || k[5]);
 }
 
 void sys_main()
@@ -169,13 +169,18 @@ void sys_main()
   if (USPiKeyboardAvailable())
     USPiKeyboardRegisterKeyStatusHandlerRaw(kbd_upd_callback);
 
-  mem_barrier();
-  *GPFSEL4 |= (1 << 21);
+  AMPiInitialize(44100, 8000);
+  AMPiSetChunkCallback(synth);
+  bool b = AMPiStart();
+  printf(b ? "Yes\n" : "No\n");
   while (1) {
-    *GPCLR1 = (1 << 15);
-    for (uint32_t i = 0; i < 100000000; i++) __asm__ __volatile__ ("");
-    *GPSET1 = (1 << 15);
-    for (uint32_t i = 0; i < 100000000; i++) __asm__ __volatile__ ("");
+    //printf(AMPiIsActive() ? "\rActive  " : "\rInactive");
+    if (!AMPiIsActive()) {
+      MsDelay(1000);
+      AMPiStart();
+    }
+    MsDelay(20);
+    AMPiPoke();
   }
 
 /*
