@@ -5,7 +5,6 @@
 #include "printf/printf.h"
 #include "uspienv/timer.h"
 
-/*
 void *malloc(size_t size)
 {
   return kmalloc(size);
@@ -15,7 +14,6 @@ void free(void *ptr)
 {
   kfree(ptr);
 }
-*/
 
 void uspi_assertion_failed(const char *pExpr, const char *pFile, unsigned nLine)
 {
@@ -38,7 +36,6 @@ void CancelKernelTimer(unsigned hTimer)
 	TimerCancelKernelTimer (TimerGet (), hTimer);
 }
 
-/*
 int SetPowerStateOn(unsigned nDeviceId)
 {
   bool succeeded = set_power_state(nDeviceId, 3); // on | wait
@@ -50,7 +47,6 @@ int GetMACAddress(unsigned char Buffer[6])
   get_mac_addr(Buffer);
   return 1;
 }
-*/
 
 void DebugHexdump(const void *pBuffer, unsigned nBufLen, const char *pSource)
 {
