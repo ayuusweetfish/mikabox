@@ -4,6 +4,7 @@
 #include "irq.h"
 #include "prop_tag.h"
 #include "printf/printf.h"
+#include "uspienv/interrupt.h"
 
 void *ampi_malloc (size_t size)
 {
@@ -19,6 +20,7 @@ void ampi_assertion_failed (const char *pExpr, const char *pFile, unsigned nLine
 {
 }
 
+/*
 void MsDelay (unsigned nMilliSeconds)
 {
   usDelay(nMilliSeconds * 1000);
@@ -32,6 +34,7 @@ void usDelay (unsigned nMicroSeconds)
   while (*TMR_CLO < val) { }
   mem_barrier();
 }
+*/
 
 extern void (*periodic)();
 
@@ -43,6 +46,7 @@ void RegisterPeriodicHandler (TPeriodicTimerHandler *pHandler)
 void ConnectInterrupt (unsigned nIRQ, TInterruptHandler *pHandler, void *pParam)
 {
   irq_set_callback(nIRQ, pHandler, pParam);
+  InterruptSystemConnectIRQ(InterruptSystemGet(), nIRQ, pHandler, pParam);
 }
 
 uint32_t EnableVCHIQ (uint32_t p)

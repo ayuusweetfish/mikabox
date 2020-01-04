@@ -5,6 +5,7 @@ SECTIONS
 
   .text.startup : { *(.text.startup) }
   .text : { *(.text .text.*) }
+  _etext = .;
   .rodata : { *(.rodata) }
   .data : { *(.data) }
 

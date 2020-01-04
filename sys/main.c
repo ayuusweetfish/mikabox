@@ -162,23 +162,33 @@ void sys_main()
   get_mac_addr(mac);
   printf("MAC address: %02x %02x %02x %02x %02x %02x\n",
     mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+  charbuf_flush();
+  fb_flip_buffer();
+
+  bool env = USPiEnvInitialize();
+  printf(env ? "Yes\n" : "No\n");
+  charbuf_flush();
+  fb_flip_buffer();
 
   bool result = USPiInitialize();
   printf("USPi initialization %s\n", result ? "succeeded" : "failed");
   printf("Keyboard %savailable\n", USPiKeyboardAvailable() ? "" : "un");
 
   mem_barrier();
+  if (USPiKeyboardAvailable())
+    USPiKeyboardRegisterKeyStatusHandlerRaw(kbd_upd_callback);
+
   *GPFSEL4 |= (1 << 21);
   while (1) {
     *GPCLR1 = (1 << 15);
     for (uint32_t i = 0; i < 2000000; i++) __asm__ __volatile__ ("");
     *GPSET1 = (1 << 15);
     for (uint32_t i = 0; i < 2000000; i++) __asm__ __volatile__ ("");
+    extern int zzz, yyy;
+    printf("%d / %d\n", zzz, yyy);
   charbuf_flush();
   fb_flip_buffer();
   }
-  if (USPiKeyboardAvailable())
-    USPiKeyboardRegisterKeyStatusHandlerRaw(kbd_upd_callback);
 
 /*
   mem_barrier();
