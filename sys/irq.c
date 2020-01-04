@@ -28,7 +28,7 @@ void irq_handler(uint32_t ret_addr)
   mem_barrier();
 
   if (callbacks[source]) {
-    callbacks[source](args[source]);
+    callbacks[source](args[source] != NULL ? args[source] : (void *)ret_addr);
     mem_barrier();
   }
 }

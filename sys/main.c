@@ -50,6 +50,8 @@ void fb_flip_buffer()
 }
 
 void (*periodic)() = NULL;
+uint32_t uspi_tick = 0;
+void uspi_upd_timers();
 
 void timer3_callback(void *_unused)
 {
@@ -60,20 +62,18 @@ void timer3_callback(void *_unused)
 
   // printf("Timer!\n");
   if (periodic) periodic();
+  uspi_tick++;
+  uspi_upd_timers();
 }
 
-void timer2_callback(void *_unused)
+void timer2_callback(void *ret_addr)
 {
   do *TMR_CS = 4; while (*TMR_CS & 4);
   uint32_t t = *TMR_CLO;
   t = t - t % 500000 + 500000;
   *TMR_C2 = t;
 
-  mem_barrier();
-  static bool on = false;
-  on = !on;
-  *(on ? GPCLR1 : GPSET1) = (1 << 15);
-  mem_barrier();
+  printf("%u: %p\n", t, ret_addr);
 }
 
 static v3d_ctx ctx;
@@ -133,6 +133,7 @@ void sys_main()
   irq_set_callback(3, timer3_callback, NULL);
   //irq_set_callback(2, timer2_callback, NULL);
 
+  mem_barrier();
   struct framebuffer *f = mmu_ord_alloc(sizeof(struct framebuffer), 16);
   memset(f, 0, sizeof(struct framebuffer));
   f->pwidth = SCR_W; f->pheight = SCR_H;
@@ -154,7 +155,6 @@ void sys_main()
   charbuf_init(SCR_W, SCR_H);
   printf("Hello world!\n");
   printf("ARM clock rate: %u\n", get_clock_rate(3));
-  fb_flip_buffer();
 
   irq_set_callback(48, vsync_callback, NULL);
 
@@ -166,9 +166,17 @@ void sys_main()
   bool result = USPiInitialize();
   printf("USPi initialization %s\n", result ? "succeeded" : "failed");
   printf("Keyboard %savailable\n", USPiKeyboardAvailable() ? "" : "un");
-
   if (USPiKeyboardAvailable())
     USPiKeyboardRegisterKeyStatusHandlerRaw(kbd_upd_callback);
+
+  mem_barrier();
+  *GPFSEL4 |= (1 << 21);
+  while (1) {
+    *GPCLR1 = (1 << 15);
+    for (uint32_t i = 0; i < 100000000; i++) __asm__ __volatile__ ("");
+    *GPSET1 = (1 << 15);
+    for (uint32_t i = 0; i < 100000000; i++) __asm__ __volatile__ ("");
+  }
 
 /*
   mem_barrier();
