@@ -52,6 +52,7 @@ void fb_flip_buffer()
 void (*periodic)() = NULL;
 uint32_t uspi_tick = 0;
 void uspi_upd_timers();
+static uint32_t z = 0;
 
 void timer3_callback(void *_unused)
 {
@@ -64,6 +65,13 @@ void timer3_callback(void *_unused)
   if (periodic) periodic();
   uspi_tick++;
   uspi_upd_timers();
+
+  static uint32_t count = 0;
+  if (++count == 100) {
+    count = 0;
+    printf("\n%u\n", z);
+    z = 0;
+  }
 }
 
 void timer2_callback(void *ret_addr)
@@ -98,7 +106,7 @@ static unsigned synth(int16_t *buf, unsigned chunk_size)
 {
   static uint8_t phase = 0;
   for (unsigned i = 0; i < chunk_size; i += 2) {
-    int16_t sample = (has_key ? (int16_t)(32767 * sin(phase / 255.0 * M_PI * 2)) : 0);
+    int16_t sample = (has_key ? (int16_t)(32767.0 / 2 * (sin(phase / 255.0 * M_PI * 2) + sin(phase / 127.5 * M_PI * 2))) : 0);
     buf[i] = buf[i + 1] = sample;
     phase += 2; // Folds over to 0 ~ 255, generates 344.5 Hz (F4 - ~1/4 semitone)
   }
@@ -169,18 +177,15 @@ void sys_main()
   if (USPiKeyboardAvailable())
     USPiKeyboardRegisterKeyStatusHandlerRaw(kbd_upd_callback);
 
-  AMPiInitialize(44100, 8000);
+  AMPiInitialize(44100, 2000);
   AMPiSetChunkCallback(synth);
   bool b = AMPiStart();
   printf(b ? "Yes\n" : "No\n");
   while (1) {
     //printf(AMPiIsActive() ? "\rActive  " : "\rInactive");
-    if (!AMPiIsActive()) {
-      MsDelay(1000);
-      AMPiStart();
-    }
-    MsDelay(20);
     AMPiPoke();
+    for (uint32_t i = 0; i < 100000; i++) __asm__ __volatile__ ("");
+    z++;
   }
 
 /*
