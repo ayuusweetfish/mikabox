@@ -52,7 +52,7 @@ void fb_flip_buffer()
 void (*periodic)() = NULL;
 uint32_t uspi_tick = 0;
 void uspi_upd_timers();
-static uint32_t z = 0;
+uint32_t z = 0;
 
 void timer3_callback(void *_unused)
 {
@@ -81,7 +81,14 @@ void timer2_callback(void *ret_addr)
   t = t - t % 500000 + 500000;
   *TMR_C2 = t;
 
-  printf("%u: %p\n", t, ret_addr);
+  //printf("%u: %p\n", t, ret_addr);
+  static bool on = false;
+  on = !on;
+  mem_barrier();
+  *GPFSEL4 |= (1 << 21);
+  if (on) *GPCLR1 = (1 << 15);
+  else *GPSET1 = (1 << 15);
+  mem_barrier();
 }
 
 static v3d_ctx ctx;
@@ -120,6 +127,12 @@ static void kbd_upd_callback(uint8_t mod, const uint8_t k[6])
   has_key = (k[0] || k[1] || k[2] || k[3] || k[4] || k[5]);
 }
 
+static void gpad_upd_callback(unsigned index, const USPiGamePadState *state)
+{
+  printf("\r%d %08x", state->nbuttons, state->buttons);
+  has_key = (state->buttons & 0x100);
+}
+
 void sys_main()
 {
   for (uint8_t *p = &_bss_begin; p < &_bss_end; p++) *p = 0;
@@ -139,7 +152,7 @@ void sys_main()
   *TMR_C3 = *TMR_CLO + 1000000;
   *TMR_C2 = *TMR_CLO + 1000000;
   irq_set_callback(3, timer3_callback, NULL);
-  //irq_set_callback(2, timer2_callback, NULL);
+  irq_set_callback(2, timer2_callback, NULL);
 
   mem_barrier();
   struct framebuffer *f = mmu_ord_alloc(sizeof(struct framebuffer), 16);
@@ -177,6 +190,10 @@ void sys_main()
   if (USPiKeyboardAvailable())
     USPiKeyboardRegisterKeyStatusHandlerRaw(kbd_upd_callback);
 
+  printf("Gamepad %savailable\n", USPiGamePadAvailable() ? "" : "un");
+  // if (USPiGamePadAvailable())
+  //   USPiGamePadRegisterStatusHandler(gpad_upd_callback);
+
   AMPiInitialize(44100, 2000);
   AMPiSetChunkCallback(synth);
   bool b = AMPiStart();
@@ -185,7 +202,7 @@ void sys_main()
     //printf(AMPiIsActive() ? "\rActive  " : "\rInactive");
     AMPiPoke();
     for (uint32_t i = 0; i < 100000; i++) __asm__ __volatile__ ("");
-    z++;
+    //z++;
   }
 
 /*

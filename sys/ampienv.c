@@ -54,12 +54,14 @@ void LogWrite (const char *pSource,
                unsigned    Severity,
                const char *pMessage, ...)
 {
+/*
   printf("[%c] %s: ", "!EWND"[Severity], pSource ? pSource : "undef");
   va_list arglist;
   va_start(arglist, pMessage);
   vprintf(pMessage, arglist);
   va_end(arglist);
   _putchar('\n');
+*/
 }
 
 uint8_t coh[512 * 1024]
