@@ -61,6 +61,12 @@ void CancelKernelTimer(unsigned hTimer)
     timers[hTimer - 1].callback = NULL;
 }
 
+void CancelAllKernelTimers()
+{
+  for (uint16_t i = 0; i < NUM_TIMERS; i++)
+    timers[i].callback = NULL;
+}
+
 int SetPowerStateOn(unsigned nDeviceId)
 {
   bool succeeded = set_power_state(nDeviceId, 3); // on | wait

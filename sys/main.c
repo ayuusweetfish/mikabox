@@ -165,11 +165,16 @@ void sys_main()
 
   bool result = USPiInitialize();
   printf("USPi initialization %s\n", result ? "succeeded" : "failed");
+
+  USPiDeinitialize();
+  result = USPiInitialize();
+  printf("USPi initialization %s\n", result ? "succeeded" : "failed");
+
   printf("Keyboard %savailable\n", USPiKeyboardAvailable() ? "" : "un");
   if (USPiKeyboardAvailable())
     USPiKeyboardRegisterKeyStatusHandlerRaw(kbd_upd_callback);
 
-  AMPiInitialize(44100, 8000);
+  AMPiInitialize(44100, 2000);
   AMPiSetChunkCallback(synth);
   bool b = AMPiStart();
   printf(b ? "Yes\n" : "No\n");
