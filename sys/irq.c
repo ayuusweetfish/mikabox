@@ -7,8 +7,6 @@
 static irq_callback_t callbacks[IRQ_MAX] = { NULL };
 static void *args[IRQ_MAX] = { NULL };
 
-extern uint32_t z;
-
 void irq_handler(uint32_t ret_addr)
 {
   // Check interrupt source
@@ -30,7 +28,6 @@ void irq_handler(uint32_t ret_addr)
   mem_barrier();
 
   if (callbacks[source]) {
-    if (source == 9) z++;
     callbacks[source](args[source] != NULL ? args[source] : (void *)ret_addr);
     mem_barrier();
   }

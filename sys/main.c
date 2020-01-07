@@ -52,7 +52,7 @@ void fb_flip_buffer()
 void (*periodic)() = NULL;
 uint32_t uspi_tick = 0;
 void uspi_upd_timers();
-uint32_t z = 0;
+static uint32_t z = 0;
 
 void timer3_callback(void *_unused)
 {
@@ -130,7 +130,7 @@ static void kbd_upd_callback(uint8_t mod, const uint8_t k[6])
 static void gpad_upd_callback(unsigned index, const USPiGamePadState *state)
 {
   printf("\r%d %08x", state->nbuttons, state->buttons);
-  has_key = (state->buttons & 0x100);
+  has_key = (state->buttons & 0x800);
 }
 
 void sys_main()
@@ -191,8 +191,8 @@ void sys_main()
     USPiKeyboardRegisterKeyStatusHandlerRaw(kbd_upd_callback);
 
   printf("Gamepad %savailable\n", USPiGamePadAvailable() ? "" : "un");
-  // if (USPiGamePadAvailable())
-  //   USPiGamePadRegisterStatusHandler(gpad_upd_callback);
+  if (USPiGamePadAvailable())
+    USPiGamePadRegisterStatusHandler(gpad_upd_callback);
 
   AMPiInitialize(44100, 2000);
   AMPiSetChunkCallback(synth);
@@ -202,7 +202,7 @@ void sys_main()
     //printf(AMPiIsActive() ? "\rActive  " : "\rInactive");
     AMPiPoke();
     for (uint32_t i = 0; i < 100000; i++) __asm__ __volatile__ ("");
-    //z++;
+    z++;
   }
 
 /*
