@@ -53,6 +53,7 @@ void (*periodic)() = NULL;
 uint32_t uspi_tick = 0;
 void uspi_upd_timers();
 static uint32_t z = 0;
+extern uint32_t y;  // Error count
 
 void timer3_callback(void *_unused)
 {
@@ -69,8 +70,9 @@ void timer3_callback(void *_unused)
   static uint32_t count = 0;
   if (++count == 100) {
     count = 0;
-    printf("\n%u\n", z);
+    printf("\n%u %u\n", z, y);
     z = 0;
+    y = (y <= 5 ? 0 : y - 5);
   }
 }
 
@@ -184,20 +186,7 @@ void sys_main()
   printf("MAC address: %02x %02x %02x %02x %02x %02x\n",
     mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 
-  bool result = USPiInitialize();
-  printf("USPi initialization %s\n", result ? "succeeded" : "failed");
-
-  USPiDeinitialize();
-  result = USPiInitialize();
-  printf("USPi initialization %s\n", result ? "succeeded" : "failed");
-
-  printf("Keyboard %savailable\n", USPiKeyboardAvailable() ? "" : "un");
-  if (USPiKeyboardAvailable())
-    USPiKeyboardRegisterKeyStatusHandlerRaw(kbd_upd_callback);
-
-  printf("Gamepad %savailable\n", USPiGamePadAvailable() ? "" : "un");
-  if (USPiGamePadAvailable())
-    USPiGamePadRegisterStatusHandler(gpad_upd_callback);
+  y = 60; // Trigger a USB initialization
 
   AMPiInitialize(44100, 2000);
   AMPiSetChunkCallback(synth);
@@ -208,6 +197,20 @@ void sys_main()
     AMPiPoke();
     for (uint32_t i = 0; i < 100000; i++) __asm__ __volatile__ ("");
     z++;
+    if (y >= 60) do {
+      y = 0;
+      USPiDeinitialize();
+      bool result = USPiInitialize();
+      printf("USPi initialization %s\n", result ? "succeeded" : "failed");
+
+      printf("Keyboard %savailable\n", USPiKeyboardAvailable() ? "" : "un");
+      if (USPiKeyboardAvailable())
+        USPiKeyboardRegisterKeyStatusHandlerRaw(kbd_upd_callback);
+
+      printf("Gamepad %savailable\n", USPiGamePadAvailable() ? "" : "un");
+      if (USPiGamePadAvailable())
+        USPiGamePadRegisterStatusHandler(gpad_upd_callback);
+    } while (!USPiKeyboardAvailable() && !USPiGamePadAvailable());
   }
 
 /*

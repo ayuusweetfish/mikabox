@@ -50,10 +50,13 @@ uint32_t EnableVCHIQ (uint32_t p)
   return enable_vchiq(p);
 }
 
+uint32_t y = 0;
+
 void LogWrite (const char *pSource,
                unsigned    Severity,
                const char *pMessage, ...)
 {
+  if (Severity <= LOG_ERROR) {y++;return;}
   printf("[%c] %s: ", "!EWND"[Severity], pSource ? pSource : "undef");
   va_list arglist;
   va_start(arglist, pMessage);
