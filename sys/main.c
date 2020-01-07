@@ -52,6 +52,7 @@ void fb_flip_buffer()
 void (*periodic)() = NULL;
 uint32_t uspi_tick = 0;
 void uspi_upd_timers();
+static uint32_t z = 0;
 
 void timer3_callback(void *_unused)
 {
@@ -64,6 +65,13 @@ void timer3_callback(void *_unused)
   if (periodic) periodic();
   uspi_tick++;
   uspi_upd_timers();
+
+  static uint32_t count = 0;
+  if (++count == 100) {
+    count = 0;
+    printf("\n%u\n", z);
+    z = 0;
+  }
 }
 
 void timer2_callback(void *ret_addr)
@@ -73,7 +81,14 @@ void timer2_callback(void *ret_addr)
   t = t - t % 500000 + 500000;
   *TMR_C2 = t;
 
-  printf("%u: %p\n", t, ret_addr);
+  //printf("%u: %p\n", t, ret_addr);
+  static bool on = false;
+  on = !on;
+  mem_barrier();
+  *GPFSEL4 |= (1 << 21);
+  if (on) *GPCLR1 = (1 << 15);
+  else *GPSET1 = (1 << 15);
+  mem_barrier();
 }
 
 static v3d_ctx ctx;
@@ -98,7 +113,7 @@ static unsigned synth(int16_t *buf, unsigned chunk_size)
 {
   static uint8_t phase = 0;
   for (unsigned i = 0; i < chunk_size; i += 2) {
-    int16_t sample = (has_key ? (int16_t)(32767 * sin(phase / 255.0 * M_PI * 2)) : 0);
+    int16_t sample = (has_key ? (int16_t)(32767.0 / 2 * (sin(phase / 255.0 * M_PI * 2) + sin(phase / 127.5 * M_PI * 2))) : 0);
     buf[i] = buf[i + 1] = sample;
     phase += 2; // Folds over to 0 ~ 255, generates 344.5 Hz (F4 - ~1/4 semitone)
   }
@@ -110,6 +125,12 @@ static void kbd_upd_callback(uint8_t mod, const uint8_t k[6])
   printf("\r%02x %02x %02x %02x %02x %02x | mod = %02x",
     k[0], k[1], k[2], k[3], k[4], k[5], mod);
   has_key = (k[0] || k[1] || k[2] || k[3] || k[4] || k[5]);
+}
+
+static void gpad_upd_callback(unsigned index, const USPiGamePadState *state)
+{
+  printf("\r%d %08x", state->nbuttons, state->buttons);
+  has_key = (state->buttons & 0x800);
 }
 
 void sys_main()
@@ -131,7 +152,7 @@ void sys_main()
   *TMR_C3 = *TMR_CLO + 1000000;
   *TMR_C2 = *TMR_CLO + 1000000;
   irq_set_callback(3, timer3_callback, NULL);
-  //irq_set_callback(2, timer2_callback, NULL);
+  irq_set_callback(2, timer2_callback, NULL);
 
   mem_barrier();
   struct framebuffer *f = mmu_ord_alloc(sizeof(struct framebuffer), 16);
@@ -174,18 +195,19 @@ void sys_main()
   if (USPiKeyboardAvailable())
     USPiKeyboardRegisterKeyStatusHandlerRaw(kbd_upd_callback);
 
+  printf("Gamepad %savailable\n", USPiGamePadAvailable() ? "" : "un");
+  if (USPiGamePadAvailable())
+    USPiGamePadRegisterStatusHandler(gpad_upd_callback);
+
   AMPiInitialize(44100, 2000);
   AMPiSetChunkCallback(synth);
   bool b = AMPiStart();
   printf(b ? "Yes\n" : "No\n");
   while (1) {
     //printf(AMPiIsActive() ? "\rActive  " : "\rInactive");
-    if (!AMPiIsActive()) {
-      MsDelay(1000);
-      AMPiStart();
-    }
-    MsDelay(20);
     AMPiPoke();
+    for (uint32_t i = 0; i < 100000; i++) __asm__ __volatile__ ("");
+    z++;
   }
 
 /*
