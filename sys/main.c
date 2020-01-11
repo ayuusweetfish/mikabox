@@ -179,6 +179,7 @@ void sys_main()
   printf("Hello world!\n");
   printf("ARM clock rate: %u\n", get_clock_rate(3));
 
+/*
   irq_set_callback(48, vsync_callback, NULL);
 
   uint8_t mac[6];
@@ -212,8 +213,8 @@ void sys_main()
         USPiGamePadRegisterStatusHandler(gpad_upd_callback);
     } while (!USPiKeyboardAvailable() && !USPiGamePadAvailable());
   }
+*/
 
-/*
   mem_barrier();
   v3d_init();
   v3d_ctx_init(&ctx, SCR_W, SCR_H, fb_buf);
@@ -252,7 +253,6 @@ void sys_main()
     *GPSET1 = (1 << 15);
     for (uint32_t i = 0; i < 100000000; i++) __asm__ __volatile__ ("");
   }
-*/
 
 /*
   AMPiInitialize(44100, 4000);
