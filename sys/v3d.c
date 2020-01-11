@@ -141,9 +141,9 @@ void v3d_init()
 }
 
 #define OFF_VERT    0
-#define OFF_TILESTA 0x200000
-#define OFF_TILEDAT 0x240000
-#define OFF_BIN     0x280000
+#define OFF_TILESTA 0x200010  // 16-byte aligned, size of 48 * #tiles
+#define OFF_TILEDAT 0x240100  // 256-byte aligned
+#define OFF_SZ      0x280000
 
 #define TEX_W 512
 #define TEX_H 256
@@ -161,38 +161,22 @@ void v3d_ctx_init(v3d_ctx *ctx, uint32_t w, uint32_t h, void *bufaddr)
   ctx->h = h;
   ctx->bufaddr = (uint32_t)bufaddr;
 
-  uint32_t handle = gpumem_alloc(0x300000, 0x1000, MEM_FLAG_COHERENT | MEM_FLAG_ZERO);
+  uint32_t handle = gpumem_alloc(OFF_SZ, 0x1000, MEM_FLAG_COHERENT | MEM_FLAG_ZERO);
   uint32_t p = gpumem_lock(handle);
   ctx->rhandle = handle;
   ctx->rbusaddr = p;
   ctx->rarmaddr = p & ~GPU_BUS_ADDR;
   v3d_printf("%08x %08x\n", ctx->rbusaddr, ctx->rarmaddr);
 
-  handle = gpumem_alloc(TEX_W * TEX_H * 4 + 0x1000, 0x1000,
+  handle = gpumem_alloc(TEX_W * TEX_H * 4, 0x1000,
     MEM_FLAG_L1_NONALLOCATING | MEM_FLAG_ZERO);
   p = gpumem_lock(handle);
   ctx->thandle = handle;
   ctx->tbusaddr = p;
   ctx->tarmaddr = p & ~GPU_BUS_ADDR;
 
-  // Texture config parameters
-  // VC IV Manual p. 40:
-  // - For each write of texture unit sampling vector data
-  // - [...] a uniform is automatically read [...]
-  // - Uniforms associated with the first 2 TMU data writes set up common things
-  // - [...] The rest of the config setup data can be
-  // - [...] not used if only two parameters are required.
-  uint32_t *q = (uint32_t *)ctx->tarmaddr;
-  q[0] = ctx->tbusaddr + 0x1000;
-  q[1] = (TEX_W << 8) | (TEX_H << 20) | (2 << 2); // Repeat X (S), mirror Y (T)
-
-  // More floating-point uniforms
-  uint8_t *qq = (uint8_t *)(q + 2);
-  _putf32(&qq, 0.3f);
-  _putf32(&qq, 1.0f);
-  _putf32(&qq, 0.7f);
-
-  uint32_t *tex = (uint32_t *)(ctx->tarmaddr + 0x1000);
+  // Texture pixels
+  uint32_t *tex = (uint32_t *)ctx->tarmaddr;
   uint8_t *img = &_binary_utils_nanikore_bin_start;
   uint32_t ptr = 0;
   // 4K tiles
@@ -314,6 +298,7 @@ void v3d_op(v3d_ctx *ctx)
   gpumem_lock(ctx->rhandle);
 
   // Vertices
+  // 128-byte aligned
   p = (uint8_t *)(ctx->rarmaddr) + OFF_VERT;
   uint32_t vertex_start = (uint32_t)p | alias;
   v3d_printf("Vertices start: %p %u\n", p, vertex_start);
@@ -406,39 +391,60 @@ void v3d_op(v3d_ctx *ctx)
   v3d_printf("Vertex indices end: %p\n", p);
 
   // Shader
-  p = (uint8_t *)(((uint32_t)p + 127) & ~127);
+  // 8-byte aligned
+  p = (uint8_t *)(((uint32_t)p + 7) & ~7);
   uint32_t qvqshader_start = (uint32_t)p | alias;
   for (size_t i = 0; i < qvqshaderlen; i++)
     _putu32(&p, qvqshader[i]);
 
-  p = (uint8_t *)(((uint32_t)p + 127) & ~127);
+  p = (uint8_t *)(((uint32_t)p + 7) & ~7);
   uint32_t qwqshader_start = (uint32_t)p | alias;
   for (size_t i = 0; i < qwqshaderlen; i++)
     _putu32(&p, qwqshader[i]);
 
+  // Uniforms
+  // 4-byte aligned
+  p = (uint8_t *)(((uint32_t)p + 7) & ~7) + 4;
+  uint32_t uniform_start = (uint32_t)p | alias;
+
+  // Texture config parameters
+  // VC IV Manual p. 40:
+  // - For each write of texture unit sampling vector data
+  // - [...] a uniform is automatically read [...]
+  // - Uniforms associated with the first 2 TMU data writes set up common things
+  // - [...] The rest of the config setup data can be
+  // - [...] not used if only two parameters are required.
+  _putu32(&p, ctx->tbusaddr);
+  _putu32(&p, (TEX_W << 8) | (TEX_H << 20) | (2 << 2)); // Repeat X (S), mirror Y (T)
+
+  // More floating-point uniforms
+  _putf32(&p, 0.3f);
+  _putf32(&p, 1.0f);
+  _putf32(&p, 0.7f);
+
   // Shader state record
-  p = (uint8_t *)(((uint32_t)p + 127) & ~127);
+  // 16-byte aligned
+  p = (uint8_t *)(((uint32_t)p + 15) & ~15);
   uint32_t qvqshader_rcd_start = (uint32_t)p | alias;
   _putu8(&p, 1);
   _putu8(&p, 4 * 4 + 2 * 2);
   _putu8(&p, 0xcc);
   _putu8(&p, 2);    // Number of varyings
   _putu32(&p, qvqshader_start);
-  _putu32(&p, ctx->tbusaddr);
+  _putu32(&p, uniform_start);
   _putu32(&p, vertex_start);
 
-  p = (uint8_t *)(((uint32_t)p + 127) & ~127);
+  p = (uint8_t *)(((uint32_t)p + 15) & ~15);
   uint32_t qwqshader_rcd_start = (uint32_t)p | alias;
   _putu8(&p, 1);
   _putu8(&p, 4 * 4 + 2 * 2);
   _putu8(&p, 0xcc);
   _putu8(&p, 2);    // Number of varyings
   _putu32(&p, qwqshader_start); // Shader code
-  _putu32(&p, ctx->tbusaddr);   // Shader uniforms
+  _putu32(&p, uniform_start);   // Shader uniforms
   _putu32(&p, vertex_start2);   // Vertex data
 
   // Render control
-  p = (uint8_t *)(((uint32_t)p + 127) & ~127);
   uint32_t ren_ctrl_start = (uint32_t)p | alias;
   v3d_printf("Render control start: %p\n", p);
 
@@ -483,13 +489,12 @@ void v3d_op(v3d_ctx *ctx)
   v3d_printf("Render control end: %p\n", p);
 
   // Binning configuration
-  p = (uint8_t *)(ctx->rarmaddr) + OFF_BIN;
   uint32_t bin_cfg_start = (uint32_t)p | alias;
   v3d_printf("Binning config start: %p\n", p);
 
   _putu8(&p, 112);  // GL_TILE_BINNING_CONFIG
   _putu32(&p, ctx->rbusaddr + OFF_TILEDAT);
-  _putu32(&p, OFF_BIN - OFF_TILEDAT);
+  _putu32(&p, OFF_SZ - OFF_TILEDAT);
   _putu32(&p, ctx->rbusaddr + OFF_TILESTA);
   _putu8(&p, bin_cols);
   _putu8(&p, bin_rows);
