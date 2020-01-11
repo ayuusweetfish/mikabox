@@ -176,11 +176,21 @@ void v3d_ctx_init(v3d_ctx *ctx, uint32_t w, uint32_t h, void *bufaddr)
   ctx->tarmaddr = p & ~GPU_BUS_ADDR;
 
   // Texture config parameters
+  // VC IV Manual p. 40:
+  // - For each write of texture unit sampling vector data
+  // - [...] a uniform is automatically read [...]
+  // - Uniforms associated with the first 2 TMU data writes set up common things
+  // - [...] The rest of the config setup data can be
+  // - [...] not used if only two parameters are required.
   uint32_t *q = (uint32_t *)ctx->tarmaddr;
   q[0] = ctx->tbusaddr + 0x1000;
   q[1] = (TEX_W << 8) | (TEX_H << 20) | (2 << 2); // Repeat X (S), mirror Y (T)
-  q[2] = 0;
-  q[3] = 0;
+
+  // More floating-point uniforms
+  uint8_t *qq = (uint8_t *)(q + 2);
+  _putf32(&qq, 0.3f);
+  _putf32(&qq, 1.0f);
+  _putf32(&qq, 0.7f);
 
   uint32_t *tex = (uint32_t *)(ctx->tarmaddr + 0x1000);
   uint8_t *img = &_binary_utils_nanikore_bin_start;
@@ -258,22 +268,27 @@ static uint32_t qwqshader[] = {
   /* 0x00000030: */ 0x009e7000, 0xa00009e7, /* nop; nop; ldtmu0 */
   /* 0x00000038: */ 0x009e7000, 0x400009e7, /* nop; nop; sbwait */
   /* 0x00000040: */ 0x159e7900, 0x80020827, /* mov r0, r4; nop; loadc */
-  /* 0x00000048: */ 0x609e7003, 0x100049e0, /* nop; v8muld r0, r0, r3 */
-  /* 0x00000050: */ 0xff808080, 0xe00208e7, /* ldi r3, 0xff808080 */
-  /* 0x00000058: */ 0x609e7023, 0x100049e1, /* nop; v8muld r1, r4, r3 */
-  /* 0x00000060: */ 0xc09e7001, 0x100049e2, /* nop; v8adds r2, r0, r1 */
-  /* 0x00000068: */ 0x159e7480, 0x80020b67, /* mov tlbm, r2; nop; loadc */
-  /* 0x00000070: */ 0x609e7023, 0x100049e1, /* nop; v8muld r1, r4, r3 */
-  /* 0x00000078: */ 0xc09e7001, 0x100049e2, /* nop; v8adds r2, r0, r1 */
-  /* 0x00000080: */ 0x159e7480, 0x80020b67, /* mov tlbm, r2; nop; loadc */
-  /* 0x00000088: */ 0x609e7023, 0x100049e1, /* nop; v8muld r1, r4, r3 */
-  /* 0x00000090: */ 0xc09e7001, 0x100049e2, /* nop; v8adds r2, r0, r1 */
-  /* 0x00000098: */ 0x159e7480, 0x80020b67, /* mov tlbm, r2; nop; loadc */
-  /* 0x000000a0: */ 0x609e7023, 0x100049e1, /* nop; v8muld r1, r4, r3 */
-  /* 0x000000a8: */ 0xc09e7001, 0x100049e2, /* nop; v8adds r2, r0, r1 */
-  /* 0x000000b0: */ 0x159e7480, 0x30020b67, /* mov tlbm, r2; nop; thrend */
-  /* 0x000000b8: */ 0x009e7000, 0x100009e7, /* nop; nop */
-  /* 0x000000c0: */ 0x009e7000, 0x500009e7, /* nop; nop; sbdone */
+  /* 0x00000048: */ 0x809e003f, 0xd17049e3, /* nop; mov r3.8d, 1.0 */
+  /* 0x00000050: */ 0x80827036, 0x116049e3, /* nop; mov r3.8c, unif */
+  /* 0x00000058: */ 0x80827036, 0x115049e3, /* nop; mov r3.8b, unif */
+  /* 0x00000060: */ 0x80827036, 0x114049e3, /* nop; mov r3.8a, unif */
+  /* 0x00000068: */ 0xff808080, 0xe0020027, /* ldi ra0, 0xff808080 */
+  /* 0x00000070: */ 0x609e7003, 0x100049e0, /* nop; v8muld r0, r0, r3 */
+  /* 0x00000078: */ 0x60027006, 0x100049e0, /* nop; v8muld r0, r0, ra0 */
+  /* 0x00000080: */ 0x60027026, 0x100049e1, /* nop; v8muld r1, r4, ra0 */
+  /* 0x00000088: */ 0xc09e7001, 0x100049e2, /* nop; v8adds r2, r0, r1 */
+  /* 0x00000090: */ 0x159e7480, 0x80020b67, /* mov tlbm, r2; nop; loadc */
+  /* 0x00000098: */ 0x60027026, 0x100049e1, /* nop; v8muld r1, r4, ra0 */
+  /* 0x000000a0: */ 0xc09e7001, 0x100049e2, /* nop; v8adds r2, r0, r1 */
+  /* 0x000000a8: */ 0x159e7480, 0x80020b67, /* mov tlbm, r2; nop; loadc */
+  /* 0x000000b0: */ 0x60027026, 0x100049e1, /* nop; v8muld r1, r4, ra0 */
+  /* 0x000000b8: */ 0xc09e7001, 0x100049e2, /* nop; v8adds r2, r0, r1 */
+  /* 0x000000c0: */ 0x159e7480, 0x80020b67, /* mov tlbm, r2; nop; loadc */
+  /* 0x000000c8: */ 0x60027026, 0x100049e1, /* nop; v8muld r1, r4, ra0 */
+  /* 0x000000d0: */ 0xc09e7001, 0x100049e2, /* nop; v8adds r2, r0, r1 */
+  /* 0x000000d8: */ 0x159e7480, 0x30020b67, /* mov tlbm, r2; nop; thrend */
+  /* 0x000000e0: */ 0x009e7000, 0x100009e7, /* nop; nop */
+  /* 0x000000e8: */ 0x009e7000, 0x500009e7, /* nop; nop; sbdone */
 };
 #define qwqshaderlen (sizeof qwqshader / sizeof qwqshader[0])
 
