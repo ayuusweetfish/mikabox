@@ -5,6 +5,7 @@
 #include "printf/printf.h"
 
 #include <math.h>
+#include <string.h>
 
 #define GPU_BUS_ADDR  0x40000000  // TODO: Unify all occurrences
 #define v3d_printf(...)
@@ -140,55 +141,69 @@ void v3d_init()
   v3d_printf("QPUs enabled\n");
 }
 
-#define OFF_VERT    0
-#define OFF_TILESTA 0x200000
-#define OFF_TILEDAT 0x240000
-#define OFF_BIN     0x280000
-
-#define TEX_W 512
-#define TEX_H 256
-extern uint8_t _binary_utils_nanikore_bin_start;
-extern uint8_t _binary_utils_nanikore_bin_end;
-
-static const uint32_t aurora[7] = {
-  0xbf616a, 0xd08770, 0xebcb8b, 0xa3be8c, 0xb48ead,
-  0x88c0d0, 0x5e81ac
-};
-
-void v3d_ctx_init(v3d_ctx *ctx, uint32_t w, uint32_t h, void *bufaddr)
+struct v3d_mem v3d_mem_create(uint32_t size, uint32_t align, uint32_t flags)
 {
-  ctx->w = w;
-  ctx->h = h;
-  ctx->bufaddr = (uint32_t)bufaddr;
+  v3d_mem m;
+  m.handle = gpumem_alloc(size, align, flags);
+  m.addr = gpumem_lock(m.handle);
+  return m;
+}
 
-  uint32_t handle = gpumem_alloc(0x300000, 0x1000, MEM_FLAG_COHERENT | MEM_FLAG_ZERO);
-  uint32_t p = gpumem_lock(handle);
-  ctx->rhandle = handle;
-  ctx->rbusaddr = p;
-  ctx->rarmaddr = p & ~GPU_BUS_ADDR;
-  v3d_printf("%08x %08x\n", ctx->rbusaddr, ctx->rarmaddr);
+#define _armptr(__mem)            ((uint8_t *)((__mem).addr & ~GPU_BUS_ADDR))
+#define _offset(__armptr, __mem)  ((uint8_t *)(__armptr) - _armptr(__mem))
+#define _align(__x, __align)      ((__x) = (((__x) + (__align) - 1) & ~((__align) - 1)))
+#define _count(__arr)             ((sizeof (__arr)) / (sizeof (__arr)[0]))
 
-  handle = gpumem_alloc(TEX_W * TEX_H * 4 + 0x1000, 0x1000,
+void v3d_mem_lock(struct v3d_mem *m)
+{
+  m->addr = gpumem_lock(m->handle);
+}
+
+void v3d_mem_unlock(struct v3d_mem *m)
+{
+  m->addr = 0;
+  gpumem_unlock(m->handle);
+}
+
+void v3d_mem_close(struct v3d_mem *m)
+{
+  gpumem_release(m->handle);
+}
+
+void v3d_mem_copy(struct v3d_mem *m, uint32_t offs, void *ptr, uint32_t size)
+{
+  void *p = _armptr(*m) + offs;
+  memcpy(p, ptr, size);
+}
+
+v3d_tex v3d_tex_screen(uint32_t buf)
+{
+  v3d_tex t = {
+    .w = 800,
+    .h = 480,
+    .mem = {
+      .handle = 0xfbfbfbfb,
+      .addr = buf
+    }
+  };
+  return t;
+}
+
+v3d_tex v3d_tex_create(uint16_t w, uint16_t h, uint8_t *buf)
+{
+  v3d_tex t;
+  t.w = w;
+  t.h = h;
+  t.mem = v3d_mem_create((uint32_t)w * h * 4, 4096,
     MEM_FLAG_L1_NONALLOCATING | MEM_FLAG_ZERO);
-  p = gpumem_lock(handle);
-  ctx->thandle = handle;
-  ctx->tbusaddr = p;
-  ctx->tarmaddr = p & ~GPU_BUS_ADDR;
 
-  uint32_t *q = (uint32_t *)ctx->tarmaddr;
-  q[0] = ctx->tbusaddr + 0x1000;
-  q[1] = (TEX_W << 8) | (TEX_H << 20);
-  q[2] = 0;
-  q[3] = 0;
-
-  uint32_t *tex = (uint32_t *)(ctx->tarmaddr + 0x1000);
-  uint8_t *img = &_binary_utils_nanikore_bin_start;
+  uint32_t *tex = (uint32_t *)_armptr(t.mem);
   uint32_t ptr = 0;
   // 4K tiles
-  for (uint16_t y0i = 0; y0i < TEX_H / 32; y0i++) {
-    uint16_t y0 = TEX_H - 32 * (y0i + 1);
-    for (uint16_t x0i = 0; x0i < TEX_W / 32; x0i++) {
-      uint16_t x0 = ((y0i & 1) ? TEX_W - 32 * (x0i + 1) : 32 * x0i);
+  for (uint16_t y0i = 0; y0i < h / 32; y0i++) {
+    uint16_t y0 = h - 32 * (y0i + 1);
+    for (uint16_t x0i = 0; x0i < w / 32; x0i++) {
+      uint16_t x0 = ((y0i & 1) ? w - 32 * (x0i + 1) : 32 * x0i);
       // Four 1K subtiles
       static const uint8_t subt[4] = {1, 0, 2, 3};
       for (uint8_t k = 0; k < 4; k++) {
@@ -202,28 +217,109 @@ void v3d_ctx_init(v3d_ctx *ctx, uint32_t w, uint32_t h, void *bufaddr)
           for (uint16_t x3 = 0; x3 < 4; x3++) {
             uint16_t x4 = x1 + (x2 * 4 + x3 + 1);
             uint16_t y4 = y1 + (16 - (y2 * 4 + y3 + 1));
-            uint32_t p = ((uint32_t)y4 * TEX_W + x4) * 3;
-            uint32_t value = ((uint32_t)img[p] << 16) |
-              ((uint32_t)img[p + 1] << 8) | (uint32_t)img[p + 2];
+            uint32_t p = ((uint32_t)y4 * w + x4) * 3;
+            uint32_t value = ((uint32_t)buf[p] << 16) |
+              ((uint32_t)buf[p + 1] << 8) | (uint32_t)buf[p + 2];
             tex[ptr++] = value;
           }
       }
     }
   }
 
-  gpumem_unlock(ctx->thandle);
-  gpumem_unlock(ctx->rhandle);
+  return t;
 }
 
-/*
-  Benchmark results with current suboptimal approach:
-  >= 1e6 triangles/sec
-  >= 5e8 instruction cycles/sec
-*/
+struct v3d_vertarr v3d_vertarr_create(uint16_t num, uint8_t num_varyings)
+{
+  v3d_vertarr a;
+  a.num = num;
+  a.num_varyings = num_varyings;
+  size_t pstride = 12 + 4 * num_varyings;
+  a.mem = v3d_mem_create(pstride * num, 128, MEM_FLAG_COHERENT | MEM_FLAG_ZERO);
+  return a;
+}
 
-static uint32_t qvqshader[] = {
-#if 1
-  // Texture sampling
+void v3d_vertarr_put(
+  struct v3d_vertarr *a, uint32_t start_index,
+  const v3d_vert *verts, uint32_t num
+) {
+  uint32_t num_varyings = a->num_varyings;
+
+  uint8_t *p = _armptr(a->mem);
+  size_t pstride = 12 + 4 * num_varyings;
+  p += pstride * start_index;
+
+  const uint8_t *q = (const uint8_t *)verts;
+  size_t qstride = sizeof(v3d_vert) + sizeof(float) * num_varyings;
+
+  for (uint32_t i = 0; i < num; i++) {
+    const v3d_vert *vert = (const v3d_vert *)q;
+    _putu16(&p, (uint16_t)(vert->x * 16 + 0.5f));
+    _putu16(&p, (uint16_t)(vert->y * 16 + 0.5f));
+    _putf32(&p, 1.0f);
+    _putf32(&p, 1.0f);
+    for (uint32_t j = 0; j < num_varyings; j++)
+      _putf32(&p, vert->varyings[j]);
+    q += qstride;
+  }
+}
+
+struct v3d_unifarr v3d_unifarr_create(uint8_t num)
+{
+  v3d_unifarr a;
+  a.num = num;
+  a.mem = v3d_mem_create(4 * num, 4, MEM_FLAG_COHERENT | MEM_FLAG_ZERO);
+  return a;
+}
+
+void v3d_unifarr_putu32(struct v3d_unifarr *a, uint32_t index, uint32_t value)
+{
+  uint32_t *p = (uint32_t *)_armptr(a->mem);
+  p[index] = value;
+}
+
+void v3d_unifarr_putf32(struct v3d_unifarr *a, uint32_t index, float value)
+{
+  float *p = (float *)_armptr(a->mem);
+  p[index] = value;
+}
+
+void v3d_unifarr_puttex(struct v3d_unifarr *a, uint32_t index, v3d_tex tex)
+{
+  uint32_t *p = (uint32_t *)_armptr(a->mem);
+  p[index] = tex.mem.addr;
+  p[index + 1] = (tex.w << 8) | (tex.h << 20);
+}
+
+static const uint32_t white_shader[] = {
+};
+
+static const uint32_t chroma_shader[] = {
+  /* 0x00000000: */ 0x203e303e, 0x100049e0, /* nop; fmul r0, vary, ra15 */
+  /* 0x00000008: */ 0x019e7140, 0x10020827, /* fadd r0, r0, r5; nop */
+  /* 0x00000010: */ 0x203e303e, 0x100049e1, /* nop; fmul r1, vary, ra15 */
+  /* 0x00000018: */ 0x019e7340, 0x10020867, /* fadd r1, r1, r5; nop */
+  /* 0x00000020: */ 0x159e7240, 0x10020e67, /* mov t0t, r1; nop */
+  /* 0x00000028: */ 0x159e7000, 0x10020e27, /* mov t0s, r0; nop */
+  /* 0x00000030: */ 0x009e7000, 0xa00009e7, /* nop; nop; ldtmu0 */
+  /* 0x00000038: */ 0x15827d80, 0x100208a7, /* mov r2, unif; nop */
+  /* 0x00000040: */ 0x829e0e92, 0xd0025040, /* fsub rb1, 1.0, r2; mov ra0, r2 */
+  /* 0x00000048: */ 0x203e303e, 0x100049e0, /* nop; fmul r0, vary, ra15 */
+  /* 0x00000050: */ 0x213e317e, 0x10024821, /* fadd r0, r0, r5; fmul r1, vary, ra15 */
+  /* 0x00000058: */ 0x213e337e, 0x10024862, /* fadd r1, r1, r5; fmul r2, vary, ra15 */
+  /* 0x00000060: */ 0x21027546, 0x100248a0, /* fadd r2, r2, r5; fmul r0, r0, ra0 */
+  /* 0x00000068: */ 0x210011ce, 0x10024821, /* fadd r0, r0, rb1; fmul r1, r1, ra0 */
+  /* 0x00000070: */ 0x210013d6, 0x10024862, /* fadd r1, r1, rb1; fmul r2, r2, ra0 */
+  /* 0x00000078: */ 0x819c15c0, 0x114248a3, /* fadd r2, r2, rb1; mov r3.8a, r0 */
+  /* 0x00000080: */ 0x809e7009, 0x115049e3, /* nop; mov r3.8b, r1 */
+  /* 0x00000088: */ 0x809e7012, 0x416049e3, /* nop; mov r3.8c, r2; sbwait */
+  /* 0x00000090: */ 0x809e003f, 0xd17049e3, /* nop; mov r3.8d, 1.0 */
+  /* 0x00000098: */ 0x609e7023, 0x300049ee, /* nop; v8muld tlbc, r4, r3; thrend */
+  /* 0x000000a0: */ 0x009e7000, 0x100009e7, /* nop; nop; nop */
+  /* 0x000000a8: */ 0x009e7000, 0x500009e7, /* nop; nop; sbdone */
+};
+
+static const uint32_t tex_shader[] = {
   /* 0x00000000: */ 0x203e303e, 0x100049e0, /* nop; fmul r0, vary, ra15 */
   /* 0x00000008: */ 0x019e7140, 0x10020827, /* fadd r0, r0, r5; nop */
   /* 0x00000010: */ 0x203e303e, 0x100049e1, /* nop; fmul r1, vary, ra15 */
@@ -232,257 +328,219 @@ static uint32_t qvqshader[] = {
   /* 0x00000028: */ 0x159e7000, 0x10020e27, /* mov t0s, r0; nop */
   /* 0x00000030: */ 0x009e7000, 0xa00009e7, /* nop; nop; ldtmu0 */
   /* 0x00000038: */ 0x009e7000, 0x400009e7, /* nop; nop; sbwait */
-  /* 0x00000040: */ 0x159e7900, 0x30020ba7, /* mov tlbc, r4; nop; thrend */
-  /* 0x00000048: */ 0x009e7000, 0x100009e7, /* nop; nop */
-  /* 0x00000050: */ 0x009e7000, 0x500009e7, /* nop; nop; sbdone */
-#else
-  // Pure colour
-  /* 0x00000000: */ 0x009e7000, 0x100009e7, /* nop */
-  /* 0x00000008: */ 0xffffffff, 0xe0020ba7, /* ldi tlbc, 0xffffffff */
-  /* 0x00000010: */ 0x009e7000, 0x500009e7, /* nop; nop; sbdone */
-  /* 0x00000018: */ 0x009e7000, 0x300009e7, /* nop; nop; thrend */
-  /* 0x00000020: */ 0x009e7000, 0x100009e7, /* nop */
-  /* 0x00000028: */ 0x009e7000, 0x100009e7, /* nop */
-#endif
+  /* 0x00000040: */ 0x159e7900, 0x80020827, /* mov r0, r4; nop; loadc */
+  /* 0x00000048: */ 0x159e7000, 0x30020ba7, /* mov tlbc, r0; nop; thrend */
+  /* 0x00000050: */ 0x009e7000, 0x100009e7, /* nop; nop */
+  /* 0x00000058: */ 0x009e7000, 0x500009e7, /* nop; nop; sbdone */
 };
-#define qvqshaderlen (sizeof qvqshader / sizeof qvqshader[0])
 
-#if 0
-#define GRID_W 10
-#define GRID_H 6
-#define LAYERS 20
-#else
-#define GRID_W 110
-#define GRID_H 72
-#define LAYERS 1
-#endif
-#define CELL_W (800.0f / GRID_W)
-#define CELL_H (480.0f / GRID_H)
-
-void v3d_op(v3d_ctx *ctx)
+v3d_shader v3d_shader_create(const char *code)
 {
-  mem_barrier();
-  uint32_t w = ctx->w, h = ctx->h;
-  uint8_t *p;
-  uint32_t alias = (ctx->rbusaddr & GPU_BUS_ADDR);
+  v3d_shader s;
+  s.mem = v3d_mem_create(256, 8, MEM_FLAG_COHERENT | MEM_FLAG_ZERO);
+  uint8_t *p = _armptr(s.mem);
 
-  gpumem_lock(ctx->rhandle);
+  for (uint32_t i = 0; i < _count(chroma_shader); i++)
+    _putu32(&p, chroma_shader[i]);
 
-  // Vertices
-  p = (uint8_t *)(ctx->rarmaddr) + OFF_VERT;
-  uint32_t vertex_start = (uint32_t)p | alias;
-  v3d_printf("Vertices start: %p %u\n", p, vertex_start);
+  return s;
+}
 
-  uint32_t t = *TMR_CLO;
-  float angle = (float)t / 4e6f * acosf(-1) * 2;
-
-  for (int i = 0; i < GRID_H; i++) {
-    for (int j = 0; j < GRID_W; j++) {
-      float dx = cos(angle * (1 + i * 0.06f + j * 0.005f)) * CELL_W * 0.3f;
-      float dy = sin(angle * (1 + i * 0.06f + j * 0.005f)) * CELL_H * 0.3f;
-      _putu16(&p, (uint16_t)((j * CELL_W + CELL_W / 2 + dx) * 16 + 0.5f));
-      _putu16(&p, (uint16_t)((i * CELL_H + CELL_H / 2 + dy) * 16 + 0.5f));
-      _putf32(&p, 1.0f); _putf32(&p, 1.0f);
-/*
-      int c = aurora[(i + j) * (i - j + i * j + 332) % 7];
-      _putf32(&p, (c >> 16) / 255.0f);
-      _putf32(&p, ((c >> 8) & 0xff) / 255.0f);
-      _putf32(&p, (c & 0xff) / 255.0f);
-*/
-      _putf32(&p, (float)j / (GRID_W - 1));
-      _putf32(&p, (float)(GRID_H - 1 - i) / (GRID_H - 1));
-    }
-  }
-
-/*
-  _putu16(&p, (uint16_t)(w * (0.2f + 0.07f * cos(angle)) * 16 + 0.5f));
-  _putu16(&p, (uint16_t)(h * (0.2f + 0.07f * sin(angle)) * 16 + 0.5f));
-  _putf32(&p, 1.0f); _putf32(&p, 1.0f);
-  //_putf32(&p, 0.4f); _putf32(&p, 0.7f); _putf32(&p, 1.0f); _putf32(&p, 1.0f);
-  _putf32(&p, 0.2f); _putf32(&p, 0.2f);
-
-  _putu16(&p, (uint16_t)(w * 0.2 * 16 + 0.5f));
-  _putu16(&p, (uint16_t)(h * 0.8 * 16 + 0.5f));
-  _putf32(&p, 1.0f); _putf32(&p, 1.0f);
-  //_putf32(&p, 1.0f); _putf32(&p, 1.0f); _putf32(&p, 1.0f); _putf32(&p, 1.0f);
-  _putf32(&p, 0.8f); _putf32(&p, 0.2f);
-
-  _putu16(&p, (uint16_t)(w * 0.8 * 16 + 0.5f));
-  _putu16(&p, (uint16_t)(h * 0.2 * 16 + 0.5f));
-  _putf32(&p, 1.0f); _putf32(&p, 1.0f);
-  //_putf32(&p, 1.0f); _putf32(&p, 1.0f); _putf32(&p, 1.0f); _putf32(&p, 1.0f);
-  _putf32(&p, 0.2f); _putf32(&p, 0.8f);
-
-  _putu16(&p, (uint16_t)(w * 0.8 * 16 + 0.5f));
-  _putu16(&p, (uint16_t)(h * 0.8 * 16 + 0.5f));
-  _putf32(&p, 1.0f); _putf32(&p, 1.0f);
-  //_putf32(&p, 1.0f); _putf32(&p, 1.0f); _putf32(&p, 1.0f); _putf32(&p, 1.0f);
-  _putf32(&p, 0.8f); _putf32(&p, 0.8f);
-*/
-
-  v3d_printf("Vertices end: %p\n", p);
-
-  p = (uint8_t *)(((uint32_t)p + 127) & ~127);
-  uint32_t vertex_idx_start = (uint32_t)p | alias;
-  v3d_printf("Vertex indices start: %p\n", p);
-
-  for (int layer = 0; layer < LAYERS; layer++)
-    for (int16_t i = 0; i < GRID_H - 1; i++)
-      for (int16_t j = 0; j < GRID_W - 1; j++) {
-        _putu16(&p, i * GRID_W + j);
-        _putu16(&p, i * GRID_W + j + 1);
-        _putu16(&p, (i + 1) * GRID_W + j);
-        _putu16(&p, (i + 1) * GRID_W + (j + 1));
-        _putu16(&p, i * GRID_W + j + 1);
-        _putu16(&p, (i + 1) * GRID_W + j);
-      }
-
-/*
-  _putu16(&p, 0); _putu16(&p, 1); _putu16(&p, 3);
-  _putu16(&p, 0); _putu16(&p, 2); _putu16(&p, 3);
-*/
-  v3d_printf("Vertex indices end: %p\n", p);
-
-  // Shader
-  p = (uint8_t *)(((uint32_t)p + 127) & ~127);
-  uint32_t shader_start = (uint32_t)p | alias;
-  v3d_printf("Shader instructions start: %p\n", p);
-
-  for (size_t i = 0; i < qvqshaderlen; i++)
-    _putu32(&p, qvqshader[i]);
-  v3d_printf("Shader instructions end: %p\n", p);
-
-  p = (uint8_t *)(((uint32_t)p + 127) & ~127);
-  uint32_t shader_unif_start = (uint32_t)p | alias;
-  _putu32(&p, ctx->tbusaddr);
-  //_putf32(&p, 0.5f);
-  _putu32(&p, 0xff00ff00);
-  _putu32(&p, 0xffffff00);
-  _putu32(&p, 0xffffffff);
-
-  p = (uint8_t *)(((uint32_t)p + 127) & ~127);
-  uint32_t shader_rcd_start = (uint32_t)p | alias;
-  v3d_printf("Shader record start: %p\n", p);
+v3d_batch v3d_batch_create(
+  const v3d_vertarr vertarr,
+  const v3d_unifarr unifarr,
+  const v3d_shader shader
+) {
+  v3d_batch b;
+  b.mem = v3d_mem_create(16, 16, MEM_FLAG_COHERENT | MEM_FLAG_ZERO);
+  uint8_t *p = _armptr(b.mem);
 
   _putu8(&p, 1);
-  _putu8(&p, 4 * 4 + 2 * 2);
+  _putu8(&p, 12 + 4 * vertarr.num_varyings);
   _putu8(&p, 0xcc);
-  _putu8(&p, 2);    // Number of varyings
-  _putu32(&p, shader_start);
-  _putu32(&p, ctx->tbusaddr);
-  _putu32(&p, vertex_start);
-  v3d_printf("Shader record end: %p\n", p);
+  _putu8(&p, vertarr.num_varyings);
+  _putu32(&p, shader.mem.addr);
+  _putu32(&p, unifarr.mem.addr);
+  _putu32(&p, vertarr.mem.addr);
+
+  return b;
+}
+
+struct v3d_ctx v3d_ctx_create()
+{
+  v3d_ctx c;
+  c.mem = v3d_mem_create(0x280000, 0x1000, MEM_FLAG_COHERENT | MEM_FLAG_ZERO);
+  c.offs = 0;
+  return c;
+}
+
+void v3d_ctx_anew(struct v3d_ctx *c, v3d_tex target)
+{
+  c->target = target;
+  uint16_t w = target.w, h = target.h;
+  const uint16_t bin_sidelen = 32;
+  uint8_t bin_cols = (w + bin_sidelen - 1) / bin_sidelen;
+  uint8_t bin_rows = (h + bin_sidelen - 1) / bin_sidelen;
+
+  uint8_t *p;
+  c->offs = 0;
 
   // Render control
-  p = (uint8_t *)(((uint32_t)p + 127) & ~127);
-  uint32_t ren_ctrl_start = (uint32_t)p | alias;
-  v3d_printf("Render control start: %p\n", p);
 
-  _putu8(&p, 114);  // GL_CLEAR_COLORS
-  _putu32(&p, 0xff2e3440);
-  _putu32(&p, 0xff2e3440);
+  _align(c->offs, 0x1000);
+  p = _armptr(c->mem) + c->offs;
+  c->ren_ctrl_start = c->mem.addr + c->offs;
+
+  // Clear Colours
+  _putu8(&p, 114);
+  _putu32(&p, 0xffafcfef);
+  _putu32(&p, 0xffafcfef);
   _putu32(&p, 0);
   _putu8(&p, 0);
 
-  _putu8(&p, 113);  // GL_TILE_RENDER_CONFIG
-  _putu32(&p, ctx->bufaddr);
-  _putu16(&p, ctx->w);
-  _putu16(&p, ctx->h);
-  // _putu8(&p, (1 << 2) | (1 << 6)); // T-format for render-to-texture
+  // Tile Rendering Mode Configuration
+  _putu8(&p, 113);
+  _putu32(&p, target.mem.addr);
+  _putu16(&p, w);
+  _putu16(&p, h);
   _putu8(&p, (1 << 2) | (1 << 0));
   _putu8(&p, 0);
 
-  _putu8(&p, 115);  // GL_TILE_COORDINATES
+  // Tile Coordinates
+  _putu8(&p, 115);
   _putu8(&p, 0);
   _putu8(&p, 0);
 
-  _putu8(&p, 28);   // GL_STORE_TILE_BUFFER
+  // Store Tile Buffer General
+  _putu8(&p, 28);
   _putu16(&p, 0);
   _putu32(&p, 0);
 
-  uint16_t tile_size = 32;
-  uint8_t bin_cols = (w + tile_size - 1) / tile_size;
-  uint8_t bin_rows = (h + tile_size - 1) / tile_size;
   for (uint8_t x = 0; x < bin_cols; x++)
   for (uint8_t y = 0; y < bin_rows; y++) {
-    _putu8(&p, 115);  // GL_TILE_COORDINATES
+    // Tile Coordinates
+    _putu8(&p, 115);
     _putu8(&p, x);
     _putu8(&p, y);
 
-    _putu8(&p, 17);   // GL_BRANCH_TO_SUBLIST
-    _putu32(&p, ctx->rbusaddr + OFF_TILEDAT + (y * bin_cols + x) * 32);
+    // Branch to Sub-list
+    _putu8(&p, 17);
+    _putu32(&p, c->mem.addr + 0x240000 + (y * bin_cols + x) * 32);
 
-    // GL_STORE_MULTISAMPLE(_END)
+    // Store Multi-sample Resolved Tile Color Buffer
+    // (and signal end of frame)
     _putu8(&p, (x == bin_cols - 1 && y == bin_rows - 1) ? 25 : 24);
   }
-  uint32_t ren_ctrl_end = (uint32_t)p | alias;
-  v3d_printf("Render control end: %p\n", p);
+
+  c->offs = _offset(p, c->mem);
+  c->ren_ctrl_end = c->mem.addr + c->offs;
 
   // Binning configuration
-  p = (uint8_t *)(ctx->rarmaddr) + OFF_BIN;
-  uint32_t bin_cfg_start = (uint32_t)p | alias;
-  v3d_printf("Binning config start: %p\n", p);
 
-  _putu8(&p, 112);  // GL_TILE_BINNING_CONFIG
-  _putu32(&p, ctx->rbusaddr + OFF_TILEDAT);
-  _putu32(&p, OFF_BIN - OFF_TILEDAT);
-  _putu32(&p, ctx->rbusaddr + OFF_TILESTA);
+  _align(c->offs, 0x1000);
+  p = _armptr(c->mem) + c->offs;
+  c->bin_ctrl_start = c->mem.addr + c->offs;
+
+  // Tile Binning Mode Configuration
+  _putu8(&p, 112);
+  _putu32(&p, c->mem.addr + 0x240000);
+  _putu32(&p, 0x40000);
+  _putu32(&p, c->mem.addr + 0x200000);
   _putu8(&p, bin_cols);
   _putu8(&p, bin_rows);
   _putu8(&p, (1 << 2) | (1 << 0));
 
-  _putu8(&p, 6);    // GL_START_TILE_BINNING
+  // Start Tile Binning
+  _putu8(&p, 6);
 
-  _putu8(&p, 56);   // GL_PRIMITIVE_LIST_FORMAT
+  // Primitive List Format
+  _putu8(&p, 56);
   _putu8(&p, 0x32);
 
-  _putu8(&p, 102);  // GL_CLIP_WINDOW
+  // Clip Window
+  _putu8(&p, 102);
   _putu16(&p, 0);
   _putu16(&p, 0);
   _putu16(&p, w);
   _putu16(&p, h);
 
-  _putu8(&p, 96);   // GL_CONFIG_STATE
-  _putu8(&p, 3 | (1 << 6)); // Forward/backward polygons, oversample 4x
+  // Configuration Bits
+  _putu8(&p, 96);
+  _putu8(&p, 3 | (1 << 6));
   _putu8(&p, 0x0);
   _putu8(&p, 0x2);
 
-  _putu8(&p, 103);  // GL_VIEWPORT_OFFSET
+  // Viewport Offset
+  _putu8(&p, 103);
   _putu16(&p, 0);
   _putu16(&p, 0);
 
-  _putu8(&p, 65);   // GL_NV_SHADER_STATE
-  _putu32(&p, shader_rcd_start);
+  c->offs = _offset(p, c->mem);
+}
 
-  _putu8(&p, 32);   // GL_INDEXED_PRIMITIVE_LIST
-  _putu8(&p, 20);   // PRIM_TRIANGLE | 16-bit
-  _putu32(&p, (GRID_W - 1) * (GRID_H - 1) * LAYERS * 6);
-  _putu32(&p, vertex_idx_start);
-  _putu32(&p, GRID_W * GRID_H - 1);
+void v3d_ctx_use_batch(struct v3d_ctx *c, const struct v3d_batch *batch)
+{
+  uint8_t *p = _armptr(c->mem) + c->offs;
 
-  _putu8(&p, 5);    // GL_FLUSH_ALL_STATE
-  _putu8(&p, 1);    // GL_NOP
-  _putu8(&p, 0);    // GL_HALT
-  uint32_t bin_cfg_end = (uint32_t)p | alias;
-  v3d_printf("Binning config end: %p\n", p);
+  // NV Shader State
+  _putu8(&p, 65);
+  _putu32(&p, batch->mem.addr);
 
-  gpumem_unlock(ctx->rhandle);
+  c->offs = _offset(p, c->mem);
+}
 
-  // Let's rock!
+void v3d_ctx_add_call(struct v3d_ctx *c, const struct v3d_call *call)
+{
+  uint8_t *p = _armptr(c->mem) + c->offs;
+
+  if (call->is_indexed) {
+    // Indexed Primitive List
+    _putu8(&p, 32);
+    _putu8(&p, 20);
+    _putu32(&p, call->num_verts);
+    _putu32(&p, call->indices.addr);
+    _putu32(&p, 0xffffffffu);
+  } else {
+    // Vertex Array Primitives
+    _putu8(&p, 33);
+    _putu8(&p, 4);
+    _putu32(&p, call->num_verts);
+    _putu32(&p, call->start_index);
+  }
+
+  c->offs = _offset(p, c->mem);
+}
+
+void v3d_ctx_issue(struct v3d_ctx *c)
+{
+  uint8_t *p = _armptr(c->mem) + c->offs;
+
+  // Flush All State
+  _putu8(&p, 5);
+  // NOP
+  _putu8(&p, 1);
+  // Halt
+  _putu8(&p, 0);
+
+  c->offs = _offset(p, c->mem);
+  c->bin_ctrl_end = c->mem.addr + c->offs;
+
+  // Let's rock
+
   *V3D_L2CACTL = 4;
   *V3D_SLCACTL = 0x0f0f0f0f;
 
   *V3D_CT0CS = 0x20;
   while (*V3D_CT0CS & 0x20) { }
   *V3D_BFC = 1;
-  *V3D_CT0CA = bin_cfg_start;
-  *V3D_CT0EA = bin_cfg_end;
+  *V3D_CT0CA = c->bin_ctrl_start;
+  *V3D_CT0EA = c->bin_ctrl_end;
   while (*V3D_BFC == 0) { }
 
   *V3D_CT1CS = 0x20;
   while (*V3D_CT1CS & 0x20) { }
   *V3D_RFC = 1;
-  *V3D_CT1CA = ren_ctrl_start;
-  *V3D_CT1EA = ren_ctrl_end;
+  *V3D_CT1CA = c->ren_ctrl_start;
+  *V3D_CT1EA = c->ren_ctrl_end;
   while (*V3D_RFC == 0) { }
 }

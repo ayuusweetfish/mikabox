@@ -70,7 +70,7 @@ void timer3_callback(void *_unused)
   static uint32_t count = 0;
   if (++count == 100) {
     count = 0;
-    printf("\n%u %u\n", z, y);
+    //printf("\n%u %u\n", z, y);
     z = 0;
     y = (y <= 5 ? 0 : y - 5);
   }
@@ -93,7 +93,6 @@ void timer2_callback(void *ret_addr)
   mem_barrier();
 }
 
-static v3d_ctx ctx;
 static volatile int frame_count = 0;
 
 void vsync_callback(void *_unused)
@@ -134,6 +133,9 @@ static void gpad_upd_callback(unsigned index, const USPiGamePadState *state)
   printf("\r%d %08x", state->nbuttons, state->buttons);
   has_key = (state->buttons & 0x800);
 }
+
+void doda();
+void dodo(uint32_t fb);
 
 void sys_main()
 {
@@ -179,6 +181,7 @@ void sys_main()
   printf("Hello world!\n");
   printf("ARM clock rate: %u\n", get_clock_rate(3));
 
+/*
   irq_set_callback(48, vsync_callback, NULL);
 
   uint8_t mac[6];
@@ -212,11 +215,10 @@ void sys_main()
         USPiGamePadRegisterStatusHandler(gpad_upd_callback);
     } while (!USPiKeyboardAvailable() && !USPiGamePadAvailable());
   }
+*/
 
-/*
   mem_barrier();
-  v3d_init();
-  v3d_ctx_init(&ctx, SCR_W, SCR_H, fb_buf);
+  doda();
 
   mem_barrier();
   printf("All done batman, we have triangles!\n");
@@ -226,8 +228,7 @@ void sys_main()
   uint32_t seconds = 0;
   do {
     mem_barrier();
-    ctx.bufaddr = (uint32_t)fb_buf;
-    v3d_op(&ctx);
+    dodo((uint32_t)fb_buf);
     fb_flip_buffer();
     frame_count++;
     mem_barrier();
@@ -236,7 +237,7 @@ void sys_main()
       seconds++;
       printf("%2u s: %4u frames\n", seconds, frame_count);
     }
-  } while (seconds < 15);
+  } while (seconds < 7);
 
   mem_barrier();
   printf("Frames: %d (%.2f FPS)\n", frame_count, frame_count / 15.0f);
@@ -252,7 +253,6 @@ void sys_main()
     *GPSET1 = (1 << 15);
     for (uint32_t i = 0; i < 100000000; i++) __asm__ __volatile__ ("");
   }
-*/
 
 /*
   AMPiInitialize(44100, 4000);
