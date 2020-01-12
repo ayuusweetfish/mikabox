@@ -155,21 +155,28 @@ static const uint32_t white_shader[] = {
 };
 
 static const uint32_t chroma_shader[] = {
-  /* 0x00000000: */ 0x15827d80, 0x100208a7, /* mov r2, unif; nop */
-  /* 0x00000008: */ 0x829e0e92, 0xd0025040, /* fsub rb1, 1.0, r2; mov ra0, r2 */
-  /* 0x00000010: */ 0x203e303e, 0x100049e0, /* nop; fmul r0, vary, ra15 */
-  /* 0x00000018: */ 0x213e317e, 0x10024821, /* fadd r0, r0, r5; fmul r1, vary, ra15 */
-  /* 0x00000020: */ 0x213e337e, 0x40024862, /* fadd r1, r1, r5; fmul r2, vary, ra15; sbwait */
-  /* 0x00000028: */ 0x21027546, 0x100248a0, /* fadd r2, r2, r5; fmul r0, r0, ra0 */
-  /* 0x00000030: */ 0x210011ce, 0x10024821, /* fadd r0, r0, rb1; fmul r1, r1, ra0 */
-  /* 0x00000038: */ 0x210013d6, 0x10024862, /* fadd r1, r1, rb1; fmul r2, r2, ra0 */
-  /* 0x00000040: */ 0x819c15c0, 0x114248a3, /* fadd r2, r2, rb1; mov r3.8a, r0 */
-  /* 0x00000048: */ 0x809e7009, 0x115049e3, /* nop; mov r3.8b, r1 */
-  /* 0x00000050: */ 0x809e7012, 0x116049e3, /* nop; mov r3.8c, r2 */
-  /* 0x00000058: */ 0x809e003f, 0xd17049e3, /* nop; mov r3.8d, 1.0 */
-  /* 0x00000060: */ 0x159e76c0, 0x30020ba7, /* mov tlbc, r3; nop; thrend */
-  /* 0x00000068: */ 0x009e7000, 0x100009e7, /* nop; nop; nop */
-  /* 0x00000070: */ 0x009e7000, 0x500009e7, /* nop; nop; sbdone */
+  /* 0x00000000: */ 0x203e303e, 0x100049e0, /* nop; fmul r0, vary, ra15 */
+  /* 0x00000008: */ 0x019e7140, 0x10020827, /* fadd r0, r0, r5; nop */
+  /* 0x00000010: */ 0x203e303e, 0x100049e1, /* nop; fmul r1, vary, ra15 */
+  /* 0x00000018: */ 0x019e7340, 0x10020867, /* fadd r1, r1, r5; nop */
+  /* 0x00000020: */ 0x159e7240, 0x10020e67, /* mov t0t, r1; nop */
+  /* 0x00000028: */ 0x159e7000, 0x10020e27, /* mov t0s, r0; nop */
+  /* 0x00000030: */ 0x009e7000, 0xa00009e7, /* nop; nop; ldtmu0 */
+  /* 0x00000038: */ 0x15827d80, 0x100208a7, /* mov r2, unif; nop */
+  /* 0x00000040: */ 0x829e0e92, 0xd0025040, /* fsub rb1, 1.0, r2; mov ra0, r2 */
+  /* 0x00000048: */ 0x203e303e, 0x100049e0, /* nop; fmul r0, vary, ra15 */
+  /* 0x00000050: */ 0x213e317e, 0x10024821, /* fadd r0, r0, r5; fmul r1, vary, ra15 */
+  /* 0x00000058: */ 0x213e337e, 0x10024862, /* fadd r1, r1, r5; fmul r2, vary, ra15 */
+  /* 0x00000060: */ 0x21027546, 0x100248a0, /* fadd r2, r2, r5; fmul r0, r0, ra0 */
+  /* 0x00000068: */ 0x210011ce, 0x10024821, /* fadd r0, r0, rb1; fmul r1, r1, ra0 */
+  /* 0x00000070: */ 0x210013d6, 0x10024862, /* fadd r1, r1, rb1; fmul r2, r2, ra0 */
+  /* 0x00000078: */ 0x819c15c0, 0x114248a3, /* fadd r2, r2, rb1; mov r3.8a, r0 */
+  /* 0x00000080: */ 0x809e7009, 0x115049e3, /* nop; mov r3.8b, r1 */
+  /* 0x00000088: */ 0x809e7012, 0x416049e3, /* nop; mov r3.8c, r2; sbwait */
+  /* 0x00000090: */ 0x809e003f, 0xd17049e3, /* nop; mov r3.8d, 1.0 */
+  /* 0x00000098: */ 0x609e7023, 0x300049ee, /* nop; v8muld tlbc, r4, r3; thrend */
+  /* 0x000000a0: */ 0x009e7000, 0x100009e7, /* nop; nop; nop */
+  /* 0x000000a8: */ 0x009e7000, 0x500009e7, /* nop; nop; sbdone */
 };
 
 static const uint32_t tex_shader[] = {
@@ -193,8 +200,8 @@ v3d_shader v3d_shader_create(const char *code)
   s.mem = v3d_mem_create(256, 8, MEM_FLAG_COHERENT | MEM_FLAG_ZERO);
   uint8_t *p = _armptr(s.mem);
 
-  for (uint32_t i = 0; i < _count(tex_shader); i++)
-    _putu32(&p, tex_shader[i]);
+  for (uint32_t i = 0; i < _count(chroma_shader); i++)
+    _putu32(&p, chroma_shader[i]);
 
   return s;
 }
