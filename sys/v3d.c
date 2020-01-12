@@ -155,7 +155,7 @@ static const uint32_t aurora[7] = {
   0x88c0d0, 0x5e81ac
 };
 
-void v3d_ctx_init(v3d_ctx *ctx, uint32_t w, uint32_t h, void *bufaddr)
+void v3d_cty_init(v3d_cty *ctx, uint32_t w, uint32_t h, void *bufaddr)
 {
   ctx->w = w;
   ctx->h = h;
@@ -288,7 +288,7 @@ static uint32_t qwqshader[] = {
 #define CELL_W (800.0f / GRID_W)
 #define CELL_H (480.0f / GRID_H)
 
-void v3d_op(v3d_ctx *ctx)
+void v3d_op(v3d_cty *ctx)
 {
   mem_barrier();
   uint32_t w = ctx->w, h = ctx->h;

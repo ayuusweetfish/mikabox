@@ -93,7 +93,6 @@ void timer2_callback(void *ret_addr)
   mem_barrier();
 }
 
-static v3d_ctx ctx;
 static volatile int frame_count = 0;
 
 void vsync_callback(void *_unused)
@@ -134,6 +133,9 @@ static void gpad_upd_callback(unsigned index, const USPiGamePadState *state)
   printf("\r%d %08x", state->nbuttons, state->buttons);
   has_key = (state->buttons & 0x800);
 }
+
+void doda();
+void dodo(uint32_t fb);
 
 void sys_main()
 {
@@ -216,8 +218,7 @@ void sys_main()
 */
 
   mem_barrier();
-  v3d_init();
-  v3d_ctx_init(&ctx, SCR_W, SCR_H, fb_buf);
+  doda();
 
   mem_barrier();
   printf("All done batman, we have triangles!\n");
@@ -227,8 +228,7 @@ void sys_main()
   uint32_t seconds = 0;
   do {
     mem_barrier();
-    ctx.bufaddr = (uint32_t)fb_buf;
-    v3d_op(&ctx);
+    dodo((uint32_t)fb_buf);
     fb_flip_buffer();
     frame_count++;
     mem_barrier();
