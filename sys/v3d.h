@@ -34,7 +34,7 @@ typedef struct v3d_mem {
 
 #define v3d_armptr(__mem) ((uint8_t *)((__mem).addr & GPU_BUS_ADDR))
 
-struct v3d_mem v3d_mem_create(uint32_t size);
+struct v3d_mem v3d_mem_create(uint32_t size, uint32_t align, uint32_t flags);
 void v3d_mem_lock(struct v3d_mem *m);
 void v3d_mem_unlock(struct v3d_mem *m);
 void v3d_mem_close(struct v3d_mem *m);
@@ -118,7 +118,7 @@ typedef struct v3d_cfg {
 typedef struct v3d_ctx {
   // Control list buffer
   v3d_mem mem;
-  uint32_t offset;
+  uint32_t offs;
 } v3d_ctx;
 
 struct v3d_ctx v3d_ctx_create();
