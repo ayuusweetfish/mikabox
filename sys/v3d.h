@@ -34,6 +34,7 @@ struct v3d_mem v3d_mem_create(uint32_t size, uint32_t align, uint32_t flags);
 void v3d_mem_lock(struct v3d_mem *m);
 void v3d_mem_unlock(struct v3d_mem *m);
 void v3d_mem_close(struct v3d_mem *m);
+void v3d_mem_copy(struct v3d_mem *m, uint32_t offs, void *ptr, uint32_t size);
 
 #define v3d_close(__objptr) v3d_mem_close((__objptr)->m)
 
@@ -89,10 +90,14 @@ v3d_shader v3d_shader_create(const char *code);
 // Batch (vertex array + uniform array + shader)
 
 typedef struct v3d_batch {
-  v3d_vertarr vertarr;
-  v3d_unifarr unifarr;
-  v3d_shader shader;
+  v3d_mem mem;
 } v3d_batch;
+
+v3d_batch v3d_batch_create(
+  const v3d_vertarr vertarr,
+  const v3d_unifarr unifarr,
+  const v3d_shader shader
+);
 
 // Draw call (batch + vertex indices)
 
