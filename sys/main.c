@@ -12,6 +12,7 @@
 #include "uspi.h"
 #include "uspios.h"
 #include "sdcard/sdcard.h"
+#include "fatfs/ff.h"
 
 #include <math.h>
 #include <string.h>
@@ -199,6 +200,33 @@ void sys_main()
       printf("%2x", carddata[j + k]);
   }
   _putchar('\n');
+
+  FATFS fs;
+  DIR dir;
+  FILINFO finfo;
+  FRESULT fr;
+
+  static char path_buf[FF_LFN_BUF * 2 + 10];
+  static char appnames[256][FF_LFN_BUF + 1];
+  uint8_t appcount = 0;
+
+  fr = f_mount(&fs, "", 1);
+  printf("f_mount() returned %d\n", (int32_t)fr);
+  fr = f_opendir(&dir, "/");
+  printf("f_opendir() returned %d\n", (int32_t)fr);
+  while (1) {
+    fr = f_readdir(&dir, &finfo);
+    if (fr != FR_OK || finfo.fname[0] == 0) break;
+    printf("%4d.%2d.%2d %2d:%2d:%2d  ",
+      ((finfo.fdate >> 9) & 127) + 1980,
+      (finfo.fdate >> 5) & 15,
+      (finfo.fdate >> 0) & 15,
+      (finfo.ftime >> 11) & 31,
+      (finfo.ftime >> 5) & 63,
+      (finfo.ftime >> 0) & 31);
+    printf("%s%s\n", finfo.fname, (finfo.fattrib & AM_DIR) ? "/" : "");
+  }
+  f_closedir(&dir);
 
 /*
   uint8_t mac[6];
