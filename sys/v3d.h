@@ -23,16 +23,12 @@ void v3d_op(v3d_cty *ctx);
 
 // Real API starts here
 
-#define GPU_BUS_ADDR  0x40000000  // TODO: Unify all occurrences
-
 // GPU memory region
 
 typedef struct v3d_mem {
   uint32_t handle;
   uint32_t addr;  // Bus address
 } v3d_mem;
-
-#define v3d_armptr(__mem) ((uint8_t *)((__mem).addr & GPU_BUS_ADDR))
 
 struct v3d_mem v3d_mem_create(uint32_t size, uint32_t align, uint32_t flags);
 void v3d_mem_lock(struct v3d_mem *m);
@@ -44,8 +40,8 @@ void v3d_mem_close(struct v3d_mem *m);
 // Texture
 
 typedef struct v3d_tex {
-  uint16_t w, h;  // w = h = 0 denotes screen
-  v3d_mem mem;
+  uint16_t w, h;
+  v3d_mem mem;    // handle = 0xfbfbfbfb denotes screen
 } v3d_tex;
 
 v3d_tex v3d_tex_screen(uint32_t buf);
@@ -111,18 +107,21 @@ typedef struct v3d_call {
 
 // Configuration (render target)
 
-typedef struct v3d_cfg {
-  v3d_tex tex;
-} v3d_cfg;
-
 typedef struct v3d_ctx {
+  v3d_tex target;
+
   // Control list buffer
   v3d_mem mem;
   uint32_t offs;
+
+  uint32_t ren_ctrl_start;
+  uint32_t ren_ctrl_end;
+  uint32_t bin_ctrl_start;
+  uint32_t bin_ctrl_end;
 } v3d_ctx;
 
 struct v3d_ctx v3d_ctx_create();
-void v3d_ctx_use_cfg(struct v3d_ctx *c, const struct v3d_cfg *cfg);
+void v3d_ctx_anew(struct v3d_ctx *c, v3d_tex target);
 void v3d_ctx_use_batch(struct v3d_ctx *c, const struct v3d_batch *batch);
 void v3d_ctx_add_call(struct v3d_ctx *c, const struct v3d_call *call);
 void v3d_ctx_issue(struct v3d_ctx *c);

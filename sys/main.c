@@ -237,7 +237,7 @@ void sys_main()
       seconds++;
       printf("%2u s: %4u frames\n", seconds, frame_count);
     }
-  } while (seconds < 15);
+  } while (seconds < 7);
 
   mem_barrier();
   printf("Frames: %d (%.2f FPS)\n", frame_count, frame_count / 15.0f);

@@ -206,8 +206,8 @@ void v3d_cty_init(v3d_cty *ctx, uint32_t w, uint32_t h, void *bufaddr)
     }
   }
 
-  gpumem_unlock(ctx->thandle);
-  gpumem_unlock(ctx->rhandle);
+  //gpumem_unlock(ctx->thandle);
+  //gpumem_unlock(ctx->rhandle);
 }
 
 /*
@@ -543,7 +543,7 @@ void v3d_op(v3d_cty *ctx)
   uint32_t bin_cfg_end = (uint32_t)p | alias;
   v3d_printf("Binning config end: %p\n", p);
 
-  gpumem_unlock(ctx->rhandle);
+  //gpumem_unlock(ctx->rhandle);
 
   // Let's rock!
   *V3D_L2CACTL = 4;
