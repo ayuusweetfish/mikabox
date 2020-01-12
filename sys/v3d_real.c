@@ -56,7 +56,9 @@ v3d_tex v3d_tex_create(uint16_t w, uint16_t h, uint8_t *buf)
 struct v3d_vertarr v3d_vertarr_create(uint16_t num, uint8_t num_varyings)
 {
   v3d_vertarr a;
-  size_t pstride = 12 + 2 * num_varyings;
+  a.num = num;
+  a.num_varyings = num_varyings;
+  size_t pstride = 12 + 4 * num_varyings;
   a.mem = v3d_mem_create(pstride * num, 128, MEM_FLAG_COHERENT | MEM_FLAG_ZERO);
   return a;
 }
@@ -68,20 +70,20 @@ void v3d_vertarr_put(
   uint32_t num_varyings = a->num_varyings;
 
   uint8_t *p = _armptr(a->mem);
-  size_t pstride = 12 + 2 * num_varyings;
+  size_t pstride = 12 + 4 * num_varyings;
   p += pstride * start_index;
 
   const uint8_t *q = (const uint8_t *)verts;
-  size_t qstride = sizeof(v3d_vert) + sizeof(uint32_t) * num_varyings;
+  size_t qstride = sizeof(v3d_vert) + sizeof(float) * num_varyings;
 
   for (uint32_t i = 0; i < num; i++) {
     const v3d_vert *vert = (const v3d_vert *)q;
     _putu16(&p, (uint16_t)(vert->x * 16 + 0.5f));
     _putu16(&p, (uint16_t)(vert->y * 16 + 0.5f));
-    _putu32(&p, 1.0f);
-    _putu32(&p, 1.0f);
+    _putf32(&p, 1.0f);
+    _putf32(&p, 1.0f);
     for (uint32_t j = 0; j < num_varyings; j++)
-      _putu32(&p, vert->varyings[j]);
+      _putf32(&p, vert->varyings[j]);
     q += qstride;
   }
 }
@@ -103,12 +105,15 @@ void v3d_unifarr_puttex(struct v3d_unifarr *a, uint32_t index, v3d_tex tex)
 }
 
 static const uint32_t white_shader[] = {
-  /* 0x00000000: */ 0x009e7000, 0x100009e7, /* nop */
-  /* 0x00000008: */ 0xffffffff, 0xe0020ba7, /* ldi tlbc, 0xffffffff */
-  /* 0x00000010: */ 0x009e7000, 0x500009e7, /* nop; nop; sbdone */
-  /* 0x00000018: */ 0x009e7000, 0x300009e7, /* nop; nop; thrend */
-  /* 0x00000020: */ 0x009e7000, 0x100009e7, /* nop */
-  /* 0x00000028: */ 0x009e7000, 0x100009e7, /* nop */
+  0x958e0dbf, 0xd1724823,   /* mov r0, vary; mov r3.8d, 1.0 */
+  0x818e7176, 0x40024821,   /* fadd r0, r0, r5; mov r1, vary */
+  0x818e7376, 0x10024862,   /* fadd r1, r1, r5; mov r2, vary */
+  0x819e7540, 0x114248a3,   /* fadd r2, r2, r5; mov r3.8a, r0 */
+  0x809e7009, 0x115049e3,   /* nop; mov r3.8b, r1 */
+  0x809e7012, 0x116049e3,   /* nop; mov r3.8c, r2 */
+  0x159e76c0, 0x30020ba7,   /* mov tlbc, r3; nop; thrend */
+  0x009e7000, 0x100009e7,   /* nop; nop; nop */
+  0x009e7000, 0x500009e7,   /* nop; nop; sbdone */
 };
 
 v3d_shader v3d_shader_create(const char *code)
@@ -133,7 +138,7 @@ v3d_batch v3d_batch_create(
   uint8_t *p = _armptr(b.mem);
 
   _putu8(&p, 1);
-  _putu8(&p, 12 + 2 * vertarr.num_varyings);
+  _putu8(&p, 12 + 4 * vertarr.num_varyings);
   _putu8(&p, 0xcc);
   _putu8(&p, vertarr.num_varyings);
   _putu32(&p, shader.mem.addr);

@@ -21,11 +21,28 @@ void doda()
 
   ctx = v3d_ctx_create();
 
-  va = v3d_vertarr_create(4, 0);
-  v3d_vertarr_put(&va, 0, &(v3d_vert){100.0f, 100.0f}, 1);
-  v3d_vertarr_put(&va, 1, &(v3d_vert){100.0f, 400.0f}, 1);
-  v3d_vertarr_put(&va, 2, &(v3d_vert){400.0f, 400.0f}, 1);
-  v3d_vertarr_put(&va, 3, &(v3d_vert){400.0f, 100.0f}, 1);
+  va = v3d_vertarr_create(4, 3);
+  static v3d_vert v = { .varyings = {0, 0, 0} };
+  v.x = 100.0f; v.y = 100.0f;
+  v.varyings[0] = 1.0f;
+  v.varyings[1] = 1.0f;
+  v.varyings[2] = 1.0f;
+  v3d_vertarr_put(&va, 0, &v, 1);
+  v.x = 100.0f; v.y = 400.0f;
+  v.varyings[0] = 0.5f;
+  v.varyings[1] = 1.0f;
+  v.varyings[2] = 1.0f;
+  v3d_vertarr_put(&va, 1, &v, 1);
+  v.x = 400.0f; v.y = 400.0f;
+  v.varyings[0] = 1.0f;
+  v.varyings[1] = 0.5f;
+  v.varyings[2] = 1.0f;
+  v3d_vertarr_put(&va, 2, &v, 1);
+  v.x = 400.0f; v.y = 100.0f;
+  v.varyings[0] = 1.0f;
+  v.varyings[1] = 1.0f;
+  v.varyings[2] = 0.5f;
+  v3d_vertarr_put(&va, 3, &v, 1);
 
   batch = v3d_batch_create(va, v3d_unifarr_create(0), v3d_shader_create(""));
 
@@ -61,10 +78,13 @@ void dodo(uint32_t fb)
   // Any change before issuing will apply
   static uint32_t count = 0;
   float angle = (float)(++count) / 180.0f * acosf(-1.0f);
-  v3d_vertarr_put(&va, 2, &(v3d_vert){
-    400.0f + 20.0f * cosf(angle),
-    400.0f + 20.0f * sinf(angle)
-  }, 1);
+  static v3d_vert v = { .varyings = {0, 0, 0} };
+  v.x = 400.0f + 20.0f * cosf(angle);
+  v.y = 400.0f + 20.0f * sinf(angle);
+  v.varyings[0] = 1.0f;
+  v.varyings[1] = 0.5f;
+  v.varyings[2] = 1.0f;
+  v3d_vertarr_put(&va, 2, &v, 1);
 
   v3d_ctx_issue(&ctx);
 }

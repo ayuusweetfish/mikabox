@@ -52,7 +52,7 @@ v3d_tex v3d_tex_create(uint16_t w, uint16_t h, uint8_t *buf);
 
 typedef struct v3d_vert {
   float x, y;
-  uint32_t varyings[];
+  float varyings[];
 } v3d_vert;
 
 typedef struct v3d_vertarr {
