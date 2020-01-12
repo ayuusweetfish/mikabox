@@ -11,6 +11,7 @@
 #include "ampienv.h"
 #include "uspi.h"
 #include "uspios.h"
+#include "sdcard/sdcard.h"
 
 #include <math.h>
 #include <string.h>
@@ -181,9 +182,25 @@ void sys_main()
   printf("Hello world!\n");
   printf("ARM clock rate: %u\n", get_clock_rate(3));
 
-/*
   irq_set_callback(48, vsync_callback, NULL);
 
+  sdInit();
+  int32_t i = sdInitCard();
+  printf("sdInitCard() returns %d\n", i);
+
+  // MBR
+  // Should end with 55aa
+  uint8_t carddata[512] = { 0 };
+  i = sdTransferBlocks(0x0LL, 1, carddata, 0);
+  printf("sdTransferBlocks() returns %d\n", i);
+  for (uint32_t j = 432; j < 512; j += 16) {
+    printf("\n%3x | ", j);
+    for (uint8_t k = 0; k < 16; k++)
+      printf("%2x", carddata[j + k]);
+  }
+  _putchar('\n');
+
+/*
   uint8_t mac[6];
   get_mac_addr(mac);
   printf("MAC address: %02x %02x %02x %02x %02x %02x\n",
@@ -217,6 +234,7 @@ void sys_main()
   }
 */
 
+/*
   mem_barrier();
   doda();
 
@@ -253,6 +271,7 @@ void sys_main()
     *GPSET1 = (1 << 15);
     for (uint32_t i = 0; i < 100000000; i++) __asm__ __volatile__ ("");
   }
+*/
 
 /*
   AMPiInitialize(44100, 4000);

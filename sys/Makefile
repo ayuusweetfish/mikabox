@@ -13,11 +13,11 @@ V := @
 
 BUILD_DIR := build
 C_OPTIONS := -std=c99 -Wall -O2
-INCLUDES := -I. -I./AMPi/ampi -I./uspi/include
+INCLUDES := -I. -I./AMPi/ampi -I./uspi/include -I./deps
 STATIC_LIBS := AMPi/ampi/libampi.a uspi/lib/libuspi.a
 LIBS := -lm $(STATIC_LIBS)
 
-SRCS := $(wildcard *.[Sc])
+SRCS := $(wildcard *.[Sc]) $(wildcard deps/*/*.c)
 
 # Library printf
 SRCS += printf/printf.c
