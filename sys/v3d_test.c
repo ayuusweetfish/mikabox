@@ -9,6 +9,7 @@ static v3d_cty cty;
 
 static v3d_ctx ctx;
 static v3d_vertarr va;
+static v3d_unifarr ua;
 static v3d_batch batch;
 static v3d_mem idxs;
 
@@ -44,7 +45,9 @@ void doda()
   v.varyings[2] = 0.5f;
   v3d_vertarr_put(&va, 3, &v, 1);
 
-  batch = v3d_batch_create(va, v3d_unifarr_create(0), v3d_shader_create(""));
+  ua = v3d_unifarr_create(1);
+
+  batch = v3d_batch_create(va, ua, v3d_shader_create(""));
 
   idxs = v3d_mem_create(256, 128, MEM_FLAG_COHERENT);
 }
@@ -85,6 +88,8 @@ void dodo(uint32_t fb)
   v.varyings[1] = 0.5f;
   v.varyings[2] = 1.0f;
   v3d_vertarr_put(&va, 2, &v, 1);
+
+  v3d_unifarr_putf32(&ua, 0, sinf(angle) * 0.5f + 0.5f);
 
   v3d_ctx_issue(&ctx);
 }
