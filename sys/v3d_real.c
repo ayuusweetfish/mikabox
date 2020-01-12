@@ -51,6 +51,42 @@ v3d_tex v3d_tex_screen(uint32_t buf)
 
 v3d_tex v3d_tex_create(uint16_t w, uint16_t h, uint8_t *buf)
 {
+  v3d_tex t;
+  t.w = w;
+  t.h = h;
+  t.mem = v3d_mem_create((uint32_t)w * h * 4, 4096,
+    MEM_FLAG_L1_NONALLOCATING | MEM_FLAG_ZERO);
+
+  uint32_t *tex = (uint32_t *)_armptr(t.mem);
+  uint32_t ptr = 0;
+  // 4K tiles
+  for (uint16_t y0i = 0; y0i < h / 32; y0i++) {
+    uint16_t y0 = h - 32 * (y0i + 1);
+    for (uint16_t x0i = 0; x0i < w / 32; x0i++) {
+      uint16_t x0 = ((y0i & 1) ? w - 32 * (x0i + 1) : 32 * x0i);
+      // Four 1K subtiles
+      static const uint8_t subt[4] = {1, 0, 2, 3};
+      for (uint8_t k = 0; k < 4; k++) {
+        uint16_t x1 = x0 + ((subt[k] >> 1) ^ (y0i & 1)) * 16;
+        uint16_t y1 = y0 + ((subt[k] & 1) ^ (y0i & 1)) * 16;
+        // A subtile at (y1, x1)
+        // Emit the subtile
+        for (uint16_t y2 = 0; y2 < 4; y2++)
+        for (uint16_t x2 = 0; x2 < 4; x2++)
+          for (uint16_t y3 = 0; y3 < 4; y3++)
+          for (uint16_t x3 = 0; x3 < 4; x3++) {
+            uint16_t x4 = x1 + (x2 * 4 + x3 + 1);
+            uint16_t y4 = y1 + (16 - (y2 * 4 + y3 + 1));
+            uint32_t p = ((uint32_t)y4 * w + x4) * 3;
+            uint32_t value = ((uint32_t)buf[p] << 16) |
+              ((uint32_t)buf[p + 1] << 8) | (uint32_t)buf[p + 2];
+            tex[ptr++] = value;
+          }
+      }
+    }
+  }
+
+  return t;
 }
 
 struct v3d_vertarr v3d_vertarr_create(uint16_t num, uint8_t num_varyings)
@@ -92,7 +128,7 @@ struct v3d_unifarr v3d_unifarr_create(uint8_t num)
 {
   v3d_unifarr a;
   a.num = num;
-  a.mem = v3d_mem_create(4 * num, 128, MEM_FLAG_COHERENT | MEM_FLAG_ZERO);
+  a.mem = v3d_mem_create(4 * num, 4, MEM_FLAG_COHERENT | MEM_FLAG_ZERO);
   return a;
 }
 
@@ -110,6 +146,9 @@ void v3d_unifarr_putf32(struct v3d_unifarr *a, uint32_t index, float value)
 
 void v3d_unifarr_puttex(struct v3d_unifarr *a, uint32_t index, v3d_tex tex)
 {
+  uint32_t *p = (uint32_t *)_armptr(a->mem);
+  p[index] = tex.mem.addr;
+  p[index + 1] = (tex.w << 8) | (tex.h << 20);
 }
 
 static const uint32_t white_shader[] = {
@@ -133,14 +172,29 @@ static const uint32_t chroma_shader[] = {
   /* 0x00000070: */ 0x009e7000, 0x500009e7, /* nop; nop; sbdone */
 };
 
+static const uint32_t tex_shader[] = {
+  /* 0x00000000: */ 0x203e303e, 0x100049e0, /* nop; fmul r0, vary, ra15 */
+  /* 0x00000008: */ 0x019e7140, 0x10020827, /* fadd r0, r0, r5; nop */
+  /* 0x00000010: */ 0x203e303e, 0x100049e1, /* nop; fmul r1, vary, ra15 */
+  /* 0x00000018: */ 0x019e7340, 0x10020867, /* fadd r1, r1, r5; nop */
+  /* 0x00000020: */ 0x159e7240, 0x10020e67, /* mov t0t, r1; nop */
+  /* 0x00000028: */ 0x159e7000, 0x10020e27, /* mov t0s, r0; nop */
+  /* 0x00000030: */ 0x009e7000, 0xa00009e7, /* nop; nop; ldtmu0 */
+  /* 0x00000038: */ 0x009e7000, 0x400009e7, /* nop; nop; sbwait */
+  /* 0x00000040: */ 0x159e7900, 0x80020827, /* mov r0, r4; nop; loadc */
+  /* 0x00000048: */ 0x159e7000, 0x30020ba7, /* mov tlbc, r0; nop; thrend */
+  /* 0x00000050: */ 0x009e7000, 0x100009e7, /* nop; nop */
+  /* 0x00000058: */ 0x009e7000, 0x500009e7, /* nop; nop; sbdone */
+};
+
 v3d_shader v3d_shader_create(const char *code)
 {
   v3d_shader s;
   s.mem = v3d_mem_create(256, 8, MEM_FLAG_COHERENT | MEM_FLAG_ZERO);
   uint8_t *p = _armptr(s.mem);
 
-  for (uint32_t i = 0; i < _count(chroma_shader); i++)
-    _putu32(&p, chroma_shader[i]);
+  for (uint32_t i = 0; i < _count(tex_shader); i++)
+    _putu32(&p, tex_shader[i]);
 
   return s;
 }
