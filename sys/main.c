@@ -72,7 +72,7 @@ void timer2_callback(void *_unused)
   static uint32_t count = 0;
   if (++count == 100) {
     count = 0;
-    //printf("\n%u %u\n", z, y);
+    printf("\n%u %u\n", z, y);
     z = 0;
     y = (y <= 5 ? 0 : y - 5);
   }
@@ -113,13 +113,26 @@ void vsync_callback(void *_unused)
 
 static bool has_key = false;
 
+static inline int16_t myrand()
+{
+  static int seed = 1;
+  seed = seed * 1103515245 + 12345;
+  return (seed & 0xffff);
+}
+
+static int16_t wavetable[256];
+
 static unsigned synth(int16_t *buf, unsigned chunk_size)
 {
+  //for (uint32_t i = 0; i < 1000000; i++) __asm__ __volatile__ ("");
   static uint8_t phase = 0;
   for (unsigned i = 0; i < chunk_size; i += 2) {
-    int16_t sample = (has_key ? (int16_t)(32767.0 / 2 * (sin(phase / 255.0 * M_PI * 2) + sin(phase / 127.5 * M_PI * 2))) : 0);
+    //int16_t sample = (has_key ? (int16_t)(32767.0 / 2 * (sin(phase / 255.0 * M_PI * 2) + sin(phase / 127.5 * M_PI * 2))) : 0);
+    int16_t sample = (has_key ? wavetable[phase] : 0);
+    //int16_t sample = wavetable[i];
     buf[i] = buf[i + 1] = sample;
-    phase += 2; // Folds over to 0 ~ 255, generates 344.5 Hz (F4 - ~1/4 semitone)
+    //phase += 2; // Folds over to 0 ~ 255, generates 344.5 Hz (F4 - ~1/4 semitone)
+    phase++;
   }
   return chunk_size;
 }
@@ -159,7 +172,7 @@ void sys_main()
   *TMR_C2 = *TMR_CLO + 1000000;
   *TMR_C3 = *TMR_CLO + 1000000;
   irq_set_callback(2, timer2_callback, NULL);
-  irq_set_callback(3, timer3_callback, NULL);
+  //irq_set_callback(3, timer3_callback, NULL);
 
   mem_barrier();
   struct framebuffer *f = mmu_ord_alloc(sizeof(struct framebuffer), 16);
@@ -232,8 +245,12 @@ void sys_main()
 
   y = 60; // Trigger a USB initialization
 
+  for (uint32_t i = 0; i < 256; i++) {
+    wavetable[i] = (int16_t)(sin((double)i / 128 * M_PI * 2) * 32767);
+  }
+
   mem_barrier();
-  AMPiInitialize(44100, 2000);
+  AMPiInitialize(44100, 1764);  // 20 ms latency/block size
   AMPiSetChunkCallback(synth);
   bool b = AMPiStart();
   printf(b ? "Yes\n" : "No\n");

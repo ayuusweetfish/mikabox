@@ -28,8 +28,8 @@
 #define CHAR_H    20
 #define CHAR_BL   18  // Baseline
 static char buf[MAX_ROWS][MAX_COLS];
-static uint32_t w, h, rs, cs;
-static uint32_t r, c;
+static uint32_t w, h, rs = MAX_ROWS, cs = MAX_COLS;
+static uint32_t r = 0, c = 0;
 static bool newline_unwritten;
 
 static char last[BUF_COUNT][MAX_ROWS + 1][MAX_COLS + 1];
