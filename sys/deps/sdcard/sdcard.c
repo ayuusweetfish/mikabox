@@ -37,7 +37,7 @@ static int sdSendCommand( int index );
 static int fls_long (unsigned long x);
 
 // EMMC registers
-static volatile unsigned int* const EMMC_ARG2        = (unsigned int*)P2V_DEV(0x20300000);
+// static volatile unsigned int* const EMMC_ARG2        = (unsigned int*)P2V_DEV(0x20300000);
 static volatile unsigned int* const EMMC_BLKSIZECNT  = (unsigned int*)P2V_DEV(0x20300004);
 static volatile unsigned int* const EMMC_ARG1        = (unsigned int*)P2V_DEV(0x20300008);
 static volatile unsigned int* const EMMC_CMDTM       = (unsigned int*)P2V_DEV(0x2030000c);
@@ -52,10 +52,10 @@ static volatile unsigned int* const EMMC_CONTROL1    = (unsigned int*)P2V_DEV(0x
 static volatile unsigned int* const EMMC_INTERRUPT   = (unsigned int*)P2V_DEV(0x20300030);
 static volatile unsigned int* const EMMC_IRPT_MASK   = (unsigned int*)P2V_DEV(0x20300034);
 static volatile unsigned int* const EMMC_IRPT_EN     = (unsigned int*)P2V_DEV(0x20300038);
-static volatile unsigned int* const EMMC_CONTROL2    = (unsigned int*)P2V_DEV(0x2030003c);
-static volatile unsigned int* const EMMC_BOOT_TIMEOUT= (unsigned int*)P2V_DEV(0x20300070);
-static volatile unsigned int* const EMMC_EXRDFIFO_EN = (unsigned int*)P2V_DEV(0x20300084);
-static volatile unsigned int* const EMMC_SPI_INT_SPT = (unsigned int*)P2V_DEV(0x203000f0);
+// static volatile unsigned int* const EMMC_CONTROL2    = (unsigned int*)P2V_DEV(0x2030003c);
+// static volatile unsigned int* const EMMC_BOOT_TIMEOUT= (unsigned int*)P2V_DEV(0x20300070);
+// static volatile unsigned int* const EMMC_EXRDFIFO_EN = (unsigned int*)P2V_DEV(0x20300084);
+// static volatile unsigned int* const EMMC_SPI_INT_SPT = (unsigned int*)P2V_DEV(0x203000f0);
 static volatile unsigned int* const EMMC_SLOTISR_VER = (unsigned int*)P2V_DEV(0x203000fc);
 
 // This register is not available on the Pi.
@@ -328,8 +328,8 @@ static EMMCCommand sdCommandTable[] =
 #define IX_SET_CLR_DET      37
 #define IX_SEND_SCR         38
 
-static const char* STATUS_NAME[] =
-  { "idle", "ready", "identify", "standby", "transmit", "data", "receive", "prog", "dis" };
+// static const char* STATUS_NAME[] =
+//   { "idle", "ready", "identify", "standby", "transmit", "data", "receive", "prog", "dis" };
 
 // CSD flags
 // Note: all flags are shifted down by 8 bits as the CRC is not included.
@@ -886,6 +886,7 @@ static uint32_t sdGetClockDivider ( uint32_t freq ) {
 /* Get the clock divider for the given requested frequency.
  * This is calculated relative to the SD base clock.
  */
+/*
 static int sdGetClockDivider_old( int freq )
    {
    // Work out the closest divider which will result in a frequency
@@ -918,6 +919,7 @@ static int sdGetClockDivider_old( int freq )
    int cdiv = (lo << 8) + hi;
    return cdiv;
    } 
+*/
 
 /* Set the SD clock to the given frequency.
  */

@@ -206,10 +206,6 @@ void sys_main()
   FILINFO finfo;
   FRESULT fr;
 
-  static char path_buf[FF_LFN_BUF * 2 + 10];
-  static char appnames[256][FF_LFN_BUF + 1];
-  uint8_t appcount = 0;
-
   fr = f_mount(&fs, "", 1);
   printf("f_mount() returned %d\n", (int32_t)fr);
   fr = f_opendir(&dir, "/");

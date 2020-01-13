@@ -8,6 +8,9 @@
 static uint8_t buf[1048576];
 static size_t ptr = 0;
 
+void uspi_EnterCritical();
+void uspi_LeaveCritical();
+
 void *kmalloc(size_t size)
 {
   uspi_EnterCritical();

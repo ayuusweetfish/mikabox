@@ -56,7 +56,7 @@ void doda()
 
   ua = v3d_unifarr_create(3);
 
-  batch = v3d_batch_create(va, ua, v3d_shader_create(""));
+  batch = v3d_batch_create(va, ua, v3d_shader_create("#chroma"));
 
   idxs = v3d_mem_create(256, 128, MEM_FLAG_COHERENT);
 

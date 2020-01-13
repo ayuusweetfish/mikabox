@@ -291,9 +291,6 @@ void v3d_unifarr_puttex(struct v3d_unifarr *a, uint32_t index, v3d_tex tex)
   p[index + 1] = (tex.w << 8) | (tex.h << 20);
 }
 
-static const uint32_t white_shader[] = {
-};
-
 static const uint32_t chroma_shader[] = {
   /* 0x00000000: */ 0x203e303e, 0x100049e0, /* nop; fmul r0, vary, ra15 */
   /* 0x00000008: */ 0x019e7140, 0x10020827, /* fadd r0, r0, r5; nop */
@@ -340,8 +337,12 @@ v3d_shader v3d_shader_create(const char *code)
   s.mem = v3d_mem_create(256, 8, MEM_FLAG_COHERENT | MEM_FLAG_ZERO);
   uint8_t *p = _armptr(s.mem);
 
-  for (uint32_t i = 0; i < _count(chroma_shader); i++)
-    _putu32(&p, chroma_shader[i]);
+  if (strcmp(code, "#chroma") == 0)
+    for (uint32_t i = 0; i < _count(chroma_shader); i++)
+      _putu32(&p, chroma_shader[i]);
+  else if (strcmp(code, "#texture") == 0)
+    for (uint32_t i = 0; i < _count(tex_shader); i++)
+      _putu32(&p, tex_shader[i]);
 
   return s;
 }
