@@ -57,12 +57,12 @@ void uspi_upd_timers();
 static uint32_t z = 0;
 extern uint32_t y;  // Error count
 
-void timer3_callback(void *_unused)
+void timer2_callback(void *_unused)
 {
-  do *TMR_CS = 8; while (*TMR_CS & 8);
+  do *TMR_CS = 4; while (*TMR_CS & 4);
   uint32_t t = *TMR_CLO;
   t = t - t % 10000 + 10000;
-  *TMR_C3 = t;
+  *TMR_C2 = t;
 
   // printf("Timer!\n");
   if (periodic) periodic();
@@ -78,14 +78,15 @@ void timer3_callback(void *_unused)
   }
 }
 
-void timer2_callback(void *ret_addr)
+void timer3_callback(void *ret_addr)
 {
-  do *TMR_CS = 4; while (*TMR_CS & 4);
+  do *TMR_CS = 8; while (*TMR_CS & 8);
   uint32_t t = *TMR_CLO;
   t = t - t % 500000 + 500000;
-  *TMR_C2 = t;
+  *TMR_C3 = t;
 
   //printf("%u: %p\n", t, ret_addr);
+  mem_barrier();
   static bool on = false;
   on = !on;
   mem_barrier();
@@ -155,10 +156,10 @@ void sys_main()
 
   mem_barrier();
   *TMR_CS = 8 | 4;
-  *TMR_C3 = *TMR_CLO + 1000000;
   *TMR_C2 = *TMR_CLO + 1000000;
-  irq_set_callback(3, timer3_callback, NULL);
+  *TMR_C3 = *TMR_CLO + 1000000;
   irq_set_callback(2, timer2_callback, NULL);
+  irq_set_callback(3, timer3_callback, NULL);
 
   mem_barrier();
   struct framebuffer *f = mmu_ord_alloc(sizeof(struct framebuffer), 16);
@@ -224,7 +225,6 @@ void sys_main()
   }
   f_closedir(&dir);
 
-/*
   uint8_t mac[6];
   get_mac_addr(mac);
   printf("MAC address: %02x %02x %02x %02x %02x %02x\n",
@@ -232,6 +232,7 @@ void sys_main()
 
   y = 60; // Trigger a USB initialization
 
+  mem_barrier();
   AMPiInitialize(44100, 2000);
   AMPiSetChunkCallback(synth);
   bool b = AMPiStart();
@@ -256,7 +257,6 @@ void sys_main()
         USPiGamePadRegisterStatusHandler(gpad_upd_callback);
     } while (!USPiKeyboardAvailable() && !USPiGamePadAvailable());
   }
-*/
 
 /*
   mem_barrier();
