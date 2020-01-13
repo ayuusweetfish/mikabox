@@ -8,5 +8,6 @@
 
 ```
 cd sys
+make libs
 make
 ```

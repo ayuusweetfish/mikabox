@@ -36,6 +36,12 @@ LDFLAGS := $(ARCH_FLAGS) -nostartfiles $(LIBS)
 
 all: $(KERNEL_IMG)  # Default target
 
+libs: $(STATIC_LIBS)
+
+$(STATIC_LIBS): %.a:
+	@ printf "  %-7s %s\n" MAKE $@
+	$(V) $(MAKE) -C $(dir $@)
+
 EXTRA_OBJS :=
 EXTRA_CLEAN :=
 
@@ -65,16 +71,21 @@ $(BUILD_DIR)/%.o: %.S %.c
 	$(V) $(LD) -r $(BUILD_DIR)/$(BN).S.o $(BUILD_DIR)/$(BN).c.o -o $@
 
 $(BUILD_DIR)/%.o: %.S
-	@ printf "  %-7s %-16s %s\n" AS $< "$(C_OPTIONS)"
+	@ printf "  %-7s %-16s %s\n" AS $(notdir $<) "$(C_OPTIONS)"
+	$(V) mkdir -p $(BUILD_DIR)/$(dir $<)
+	$(V) $(CC) -c $< -o $@ $(CFLAGS)
+
+$(BUILD_DIR)/deps/%.o: deps/%.c
+	@ printf "  %-7s %-16s %s\n" CC deps/$(notdir $<) "$(C_OPTIONS)"
 	$(V) mkdir -p $(BUILD_DIR)/$(dir $<)
 	$(V) $(CC) -c $< -o $@ $(CFLAGS)
 
 $(BUILD_DIR)/%.o: %.c
-	@ printf "  %-7s %-16s %s\n" CC $< "$(C_OPTIONS)"
+	@ printf "  %-7s %-16s %s\n" CC $(notdir $<) "$(C_OPTIONS)"
 	$(V) mkdir -p $(BUILD_DIR)/$(dir $<)
 	$(V) $(CC) -c $< -o $@ $(CFLAGS)
 
-$(KERNEL_ELF): $(OBJS) $(EXTRA_OBJS) $(STATIC_LIBS) link.ld
+$(KERNEL_ELF): $(OBJS) $(EXTRA_OBJS) link.ld
 	@ printf "  %-7s %s\n" LD $@
 	$(V) $(CC) -Wl,-T,link.ld $(OBJS) $(EXTRA_OBJS) -o $@ $(LDFLAGS)
 
@@ -85,4 +96,4 @@ $(KERNEL_IMG): $(KERNEL_ELF)
 clean:
 	rm -rf $(BUILD_DIR) $(EXTRA_CLEAN)
 
-.PHONY: clean all
+.PHONY: clean all libs $(STATIC_LIBS)
