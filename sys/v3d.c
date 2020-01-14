@@ -544,5 +544,9 @@ void v3d_ctx_issue(struct v3d_ctx *c)
   *V3D_RFC = 1;
   *V3D_CT1CA = c->ren_ctrl_start;
   *V3D_CT1EA = c->ren_ctrl_end;
-  while (*V3D_RFC == 0) co_yield();
+}
+
+void v3d_ctx_wait(struct v3d_ctx *c)
+{
+  while (*V3D_PCS & 4) co_yield();
 }
