@@ -73,7 +73,7 @@ void timer2_callback(void *_unused)
   static uint32_t count = 0;
   if (++count == 100) {
     count = 0;
-    printf("\n%u %u\n", z, y);
+    //printf("\n%u %u\n", z, y);
     z = 0;
     y = (y <= 5 ? 0 : y - 5);
   }
@@ -113,6 +113,7 @@ void vsync_callback(void *_unused)
 }
 
 static bool has_key = false;
+static bool has_kbd_key = false, has_gpad_key = false;
 
 static inline int16_t myrand()
 {
@@ -142,18 +143,20 @@ static void kbd_upd_callback(uint8_t mod, const uint8_t k[6])
 {
   printf("\r%02x %02x %02x %02x %02x %02x | mod = %02x",
     k[0], k[1], k[2], k[3], k[4], k[5], mod);
-  has_key = (k[0] || k[1] || k[2] || k[3] || k[4] || k[5]);
+  has_kbd_key = (k[0] || k[1] || k[2] || k[3] || k[4] || k[5]);
+  has_key = has_kbd_key | has_gpad_key;
 }
 
 static void gpad_upd_callback(unsigned index, const USPiGamePadState *state)
 {
   printf("\r%d %08x", state->nbuttons, state->buttons);
-  has_key = (state->buttons & 0x800);
+  has_gpad_key = (state->buttons & 0x800);
+  has_key = has_kbd_key | has_gpad_key;
 }
 
 void doda();
 void dodo(uint32_t fb);
-#define DRAW 1
+#define DRAW 0
 
 static void f1(void *_unused)
 {
@@ -193,8 +196,11 @@ static void f4(void *_unused)
 
 static void usb_loop(void *_unused)
 {
+  bool first = true;
   while (1) {
-    if (y >= 60 || (!USPiKeyboardAvailable() && !USPiGamePadAvailable())) {
+    //if (y >= 60 || (!USPiKeyboardAvailable() && !USPiGamePadAvailable())) {
+    if (first || USPiConnectionChanged()) {
+      first = false;
       y = 0;
       USPiDeinitialize();
       bool result = USPiInitialize();
@@ -208,7 +214,7 @@ static void usb_loop(void *_unused)
       if (USPiGamePadAvailable())
         USPiGamePadRegisterStatusHandler(gpad_upd_callback);
     }
-    MsDelay(1000);
+    MsDelay(100);
   }
 }
 
