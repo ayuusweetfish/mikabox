@@ -4,6 +4,7 @@
 #include "irq.h"
 #include "prop_tag.h"
 #include "printf/printf.h"
+#include "coroutine.h"
 
 void *ampi_malloc (size_t size)
 {
@@ -28,7 +29,7 @@ void usDelay (unsigned nMicroSeconds)
 {
   mem_barrier();
   uint32_t val = *TMR_CLO + nMicroSeconds;
-  while (*TMR_CLO < val) { }
+  while (*TMR_CLO < val) co_yield();
   mem_barrier();
 }
 

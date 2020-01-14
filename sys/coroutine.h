@@ -19,6 +19,7 @@ extern "C" {
 
 int8_t co_create(void (*fn)(void *), void *arg);
 void co_yield();
+void co_done();
 void co_next(int8_t id);
 
 #ifdef __cplusplus

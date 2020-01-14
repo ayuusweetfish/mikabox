@@ -64,8 +64,17 @@ void co_yield()
     int8_t id = current - 1;
     current = 0;
     co_jump(&regs[id], &main_regs);
-  } else {
-    for (int i = 1; i <= MAX_CO; i++) co_next(i);
+  }
+}
+
+void co_done()
+{
+  if (current > 0) {
+    int8_t id = current - 1;
+    used &= ~(1 << id);
+    regs[id].pc = 0;
+    current = 0;
+    co_jump(&regs[id], &main_regs);
   }
 }
 

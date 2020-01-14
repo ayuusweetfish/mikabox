@@ -157,10 +157,11 @@ void dodo(uint32_t fb);
 
 static void f1(void *_unused)
 {
-  while (1) {
+  for (uint32_t i = 0; i < 20; i++) {
     printf("f1: Hi\n");
     co_yield();
   }
+  co_done();
 }
 
 static void f2(void *arg)
@@ -174,10 +175,21 @@ static void f2(void *arg)
 
 static void f3(void *_unused)
 {
-  while (1) {
+  for (uint32_t i = 0; i < 10; i++) {
     printf("f3: Start over\n");
     co_yield();
     f2((void *)4);
+  }
+  co_done();
+}
+
+static void f4(void *_unused)
+{
+  while (1) {
+    printf("==== f4: Tik ====\n");
+    MsDelay(1000);
+    printf("==== f4: Tok ====\n");
+    MsDelay(1000);
   }
 }
 
@@ -282,9 +294,10 @@ void sys_main()
   co_create(f1, 0);
   co_create(f2, 0);
   co_create(f3, 0);
-  while (1) for (uint8_t i = 1; i <= 3; i++) {
+  co_create(f4, 0);
+  while (1) for (uint8_t i = 1; i <= 4; i++) {
     co_next(i);
-    MsDelay(300);
+    MsDelay(50);
   }
 
   mem_barrier();
