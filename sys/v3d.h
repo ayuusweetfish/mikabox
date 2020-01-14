@@ -96,8 +96,6 @@ typedef struct v3d_call {
 // Configuration (render target)
 
 typedef struct v3d_ctx {
-  v3d_tex target;
-
   // Control list buffer
   v3d_mem mem;
   uint32_t offs;
@@ -109,7 +107,7 @@ typedef struct v3d_ctx {
 } v3d_ctx;
 
 struct v3d_ctx v3d_ctx_create();
-void v3d_ctx_anew(struct v3d_ctx *c, v3d_tex target);
+void v3d_ctx_anew(struct v3d_ctx *c, v3d_tex target, uint32_t clear);
 void v3d_ctx_use_batch(struct v3d_ctx *c, const struct v3d_batch *batch);
 void v3d_ctx_add_call(struct v3d_ctx *c, const struct v3d_call *call);
 void v3d_ctx_issue(struct v3d_ctx *c);

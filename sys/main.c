@@ -112,7 +112,7 @@ void vsync_callback(void *_unused)
   fb_flip_buffer();
 }
 
-static bool has_key = false;
+bool has_key = false;
 static bool has_kbd_key = false, has_gpad_key = false;
 
 static inline int16_t myrand()

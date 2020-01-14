@@ -190,6 +190,8 @@ v3d_tex v3d_tex_screen(uint32_t buf)
   return t;
 }
 
+#define is_screen(__tex)  ((__tex).mem.handle == 0xfbfbfbfb)
+
 // x and y are coordinates of the top-left corner (left handed/y+ down)
 // XXX: Consider using right handed coordinates instead?
 static inline void microtile(
@@ -214,6 +216,8 @@ v3d_tex v3d_tex_create(uint16_t w, uint16_t h, uint8_t *buf)
   t.h = h;
   t.mem = v3d_mem_create((uint32_t)w * h * 4, 4096,
     MEM_FLAG_L1_NONALLOCATING | MEM_FLAG_ZERO);
+
+  if (buf == NULL) return t;
 
   uint32_t *tex = (uint32_t *)_armptr(t.mem);
   // 4K tiles
@@ -384,12 +388,12 @@ struct v3d_ctx v3d_ctx_create()
   v3d_ctx c;
   c.mem = v3d_mem_create(0x280000, 0x1000, MEM_FLAG_COHERENT | MEM_FLAG_ZERO);
   c.offs = 0;
+  c.ren_ctrl_start = 0;
   return c;
 }
 
-void v3d_ctx_anew(struct v3d_ctx *c, v3d_tex target)
+void v3d_ctx_anew(struct v3d_ctx *c, v3d_tex target, uint32_t clear)
 {
-  c->target = target;
   uint16_t w = target.w, h = target.h;
   const uint16_t bin_sidelen = 32;
   uint8_t bin_cols = (w + bin_sidelen - 1) / bin_sidelen;
@@ -406,8 +410,8 @@ void v3d_ctx_anew(struct v3d_ctx *c, v3d_tex target)
 
   // Clear Colours
   _putu8(&p, 114);
-  _putu32(&p, 0xffafcfef);
-  _putu32(&p, 0xffafcfef);
+  _putu32(&p, 0xff000000 | clear);
+  _putu32(&p, 0xff000000 | clear);
   _putu32(&p, 0);
   _putu8(&p, 0);
 
@@ -416,7 +420,7 @@ void v3d_ctx_anew(struct v3d_ctx *c, v3d_tex target)
   _putu32(&p, target.mem.addr);
   _putu16(&p, w);
   _putu16(&p, h);
-  _putu8(&p, (1 << 2) | (1 << 0));
+  _putu8(&p, (1 << 2) | (1 << 0) | (is_screen(target) ? 0 : (1 << 6)));
   _putu8(&p, 0);
 
   // Tile Coordinates
@@ -559,5 +563,7 @@ void v3d_ctx_issue(struct v3d_ctx *c)
 
 void v3d_ctx_wait(struct v3d_ctx *c)
 {
-  while (*V3D_PCS & 4) co_yield();
+  if (c->ren_ctrl_start != 0)
+    while (*V3D_RFC == 0) co_yield();
+  c->ren_ctrl_start = 0;
 }
