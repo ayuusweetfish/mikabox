@@ -25,15 +25,18 @@ struct reg_set {
 static struct reg_set main_regs;
 static struct reg_set regs[MAX_CO] = {{ 0 }};
 
-void co_jump(struct reg_set *restore_regs, struct reg_set *branch_regs);
+static void co_done();
 
 __attribute__ ((noinline, naked))
 void co_jump_arg(struct reg_set *restore_regs, struct reg_set *branch_regs, void *arg)
 {
+  uint32_t lr = (uint32_t)co_done;
   __asm__ __volatile__ (
     "stmia r0!, {r4-r11, sp, lr}\n"
     "mov r0, r2\n"
+    "mov lr, %0\n"
     "ldmia r1!, {r4-r11, sp, pc}\n"
+    :: "r"(lr)
   );
 }
 
@@ -67,7 +70,7 @@ void co_yield()
   }
 }
 
-void co_done()
+static void co_done()
 {
   if (current > 0) {
     int8_t id = current - 1;

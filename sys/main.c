@@ -161,7 +161,6 @@ static void f1(void *_unused)
     printf("f1: Hi\n");
     co_yield();
   }
-  co_done();
 }
 
 static void f2(void *arg)
@@ -180,7 +179,6 @@ static void f3(void *_unused)
     co_yield();
     f2((void *)4);
   }
-  co_done();
 }
 
 static void f4(void *_unused)
