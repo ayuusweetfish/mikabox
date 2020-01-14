@@ -190,6 +190,23 @@ v3d_tex v3d_tex_screen(uint32_t buf)
   return t;
 }
 
+// x and y are coordinates of the top-left corner (left handed/y+ down)
+// XXX: Consider using right handed coordinates instead?
+static inline void microtile(
+  uint32_t *tex, uint16_t w, uint16_t h, uint8_t *buf,
+  uint16_t x, uint16_t y)
+{
+  for (uint16_t y3 = 0; y3 < 4; y3++)
+  for (uint16_t x3 = 0; x3 < 4; x3++) {
+    uint16_t x4 = x + x3;
+    uint16_t y4 = y + 3 - y3;
+    uint32_t p = ((uint32_t)y4 * w + x4) * 3;
+    uint32_t value = ((uint32_t)buf[p] << 16) |
+      ((uint32_t)buf[p + 1] << 8) | (uint32_t)buf[p + 2];
+    *(tex++) = value;
+  }
+}
+
 v3d_tex v3d_tex_create(uint16_t w, uint16_t h, uint8_t *buf)
 {
   v3d_tex t;
@@ -199,7 +216,6 @@ v3d_tex v3d_tex_create(uint16_t w, uint16_t h, uint8_t *buf)
     MEM_FLAG_L1_NONALLOCATING | MEM_FLAG_ZERO);
 
   uint32_t *tex = (uint32_t *)_armptr(t.mem);
-  uint32_t ptr = 0;
   // 4K tiles
   for (uint16_t y0i = 0; y0i < h / 32; y0i++) {
     uint16_t y0 = h - 32 * (y0i + 1);
@@ -210,19 +226,14 @@ v3d_tex v3d_tex_create(uint16_t w, uint16_t h, uint8_t *buf)
       for (uint8_t k = 0; k < 4; k++) {
         uint16_t x1 = x0 + ((subt[k] >> 1) ^ (y0i & 1)) * 16;
         uint16_t y1 = y0 + ((subt[k] & 1) ^ (y0i & 1)) * 16;
-        // A subtile at (y1, x1)
+        // A subtile with top-left corner at (y1, x1)
         // Emit the subtile
-        for (uint16_t y2 = 0; y2 < 4; y2++)
-        for (uint16_t x2 = 0; x2 < 4; x2++)
-          for (uint16_t y3 = 0; y3 < 4; y3++)
-          for (uint16_t x3 = 0; x3 < 4; x3++) {
-            uint16_t x4 = x1 + (x2 * 4 + x3 + 1);
-            uint16_t y4 = y1 + (16 - (y2 * 4 + y3 + 1));
-            uint32_t p = ((uint32_t)y4 * w + x4) * 3;
-            uint32_t value = ((uint32_t)buf[p] << 16) |
-              ((uint32_t)buf[p + 1] << 8) | (uint32_t)buf[p + 2];
-            tex[ptr++] = value;
-          }
+        for (uint16_t y2 = 0; y2 < 16; y2 += 4)
+        for (uint16_t x2 = 0; x2 < 16; x2 += 4) {
+          // Microtile
+          microtile(tex, w, h, buf, x1 + x2, y1 + 12 - y2);
+          tex += 16;
+        }
       }
     }
   }
