@@ -383,10 +383,18 @@ v3d_batch v3d_batch_create(
   return b;
 }
 
+#define CTRL_BEGIN        0x0
+#define CTRL_SIZE         0x4000
+#define TILE_ALLOC_BEGIN  (CTRL_BEGIN + CTRL_SIZE)
+#define TILE_ALLOC_SIZE   0x10000
+#define TILE_STATE_BEGIN  (TILE_ALLOC_BEGIN + TILE_ALLOC_SIZE)  // 16-byte aligned
+#define TILE_STATE_SIZE   0x10000
+#define CTX_MEM_TOTAL     (TILE_STATE_BEGIN + TILE_STATE_SIZE)
+
 struct v3d_ctx v3d_ctx_create()
 {
   v3d_ctx c;
-  c.mem = v3d_mem_create(0x280000, 0x1000, MEM_FLAG_COHERENT | MEM_FLAG_ZERO);
+  c.mem = v3d_mem_create(CTX_MEM_TOTAL, 0x1000, MEM_FLAG_COHERENT | MEM_FLAG_ZERO);
   c.offs = 0;
   c.ren_ctrl_start = 0;
   return c;
@@ -401,7 +409,7 @@ void v3d_ctx_anew(struct v3d_ctx *c, v3d_tex target, uint32_t clear)
   uint8_t bin_rows = (h + bin_sidelen - 1) / bin_sidelen;
 
   uint8_t *p;
-  c->offs = 0;
+  c->offs = CTRL_BEGIN;
 
   // Render control
 
@@ -443,7 +451,7 @@ void v3d_ctx_anew(struct v3d_ctx *c, v3d_tex target, uint32_t clear)
 
     // Branch to Sub-list
     _putu8(&p, 17);
-    _putu32(&p, c->mem.addr + 0x240000 + (y * bin_cols + x) * 32);
+    _putu32(&p, c->mem.addr + TILE_ALLOC_BEGIN + (y * bin_cols + x) * 32);
 
     // Store Multi-sample Resolved Tile Color Buffer
     // (and signal end of frame)
@@ -461,9 +469,9 @@ void v3d_ctx_anew(struct v3d_ctx *c, v3d_tex target, uint32_t clear)
 
   // Tile Binning Mode Configuration
   _putu8(&p, 112);
-  _putu32(&p, c->mem.addr + 0x240000);
-  _putu32(&p, 0x40000);
-  _putu32(&p, c->mem.addr + 0x200000);
+  _putu32(&p, c->mem.addr + TILE_ALLOC_BEGIN);
+  _putu32(&p, TILE_ALLOC_SIZE);
+  _putu32(&p, c->mem.addr + TILE_STATE_BEGIN);
   _putu8(&p, bin_cols);
   _putu8(&p, bin_rows);
   _putu8(&p, (1 << 2) | (1 << 0));
