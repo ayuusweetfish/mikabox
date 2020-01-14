@@ -302,11 +302,11 @@ void v3d_unifarr_putf32(struct v3d_unifarr *a, uint32_t index, float value)
   p[index] = value;
 }
 
-void v3d_unifarr_puttex(struct v3d_unifarr *a, uint32_t index, v3d_tex tex)
+void v3d_unifarr_puttex(struct v3d_unifarr *a, uint32_t index, v3d_tex tex, uint8_t cfg)
 {
   uint32_t *p = (uint32_t *)_armptr(a->mem);
   p[index] = tex.mem.addr;
-  p[index + 1] = (tex.w << 8) | (tex.h << 20);
+  p[index + 1] = (tex.w << 8) | (tex.h << 20) | cfg;
 }
 
 static const uint32_t chroma_shader[] = {

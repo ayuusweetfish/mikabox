@@ -59,9 +59,9 @@ void doda()
   for (uint8_t i = 0; i <= 1; i++) {
     v.x = 420.0f + i * 300;
     v.y = 100.0f + i * 300;
-    v.varyings[0] = i; v.varyings[1] = i;
+    v.varyings[0] = i * 2; v.varyings[1] = i;
     v3d_vertarr_put(&va2, i * 3 + 0, &v, 1);
-    v.x = 720.0f; v.y = 100.0f; v.varyings[0] = 1.0f; v.varyings[1] = 0.0f;
+    v.x = 720.0f; v.y = 100.0f; v.varyings[0] = 2.0f; v.varyings[1] = 0.0f;
     v3d_vertarr_put(&va2, i * 3 + 1, &v, 1);
     v.x = 420.0f; v.y = 400.0f; v.varyings[0] = 0.0f; v.varyings[1] = 1.0f;
     v3d_vertarr_put(&va2, i * 3 + 2, &v, 1);
@@ -79,7 +79,7 @@ void doda()
         ((i < 4 && j < 4) || ((i ^ j) & 4)) ? 0xff : 0xcc;
 
   checker = v3d_tex_create(cw, ch, &c[0][0][0]);
-  v3d_unifarr_puttex(&ua2, 0, checker);
+  v3d_unifarr_puttex(&ua2, 0, checker, v3d_magfilt_nearest | v3d_wrap_s_mirror);
 
   target = v3d_tex_create(800, 480, NULL);
 }
@@ -119,7 +119,7 @@ void dodo(uint32_t fb)
   v.varyings[4] = 1.0f;
   v3d_vertarr_put(&va1, 2, &v, 1);
 
-  v3d_unifarr_puttex(&ua1, 0, nanikore);
+  v3d_unifarr_puttex(&ua1, 0, nanikore, 0);
   v3d_unifarr_putf32(&ua1, 2, sinf(angle) * 0.5f + 0.5f);
 
   v3d_ctx_issue(&ctx);
@@ -132,7 +132,6 @@ void dodo(uint32_t fb)
     .num_verts = 6,
     .start_index = 0,
   });
-  v3d_unifarr_puttex(&ua2, 0, target);
 
   v3d_ctx_issue(&ctx);
 }
