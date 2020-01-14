@@ -206,13 +206,6 @@ void sys_main()
   mmu_enable(mmu_table);
 
   mem_barrier();
-  *TMR_CS = 8 | 4;
-  *TMR_C2 = *TMR_CLO + 1000000;
-  *TMR_C3 = *TMR_CLO + 1000000;
-  irq_set_callback(2, timer2_callback, NULL);
-  //irq_set_callback(3, timer3_callback, NULL);
-
-  mem_barrier();
   struct framebuffer *f = mmu_ord_alloc(sizeof(struct framebuffer), 16);
   memset(f, 0, sizeof(struct framebuffer));
   f->pwidth = SCR_W; f->pheight = SCR_H;
@@ -229,6 +222,13 @@ void sys_main()
     fb_bufs[i] = base + fb_pitch * f->pheight * i;
   fb_buf = fb_bufs[0];
   mmu_ord_pop();  // f
+
+  mem_barrier();
+  *TMR_CS = 8 | 4;
+  *TMR_C2 = *TMR_CLO + 1000000;
+  *TMR_C3 = *TMR_CLO + 1000000;
+  irq_set_callback(2, timer2_callback, NULL);
+  //irq_set_callback(3, timer3_callback, NULL);
 
   mem_barrier();
   charbuf_init(SCR_W, SCR_H);
