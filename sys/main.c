@@ -13,6 +13,7 @@
 #include "uspios.h"
 #include "sdcard/sdcard.h"
 #include "fatfs/ff.h"
+#include "coroutine.h"
 
 #include <math.h>
 #include <string.h>
@@ -72,7 +73,7 @@ void timer2_callback(void *_unused)
   static uint32_t count = 0;
   if (++count == 100) {
     count = 0;
-    printf("\n%u %u\n", z, y);
+    //printf("\n%u %u\n", z, y);
     z = 0;
     y = (y <= 5 ? 0 : y - 5);
   }
@@ -153,6 +154,32 @@ static void gpad_upd_callback(unsigned index, const USPiGamePadState *state)
 void doda();
 void dodo(uint32_t fb);
 #define DRAW 0
+
+static void f1(void *_unused)
+{
+  while (1) {
+    printf("f1: Hi\n");
+    co_yield();
+  }
+}
+
+static void f2(void *arg)
+{
+  uint32_t max = (uint32_t)arg;
+  for (uint32_t i = 0, s = 0; max == 0 || i < max; s += (++i)) {
+    printf("f2: %u %u\n", i, s);
+    co_yield();
+  }
+}
+
+static void f3(void *_unused)
+{
+  while (1) {
+    printf("f3: Start over\n");
+    co_yield();
+    f2((void *)4);
+  }
+}
 
 void sys_main()
 {
@@ -250,6 +277,14 @@ void sys_main()
 
   for (uint32_t i = 0; i < 256; i++) {
     wavetable[i] = (int16_t)(sin((double)i / 128 * M_PI * 2) * 32767);
+  }
+
+  co_create(f1, 0);
+  co_create(f2, 0);
+  co_create(f3, 0);
+  while (1) for (uint8_t i = 1; i <= 3; i++) {
+    co_next(i);
+    MsDelay(300);
   }
 
   mem_barrier();
