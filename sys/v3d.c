@@ -3,6 +3,7 @@
 #include "common.h"
 #include "prop_tag.h"
 #include "printf/printf.h"
+#include "coroutine.h"
 
 #include <math.h>
 #include <string.h>
@@ -532,16 +533,16 @@ void v3d_ctx_issue(struct v3d_ctx *c)
   *V3D_SLCACTL = 0x0f0f0f0f;
 
   *V3D_CT0CS = 0x20;
-  while (*V3D_CT0CS & 0x20) { }
+  while (*V3D_CT0CS & 0x20) co_yield();
   *V3D_BFC = 1;
   *V3D_CT0CA = c->bin_ctrl_start;
   *V3D_CT0EA = c->bin_ctrl_end;
-  while (*V3D_BFC == 0) { }
+  while (*V3D_BFC == 0) co_yield();
 
   *V3D_CT1CS = 0x20;
-  while (*V3D_CT1CS & 0x20) { }
+  while (*V3D_CT1CS & 0x20) co_yield();
   *V3D_RFC = 1;
   *V3D_CT1CA = c->ren_ctrl_start;
   *V3D_CT1EA = c->ren_ctrl_end;
-  while (*V3D_RFC == 0) { }
+  while (*V3D_RFC == 0) co_yield();
 }

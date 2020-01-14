@@ -29,7 +29,10 @@ void usDelay (unsigned nMicroSeconds)
 {
   mem_barrier();
   uint32_t val = *TMR_CLO + nMicroSeconds;
-  while (*TMR_CLO < val) co_yield();
+  while (*TMR_CLO < val) {
+    if (nMicroSeconds > 5000) co_yield();
+    mem_barrier();
+  }
   mem_barrier();
 }
 
