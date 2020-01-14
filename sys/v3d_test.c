@@ -19,28 +19,28 @@ void doda()
   static v3d_vert v = { .varyings = {0, 0, 0, 0, 0} };
   v.x = 250.0f; v.y = 100.0f;
   v.varyings[0] = 0.5f;
-  v.varyings[1] = 1.0f;
+  v.varyings[1] = 0.0f;
   v.varyings[2] = 1.0f;
   v.varyings[3] = 1.0f;
   v.varyings[4] = 1.0f;
   v3d_vertarr_put(&va1, 0, &v, 1);
   v.x = 100.0f; v.y = 400.0f;
   v.varyings[0] = 0.0f;
-  v.varyings[1] = 0.0f;
+  v.varyings[1] = 1.0f;
   v.varyings[2] = 0.5f;
   v.varyings[3] = 1.0f;
   v.varyings[4] = 1.0f;
   v3d_vertarr_put(&va1, 1, &v, 1);
   v.x = 400.0f; v.y = 400.0f;
   v.varyings[0] = 1.0f;
-  v.varyings[1] = 0.0f;
+  v.varyings[1] = 1.0f;
   v.varyings[2] = 1.0f;
   v.varyings[3] = 0.5f;
   v.varyings[4] = 1.0f;
   v3d_vertarr_put(&va1, 2, &v, 1);
   v.x = 400.0f; v.y = 100.0f;
   v.varyings[0] = 1.0f;
-  v.varyings[1] = 1.0f;
+  v.varyings[1] = 0.0f;
   v.varyings[2] = 1.0f;
   v.varyings[3] = 1.0f;
   v.varyings[4] = 0.5f;
@@ -59,11 +59,11 @@ void doda()
   for (uint8_t i = 0; i <= 1; i++) {
     v.x = 420.0f + i * 300;
     v.y = 100.0f + i * 300;
-    v.varyings[0] = i; v.varyings[1] = 1 - i;
+    v.varyings[0] = i; v.varyings[1] = i;
     v3d_vertarr_put(&va2, i * 3 + 0, &v, 1);
-    v.x = 720.0f; v.y = 100.0f; v.varyings[0] = 1.0f; v.varyings[1] = 1.0f;
+    v.x = 720.0f; v.y = 100.0f; v.varyings[0] = 1.0f; v.varyings[1] = 0.0f;
     v3d_vertarr_put(&va2, i * 3 + 1, &v, 1);
-    v.x = 420.0f; v.y = 400.0f; v.varyings[0] = 0.0f; v.varyings[1] = 0.0f;
+    v.x = 420.0f; v.y = 400.0f; v.varyings[0] = 0.0f; v.varyings[1] = 1.0f;
     v3d_vertarr_put(&va2, i * 3 + 2, &v, 1);
   }
 
@@ -113,7 +113,7 @@ void dodo(uint32_t fb)
   v.x = 400.0f + 20.0f * cosf(angle);
   v.y = 400.0f + 20.0f * sinf(angle);
   v.varyings[0] = 1.0f;
-  v.varyings[1] = 0.0f;
+  v.varyings[1] = 1.0f;
   v.varyings[2] = 1.0f;
   v.varyings[3] = 0.5f;
   v.varyings[4] = 1.0f;

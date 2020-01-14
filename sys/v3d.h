@@ -96,6 +96,8 @@ typedef struct v3d_call {
 // Configuration (render target)
 
 typedef struct v3d_ctx {
+  v3d_tex target;
+
   // Control list buffer
   v3d_mem mem;
   uint32_t offs;

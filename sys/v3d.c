@@ -201,7 +201,7 @@ static inline void microtile(
   for (uint16_t y3 = 0; y3 < 4; y3++)
   for (uint16_t x3 = 0; x3 < 4; x3++) {
     uint16_t x4 = x + x3;
-    uint16_t y4 = y + 3 - y3;
+    uint16_t y4 = y + y3;
     uint32_t p = ((uint32_t)y4 * w + x4) * 3;
     uint32_t value = ((uint32_t)buf[p] << 16) |
       ((uint32_t)buf[p + 1] << 8) | (uint32_t)buf[p + 2];
@@ -222,11 +222,11 @@ v3d_tex v3d_tex_create(uint16_t w, uint16_t h, uint8_t *buf)
   uint32_t *tex = (uint32_t *)_armptr(t.mem);
   // 4K tiles
   for (uint16_t y0i = 0; y0i < h / 32; y0i++) {
-    uint16_t y0 = h - 32 * (y0i + 1);
+    uint16_t y0 = y0i * 32;
     for (uint16_t x0i = 0; x0i < w / 32; x0i++) {
       uint16_t x0 = ((y0i & 1) ? w - 32 * (x0i + 1) : 32 * x0i);
       // Four 1K subtiles
-      static const uint8_t subt[4] = {1, 0, 2, 3};
+      static const uint8_t subt[4] = {0, 1, 3, 2};
       for (uint8_t k = 0; k < 4; k++) {
         uint16_t x1 = x0 + ((subt[k] >> 1) ^ (y0i & 1)) * 16;
         uint16_t y1 = y0 + ((subt[k] & 1) ^ (y0i & 1)) * 16;
@@ -235,7 +235,7 @@ v3d_tex v3d_tex_create(uint16_t w, uint16_t h, uint8_t *buf)
         for (uint16_t y2 = 0; y2 < 16; y2 += 4)
         for (uint16_t x2 = 0; x2 < 16; x2 += 4) {
           // Microtile
-          microtile(tex, w, h, buf, x1 + x2, y1 + 12 - y2);
+          microtile(tex, w, h, buf, x1 + x2, y1 + y2);
           tex += 16;
         }
       }
@@ -394,6 +394,7 @@ struct v3d_ctx v3d_ctx_create()
 
 void v3d_ctx_anew(struct v3d_ctx *c, v3d_tex target, uint32_t clear)
 {
+  c->target = target;
   uint16_t w = target.w, h = target.h;
   const uint16_t bin_sidelen = 32;
   uint8_t bin_cols = (w + bin_sidelen - 1) / bin_sidelen;
