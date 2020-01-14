@@ -152,6 +152,7 @@ static void gpad_upd_callback(unsigned index, const USPiGamePadState *state)
 
 void doda();
 void dodo(uint32_t fb);
+#define DRAW 0
 
 void sys_main()
 {
@@ -197,7 +198,9 @@ void sys_main()
   printf("Hello world!\n");
   printf("ARM clock rate: %u\n", get_clock_rate(3));
 
-  //irq_set_callback(48, vsync_callback, NULL);
+#if !DRAW
+  irq_set_callback(48, vsync_callback, NULL);
+#endif
 
   sdInit();
   int32_t i = sdInitCard();
@@ -282,8 +285,10 @@ void sys_main()
       p = (!USPiKeyboardAvailable() && !USPiGamePadAvailable());
     }
 
+#if DRAW
     dodo((uint32_t)fb_buf);
     fb_flip_buffer();
+#endif
   }
 
 /*
