@@ -215,7 +215,7 @@ v3d_tex v3d_tex_create(uint16_t w, uint16_t h, uint8_t *buf)
   t.w = w;
   t.h = h;
   t.mem = v3d_mem_create((uint32_t)w * h * 4, 4096,
-    MEM_FLAG_L1_NONALLOCATING | MEM_FLAG_ZERO);
+    MEM_FLAG_L1_NONALLOCATING | MEM_FLAG_ZERO | MEM_FLAG_HINT_PERMALOCK);
 
   if (buf == NULL) return t;
 
@@ -251,7 +251,8 @@ struct v3d_vertarr v3d_vertarr_create(uint16_t num, uint8_t num_varyings)
   a.num = num;
   a.num_varyings = num_varyings;
   size_t pstride = 12 + 4 * num_varyings;
-  a.mem = v3d_mem_create(pstride * num, 128, MEM_FLAG_COHERENT | MEM_FLAG_ZERO);
+  a.mem = v3d_mem_create(pstride * num, 128,
+    MEM_FLAG_COHERENT | MEM_FLAG_ZERO | MEM_FLAG_HINT_PERMALOCK);
   return a;
 }
 
@@ -284,7 +285,8 @@ struct v3d_unifarr v3d_unifarr_create(uint8_t num)
 {
   v3d_unifarr a;
   a.num = num;
-  a.mem = v3d_mem_create(4 * num, 4, MEM_FLAG_COHERENT | MEM_FLAG_ZERO);
+  a.mem = v3d_mem_create(4 * num, 4,
+    MEM_FLAG_COHERENT | MEM_FLAG_ZERO | MEM_FLAG_HINT_PERMALOCK);
   return a;
 }
 
@@ -350,7 +352,8 @@ static const uint32_t tex_shader[] = {
 v3d_shader v3d_shader_create(const char *code)
 {
   v3d_shader s;
-  s.mem = v3d_mem_create(256, 8, MEM_FLAG_COHERENT | MEM_FLAG_ZERO);
+  s.mem = v3d_mem_create(256, 8,
+    MEM_FLAG_COHERENT | MEM_FLAG_ZERO | MEM_FLAG_HINT_PERMALOCK);
   uint8_t *p = _armptr(s.mem);
 
   if (strcmp(code, "#chroma") == 0)
@@ -369,7 +372,8 @@ v3d_batch v3d_batch_create(
   const v3d_shader shader
 ) {
   v3d_batch b;
-  b.mem = v3d_mem_create(16, 16, MEM_FLAG_COHERENT | MEM_FLAG_ZERO);
+  b.mem = v3d_mem_create(16, 16,
+    MEM_FLAG_COHERENT | MEM_FLAG_NO_INIT | MEM_FLAG_HINT_PERMALOCK);
   uint8_t *p = _armptr(b.mem);
 
   _putu8(&p, 1);
@@ -394,7 +398,8 @@ v3d_batch v3d_batch_create(
 struct v3d_ctx v3d_ctx_create()
 {
   v3d_ctx c;
-  c.mem = v3d_mem_create(CTX_MEM_TOTAL, 0x1000, MEM_FLAG_COHERENT | MEM_FLAG_ZERO);
+  c.mem = v3d_mem_create(CTX_MEM_TOTAL, 0x1000,
+    MEM_FLAG_COHERENT | MEM_FLAG_ZERO | MEM_FLAG_HINT_PERMALOCK);
   c.offs = 0;
   c.ren_ctrl_start = 0;
   return c;
