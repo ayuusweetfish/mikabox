@@ -13,6 +13,7 @@
 #include "uspios.h"
 #include "sdcard/sdcard.h"
 #include "fatfs/ff.h"
+#include "coroutine.h"
 
 #include <math.h>
 #include <string.h>
@@ -72,7 +73,7 @@ void timer2_callback(void *_unused)
   static uint32_t count = 0;
   if (++count == 100) {
     count = 0;
-    printf("\n%u %u\n", z, y);
+    //printf("\n%u %u\n", z, y);
     z = 0;
     y = (y <= 5 ? 0 : y - 5);
   }
@@ -112,6 +113,7 @@ void vsync_callback(void *_unused)
 }
 
 static bool has_key = false;
+static bool has_kbd_key = false, has_gpad_key = false;
 
 static inline int16_t myrand()
 {
@@ -141,17 +143,105 @@ static void kbd_upd_callback(uint8_t mod, const uint8_t k[6])
 {
   printf("\r%02x %02x %02x %02x %02x %02x | mod = %02x",
     k[0], k[1], k[2], k[3], k[4], k[5], mod);
-  has_key = (k[0] || k[1] || k[2] || k[3] || k[4] || k[5]);
+  has_kbd_key = (k[0] || k[1] || k[2] || k[3] || k[4] || k[5]);
+  has_key = has_kbd_key | has_gpad_key;
 }
 
 static void gpad_upd_callback(unsigned index, const USPiGamePadState *state)
 {
   printf("\r%d %08x", state->nbuttons, state->buttons);
-  has_key = (state->buttons & 0x800);
+  has_gpad_key = (state->buttons & 0x800);
+  has_key = has_kbd_key | has_gpad_key;
 }
 
 void doda();
 void dodo(uint32_t fb);
+#define DRAW 0
+
+static void f1(void *_unused)
+{
+  for (uint32_t i = 0; i < 20; i++) {
+    printf("f1: Hi\n");
+    co_yield();
+  }
+}
+
+static void f2(void *arg)
+{
+  uint32_t max = (uint32_t)arg;
+  for (uint32_t i = 0, s = 0; max == 0 || i < max; s += (++i)) {
+    printf("f2: %u %u\n", i, s);
+    co_yield();
+  }
+}
+
+static void f3(void *_unused)
+{
+  for (uint32_t i = 0; i < 10; i++) {
+    printf("f3: Start over\n");
+    co_yield();
+    f2((void *)4);
+  }
+}
+
+static void f4(void *_unused)
+{
+  while (1) {
+    printf("==== f4: Tik ====\n");
+    MsDelay(1000);
+    printf("==== f4: Tok ====\n");
+    MsDelay(1000);
+  }
+}
+
+static void usb_loop(void *_unused)
+{
+  bool first = true;
+  while (1) {
+    //if (y >= 60 || (!USPiKeyboardAvailable() && !USPiGamePadAvailable())) {
+    if (first || USPiConnectionChanged()) {
+      first = false;
+      y = 0;
+      USPiDeinitialize();
+      bool result = USPiInitialize();
+      printf("USPi initialization %s\n", result ? "succeeded" : "failed");
+
+      printf("Keyboard %savailable\n", USPiKeyboardAvailable() ? "" : "un");
+      if (USPiKeyboardAvailable())
+        USPiKeyboardRegisterKeyStatusHandlerRaw(kbd_upd_callback);
+
+      printf("Gamepad %savailable\n", USPiGamePadAvailable() ? "" : "un");
+      if (USPiGamePadAvailable())
+        USPiGamePadRegisterStatusHandler(gpad_upd_callback);
+    }
+    MsDelay(100);
+  }
+}
+
+static void audio_loop(void *_unused)
+{
+  mem_barrier();
+  AMPiInitialize(44100, 1764);  // 20 ms latency/block size
+  AMPiSetChunkCallback(synth);
+  bool b = AMPiStart();
+  printf(b ? "Yes\n" : "No\n");
+
+  mem_barrier();
+  doda();
+
+  while (1) {
+    //printf(AMPiIsActive() ? "\rActive  " : "\rInactive");
+    AMPiPoke();
+    for (uint32_t i = 0; i < 100000; i++) __asm__ __volatile__ ("");
+    z++;
+
+#if DRAW
+    dodo((uint32_t)fb_buf);
+    fb_flip_buffer();
+#endif
+    co_yield();
+  }
+}
 
 void sys_main()
 {
@@ -166,13 +256,6 @@ void sys_main()
   for (uint32_t i = bss_ord_page_begin; i <= bss_ord_page_end; i++)
     mmu_table_section(mmu_table, i << 20, i << 20, 0);
   mmu_enable(mmu_table);
-
-  mem_barrier();
-  *TMR_CS = 8 | 4;
-  *TMR_C2 = *TMR_CLO + 1000000;
-  *TMR_C3 = *TMR_CLO + 1000000;
-  irq_set_callback(2, timer2_callback, NULL);
-  //irq_set_callback(3, timer3_callback, NULL);
 
   mem_barrier();
   struct framebuffer *f = mmu_ord_alloc(sizeof(struct framebuffer), 16);
@@ -193,11 +276,20 @@ void sys_main()
   mmu_ord_pop();  // f
 
   mem_barrier();
+  *TMR_CS = 8 | 4;
+  *TMR_C2 = *TMR_CLO + 1000000;
+  *TMR_C3 = *TMR_CLO + 1000000;
+  irq_set_callback(2, timer2_callback, NULL);
+  //irq_set_callback(3, timer3_callback, NULL);
+
+  mem_barrier();
   charbuf_init(SCR_W, SCR_H);
   printf("Hello world!\n");
   printf("ARM clock rate: %u\n", get_clock_rate(3));
 
+#if !DRAW
   irq_set_callback(48, vsync_callback, NULL);
+#endif
 
   sdInit();
   int32_t i = sdInitCard();
@@ -249,30 +341,10 @@ void sys_main()
     wavetable[i] = (int16_t)(sin((double)i / 128 * M_PI * 2) * 32767);
   }
 
-  mem_barrier();
-  AMPiInitialize(44100, 1764);  // 20 ms latency/block size
-  AMPiSetChunkCallback(synth);
-  bool b = AMPiStart();
-  printf(b ? "Yes\n" : "No\n");
-  while (1) {
-    //printf(AMPiIsActive() ? "\rActive  " : "\rInactive");
-    AMPiPoke();
-    for (uint32_t i = 0; i < 100000; i++) __asm__ __volatile__ ("");
-    z++;
-    if (y >= 60) do {
-      y = 0;
-      USPiDeinitialize();
-      bool result = USPiInitialize();
-      printf("USPi initialization %s\n", result ? "succeeded" : "failed");
-
-      printf("Keyboard %savailable\n", USPiKeyboardAvailable() ? "" : "un");
-      if (USPiKeyboardAvailable())
-        USPiKeyboardRegisterKeyStatusHandlerRaw(kbd_upd_callback);
-
-      printf("Gamepad %savailable\n", USPiGamePadAvailable() ? "" : "un");
-      if (USPiGamePadAvailable())
-        USPiGamePadRegisterStatusHandler(gpad_upd_callback);
-    } while (!USPiKeyboardAvailable() && !USPiGamePadAvailable());
+  co_create(usb_loop, 0);
+  co_create(audio_loop, 0);
+  while (1) for (uint8_t i = 1; i <= 2; i++) {
+    co_next(i);
   }
 
 /*

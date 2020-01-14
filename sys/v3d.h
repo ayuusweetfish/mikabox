@@ -4,24 +4,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-typedef struct {
-  uint32_t w, h;
-  uint32_t bufaddr;
-
-  uint32_t rhandle;
-  uint32_t rbusaddr;
-  uint32_t rarmaddr;
-
-  uint32_t thandle;
-  uint32_t tbusaddr;
-  uint32_t tarmaddr;
-} v3d_cty;
-
 void v3d_init();
-void v3d_cty_init(v3d_cty *ctx, uint32_t w, uint32_t h, void *bufaddr);
-void v3d_op(v3d_cty *ctx);
-
-// Real API starts here
 
 // GPU memory region
 
@@ -130,5 +113,6 @@ void v3d_ctx_anew(struct v3d_ctx *c, v3d_tex target);
 void v3d_ctx_use_batch(struct v3d_ctx *c, const struct v3d_batch *batch);
 void v3d_ctx_add_call(struct v3d_ctx *c, const struct v3d_call *call);
 void v3d_ctx_issue(struct v3d_ctx *c);
+void v3d_ctx_wait(struct v3d_ctx *c);
 
 #endif

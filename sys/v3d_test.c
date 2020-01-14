@@ -2,11 +2,6 @@
 #include "prop_tag.h"
 #include <math.h>
 
-#define STILL_DRAW_CTY 0
-#if STILL_DRAW_CTY
-static v3d_cty cty;
-#endif
-
 static v3d_ctx ctx;
 static v3d_vertarr va;
 static v3d_unifarr ua;
@@ -17,10 +12,6 @@ static v3d_tex nanikore;
 void doda()
 {
   v3d_init();
-#if STILL_DRAW_CTY
-  v3d_cty_init(&cty, 800, 480, 0);
-#endif
-
   ctx = v3d_ctx_create();
 
   va = v3d_vertarr_create(4, 5);
@@ -66,11 +57,7 @@ void doda()
 
 void dodo(uint32_t fb)
 {
-#if STILL_DRAW_CTY
-  cty.bufaddr = (uint32_t)fb;
-  v3d_op(&cty);
-#endif
-
+  v3d_ctx_wait(&ctx);
   v3d_ctx_anew(&ctx, v3d_tex_screen(fb));
 
   v3d_ctx_use_batch(&ctx, &batch);
