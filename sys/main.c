@@ -197,7 +197,7 @@ void sys_main()
   printf("Hello world!\n");
   printf("ARM clock rate: %u\n", get_clock_rate(3));
 
-  irq_set_callback(48, vsync_callback, NULL);
+  //irq_set_callback(48, vsync_callback, NULL);
 
   sdInit();
   int32_t i = sdInitCard();
@@ -254,12 +254,18 @@ void sys_main()
   AMPiSetChunkCallback(synth);
   bool b = AMPiStart();
   printf(b ? "Yes\n" : "No\n");
+
+  mem_barrier();
+  doda();
+
+  int p = 0;
   while (1) {
     //printf(AMPiIsActive() ? "\rActive  " : "\rInactive");
     AMPiPoke();
     for (uint32_t i = 0; i < 100000; i++) __asm__ __volatile__ ("");
     z++;
-    if (y >= 60) do {
+    if (p) p++;
+    if (y >= 60 || p >= 4000) {
       y = 0;
       USPiDeinitialize();
       bool result = USPiInitialize();
@@ -272,7 +278,12 @@ void sys_main()
       printf("Gamepad %savailable\n", USPiGamePadAvailable() ? "" : "un");
       if (USPiGamePadAvailable())
         USPiGamePadRegisterStatusHandler(gpad_upd_callback);
-    } while (!USPiKeyboardAvailable() && !USPiGamePadAvailable());
+
+      p = (!USPiKeyboardAvailable() && !USPiGamePadAvailable());
+    }
+
+    dodo((uint32_t)fb_buf);
+    fb_flip_buffer();
   }
 
 /*

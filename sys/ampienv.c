@@ -26,7 +26,6 @@ void MsDelay (unsigned nMilliSeconds)
 
 void usDelay (unsigned nMicroSeconds)
 {
-  nMicroSeconds <<= 1;
   mem_barrier();
   uint32_t val = *TMR_CLO + nMicroSeconds;
   while (*TMR_CLO < val) { }
