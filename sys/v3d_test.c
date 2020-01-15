@@ -39,7 +39,7 @@ void doda()
   v.varyings[2] = 1.0f;
   v.varyings[3] = 0.5f;
   v.varyings[4] = 1.0f;
-  v.varyings[5] = 1.0f;
+  v.varyings[5] = 0.1f;
   v3d_vertarr_put(&va1, 2, &v, 1);
   v.x = 400.0f; v.y = 100.0f;
   v.varyings[0] = 1.0f;
@@ -141,7 +141,7 @@ void dodo(uint32_t fb)
   // Any change before issuing will apply
   static uint32_t count = 0;
   float angle = (float)(++count) / 180.0f * acosf(-1.0f);
-  static v3d_vert v = { .varyings = {0, 0, 0, 0, 0} };
+  static v3d_vert v = { .varyings = {0, 0, 0, 0, 0, 0} };
   v.x = 400.0f + 20.0f * cosf(angle);
   v.y = 400.0f + 20.0f * sinf(angle);
   v.varyings[0] = 1.0f;
@@ -149,6 +149,7 @@ void dodo(uint32_t fb)
   v.varyings[2] = 1.0f;
   v.varyings[3] = 0.5f;
   v.varyings[4] = 1.0f;
+  v.varyings[5] = 0.1f;
   v3d_vertarr_put(&va1, 2, &v, 1);
 
   v3d_unifarr_puttex(&ua1, 0, nanikore, 0);

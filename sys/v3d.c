@@ -203,7 +203,7 @@ static inline void microtile(
     uint16_t x4 = x + x3;
     uint16_t y4 = y + y3;
     uint32_t p = ((uint32_t)y4 * w + x4) * 3;
-    uint32_t value = ((uint32_t)buf[p] << 16) |
+    uint32_t value = (0xff << 24) | ((uint32_t)buf[p] << 16) |
       ((uint32_t)buf[p + 1] << 8) | (uint32_t)buf[p + 2];
     *(tex++) = value;
   }
