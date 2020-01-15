@@ -5,7 +5,7 @@
 static v3d_ctx ctx;
 static v3d_vertarr va1, va2, va3;
 static v3d_unifarr ua1, ua2, ua3;
-static v3d_batch batch1, batch2, batch3;
+static v3d_batch batch1, batch2, batch3, batch3ms;
 static v3d_mem idxs;
 static v3d_tex nanikore, checker;
 static v3d_tex target;
@@ -97,12 +97,13 @@ void doda()
   ua3 = v3d_unifarr_create(1);
   v3d_unifarr_putf32(&ua3, 0, 0);
   batch3 = v3d_batch_create(va3, ua3, v3d_shader_create("#chroma_alpha"));
+  batch3ms = v3d_batch_create(va3, ua3, v3d_shader_create("#chroma_alpha_ms"));
 }
 
 void dodo(uint32_t fb)
 {
   v3d_ctx_wait(&ctx);
-  v3d_ctx_anew(&ctx, v3d_tex_screen(fb), 0xffafcfef);
+  v3d_ctx_anew(&ctx, v3d_tex_screen(fb), 0xff000000);
 
   v3d_ctx_use_batch(&ctx, &batch1);
 
@@ -150,7 +151,8 @@ void dodo(uint32_t fb)
     .start_index = 0,
   });
 
-  v3d_ctx_use_batch(&ctx, &batch3);
+  extern bool has_key;
+  v3d_ctx_use_batch(&ctx, has_key ? &batch3ms : &batch3);
   v3d_ctx_add_call(&ctx, &(v3d_call){
     .is_indexed = false,
     .num_verts = 3,
