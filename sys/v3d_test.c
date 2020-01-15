@@ -15,14 +15,15 @@ void doda()
   v3d_init();
   ctx = v3d_ctx_create();
 
-  va1 = v3d_vertarr_create(4, 5);
-  static v3d_vert v = { .varyings = {0, 0, 0, 0, 0} };
+  va1 = v3d_vertarr_create(4, 6);
+  static v3d_vert v = { .varyings = {0, 0, 0, 0, 0, 0} };
   v.x = 250.0f; v.y = 100.0f;
   v.varyings[0] = 0.5f;
   v.varyings[1] = 0.0f;
   v.varyings[2] = 1.0f;
   v.varyings[3] = 1.0f;
   v.varyings[4] = 1.0f;
+  v.varyings[5] = 1.0f;
   v3d_vertarr_put(&va1, 0, &v, 1);
   v.x = 100.0f; v.y = 400.0f;
   v.varyings[0] = 0.0f;
@@ -30,6 +31,7 @@ void doda()
   v.varyings[2] = 0.5f;
   v.varyings[3] = 1.0f;
   v.varyings[4] = 1.0f;
+  v.varyings[5] = 1.0f;
   v3d_vertarr_put(&va1, 1, &v, 1);
   v.x = 400.0f; v.y = 400.0f;
   v.varyings[0] = 1.0f;
@@ -37,6 +39,7 @@ void doda()
   v.varyings[2] = 1.0f;
   v.varyings[3] = 0.5f;
   v.varyings[4] = 1.0f;
+  v.varyings[5] = 1.0f;
   v3d_vertarr_put(&va1, 2, &v, 1);
   v.x = 400.0f; v.y = 100.0f;
   v.varyings[0] = 1.0f;
@@ -44,11 +47,12 @@ void doda()
   v.varyings[2] = 1.0f;
   v.varyings[3] = 1.0f;
   v.varyings[4] = 0.5f;
+  v.varyings[5] = 1.0f;
   v3d_vertarr_put(&va1, 3, &v, 1);
 
   ua1 = v3d_unifarr_create(3);
 
-  batch1 = v3d_batch_create(va1, ua1, v3d_shader_create("#texture_chroma"));
+  batch1 = v3d_batch_create(va1, ua1, v3d_shader_create("#texture_chroma_alpha"));
 
   idxs = v3d_mem_create(256, 128, MEM_FLAG_COHERENT);
 
@@ -79,9 +83,9 @@ void doda()
         ((i < 4 && j < 4) || ((i ^ j) & 4)) ? 0xff : 0xcc;
 
   checker = v3d_tex_create(cw, ch, &c[0][0][0]);
-  v3d_unifarr_puttex(&ua2, 0, checker, v3d_magfilt_nearest | v3d_wrap_s_mirror);
 
   target = v3d_tex_create(800, 480, NULL);
+  v3d_unifarr_puttex(&ua2, 0, target, v3d_magfilt_nearest | v3d_wrap_s_mirror);
 
   va3 = v3d_vertarr_create(3, 4);
   v.x = 10.0f; v.y = 10.0f;
@@ -101,8 +105,21 @@ void doda()
 
 void dodo(uint32_t fb)
 {
+  // Render to texture
   v3d_ctx_wait(&ctx);
-  v3d_ctx_anew(&ctx, v3d_tex_screen(fb), 0xffafcfef);
+  v3d_ctx_anew(&ctx, target, 0xffafcfef);
+
+  v3d_ctx_use_batch(&ctx, &batch3);
+  v3d_ctx_add_call(&ctx, &(v3d_call){
+    .is_indexed = false,
+    .num_verts = 3,
+    .start_index = 0,
+  });
+
+  v3d_ctx_issue(&ctx);
+  // Render to screen
+  v3d_ctx_wait(&ctx);
+  v3d_ctx_anew(&ctx, v3d_tex_screen(fb), 0xffbfdfff);
 
   v3d_ctx_use_batch(&ctx, &batch1);
 
@@ -137,23 +154,10 @@ void dodo(uint32_t fb)
   v3d_unifarr_puttex(&ua1, 0, nanikore, 0);
   v3d_unifarr_putf32(&ua1, 2, sinf(angle) * 0.5f + 0.5f);
 
-/*
-  v3d_ctx_issue(&ctx);
-  v3d_ctx_wait(&ctx);
-  v3d_ctx_anew(&ctx, v3d_tex_screen(fb), 0xbfdfff);
-*/
-
   v3d_ctx_use_batch(&ctx, &batch2);
   v3d_ctx_add_call(&ctx, &(v3d_call){
     .is_indexed = false,
     .num_verts = 6,
-    .start_index = 0,
-  });
-
-  v3d_ctx_use_batch(&ctx, &batch3);
-  v3d_ctx_add_call(&ctx, &(v3d_call){
-    .is_indexed = false,
-    .num_verts = 3,
     .start_index = 0,
   });
 

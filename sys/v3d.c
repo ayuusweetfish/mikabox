@@ -325,6 +325,10 @@ static const uint32_t tex_chroma_shader[] = {
   #include "v3d/shader_tex_chroma.fx.h"
 };
 
+static const uint32_t tex_chroma_alpha_shader[] = {
+  #include "v3d/shader_tex_chroma_alpha.fx.h"
+};
+
 v3d_shader v3d_shader_create(const char *code)
 {
   const uint32_t *shader = NULL;
@@ -340,6 +344,8 @@ v3d_shader v3d_shader_create(const char *code)
     use(tex_shader);
   else if (strcmp(code, "#texture_chroma") == 0)
     use(tex_chroma_shader);
+  else if (strcmp(code, "#texture_chroma_alpha") == 0)
+    use(tex_chroma_alpha_shader);
 
 #undef use
   v3d_shader s;
