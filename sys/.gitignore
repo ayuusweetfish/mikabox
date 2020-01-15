@@ -1,0 +1,5 @@
+utils/font_bitmap.h
+utils/font_bitmap_gen
+utils/nanikore.bin
+utils/nanikore.o
+v3d/*.fx.h

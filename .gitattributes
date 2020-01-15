@@ -1,1 +1,2 @@
 sys/deps/** linguist-vendored
+sys/utils/qpuasm.js linguist-vendored

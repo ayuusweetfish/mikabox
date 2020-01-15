@@ -6,6 +6,7 @@ LD      = $(TOOLCHAIN_PREFIX)ld
 OBJCOPY = $(TOOLCHAIN_PREFIX)objcopy
 
 HOSTCC  = gcc
+NODE    = node
 
 # Verbosity
 # Change to empty string for verbose output
@@ -23,8 +24,8 @@ SRCS := $(wildcard *.[Sc]) $(wildcard deps/*/*.c)
 SRCS += printf/printf.c
 INCLUDES += -I./printf
 
-OBJS := $(patsubst %.c,%.o,$(SRCS))
-OBJS := $(patsubst %.S,%.o,$(OBJS))
+OBJS := $(patsubst %.c, %.o, $(SRCS))
+OBJS := $(patsubst %.S, %.o, $(OBJS))
 OBJS := $(sort $(OBJS))
 OBJS := $(addprefix $(BUILD_DIR)/, $(OBJS))
 KERNEL_ELF := $(BUILD_DIR)/kernel.elf
@@ -61,6 +62,13 @@ utils/nanikore.o: utils/nanikore.png
 	$(V) $(LD) -b binary utils/nanikore.bin -o $@ 2> /dev/null
 EXTRA_OBJS += utils/nanikore.o
 EXTRA_CLEAN += utils/nanikore.bin utils/nanikore.o
+
+FX_H := $(patsubst %.fx, %.fx.h, $(wildcard v3d/*.fx))
+v3d/%.fx.h: v3d/%.fx
+	@ printf "  %-7s %-16s\n" QPUASM $<
+	$(V) mkdir -p $(BUILD_DIR)/$(dir $<)
+	$(V) $(NODE) utils/qpuasm.js $< > $@
+$(BUILD_DIR)/v3d.o: $(FX_H)
 
 $(BUILD_DIR)/%.o: BN = $(basename $<)
 $(BUILD_DIR)/%.o: %.S %.c

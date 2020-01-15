@@ -48,7 +48,7 @@ void doda()
 
   ua1 = v3d_unifarr_create(3);
 
-  batch1 = v3d_batch_create(va1, ua1, v3d_shader_create("#chroma"));
+  batch1 = v3d_batch_create(va1, ua1, v3d_shader_create("#texture_chroma"));
 
   idxs = v3d_mem_create(256, 128, MEM_FLAG_COHERENT);
 
@@ -87,7 +87,7 @@ void doda()
 void dodo(uint32_t fb)
 {
   v3d_ctx_wait(&ctx);
-  v3d_ctx_anew(&ctx, target, 0xafcfef);
+  v3d_ctx_anew(&ctx, v3d_tex_screen(fb), 0xafcfef);
 
   v3d_ctx_use_batch(&ctx, &batch1);
 
@@ -122,9 +122,11 @@ void dodo(uint32_t fb)
   v3d_unifarr_puttex(&ua1, 0, nanikore, 0);
   v3d_unifarr_putf32(&ua1, 2, sinf(angle) * 0.5f + 0.5f);
 
+/*
   v3d_ctx_issue(&ctx);
   v3d_ctx_wait(&ctx);
   v3d_ctx_anew(&ctx, v3d_tex_screen(fb), 0xbfdfff);
+*/
 
   v3d_ctx_use_batch(&ctx, &batch2);
   v3d_ctx_add_call(&ctx, &(v3d_call){
