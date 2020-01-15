@@ -327,23 +327,27 @@ static const uint32_t tex_chroma_shader[] = {
 
 v3d_shader v3d_shader_create(const char *code)
 {
+  const uint32_t *shader = NULL;
+  uint32_t count = 0;
+#define use(__shader) \
+  do { shader = (__shader); count = _count(__shader); } while (0)
+
+  if (strcmp(code, "#chroma") == 0)
+    use(chroma_shader);
+  else if (strcmp(code, "#chroma_alpha") == 0)
+    use(chroma_alpha_shader);
+  else if (strcmp(code, "#texture") == 0)
+    use(tex_shader);
+  else if (strcmp(code, "#texture_chroma") == 0)
+    use(tex_chroma_shader);
+
+#undef use
   v3d_shader s;
-  s.mem = v3d_mem_create(256, 8,
+  s.mem = v3d_mem_create(count * 4, 8,
     MEM_FLAG_COHERENT | MEM_FLAG_ZERO | MEM_FLAG_HINT_PERMALOCK);
   uint8_t *p = _armptr(s.mem);
 
-  if (strcmp(code, "#chroma") == 0)
-    for (uint32_t i = 0; i < _count(chroma_shader); i++)
-      _putu32(&p, chroma_shader[i]);
-  else if (strcmp(code, "#chroma_alpha") == 0)
-    for (uint32_t i = 0; i < _count(chroma_alpha_shader); i++)
-      _putu32(&p, chroma_alpha_shader[i]);
-  else if (strcmp(code, "#texture") == 0)
-    for (uint32_t i = 0; i < _count(tex_shader); i++)
-      _putu32(&p, tex_shader[i]);
-  else if (strcmp(code, "#texture_chroma") == 0)
-    for (uint32_t i = 0; i < _count(tex_chroma_shader); i++)
-      _putu32(&p, tex_chroma_shader[i]);
+  for (uint32_t i = 0; i < count; i++) _putu32(&p, shader[i]);
 
   return s;
 }
