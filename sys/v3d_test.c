@@ -3,9 +3,9 @@
 #include <math.h>
 
 static v3d_ctx ctx;
-static v3d_vertarr va1, va2;
-static v3d_unifarr ua1, ua2;
-static v3d_batch batch1, batch2;
+static v3d_vertarr va1, va2, va3;
+static v3d_unifarr ua1, ua2, ua3;
+static v3d_batch batch1, batch2, batch3;
 static v3d_mem idxs;
 static v3d_tex nanikore, checker;
 static v3d_tex target;
@@ -82,12 +82,27 @@ void doda()
   v3d_unifarr_puttex(&ua2, 0, checker, v3d_magfilt_nearest | v3d_wrap_s_mirror);
 
   target = v3d_tex_create(800, 480, NULL);
+
+  va3 = v3d_vertarr_create(3, 4);
+  v.x = 10.0f; v.y = 10.0f;
+  v.varyings[0] = 0.5f; v.varyings[1] = 1.0f; v.varyings[2] = 1.0f; v.varyings[3] = 1.0f;
+  v3d_vertarr_put(&va3, 0, &v, 1);
+  v.x = 10.0f; v.y = 470.0f;
+  v.varyings[0] = 1.0f; v.varyings[1] = 0.5f; v.varyings[2] = 1.0f; v.varyings[3] = 1.0f;
+  v3d_vertarr_put(&va3, 1, &v, 1);
+  v.x = 600.0f; v.y = 245.0f;
+  v.varyings[0] = 1.0f; v.varyings[1] = 1.0f; v.varyings[2] = 0.5f; v.varyings[3] = 0.5f;
+  v3d_vertarr_put(&va3, 2, &v, 1);
+
+  ua3 = v3d_unifarr_create(1);
+  v3d_unifarr_putf32(&ua3, 0, 0);
+  batch3 = v3d_batch_create(va3, ua3, v3d_shader_create("#chroma_alpha"));
 }
 
 void dodo(uint32_t fb)
 {
   v3d_ctx_wait(&ctx);
-  v3d_ctx_anew(&ctx, v3d_tex_screen(fb), 0xafcfef);
+  v3d_ctx_anew(&ctx, v3d_tex_screen(fb), 0xffafcfef);
 
   v3d_ctx_use_batch(&ctx, &batch1);
 
@@ -132,6 +147,13 @@ void dodo(uint32_t fb)
   v3d_ctx_add_call(&ctx, &(v3d_call){
     .is_indexed = false,
     .num_verts = 6,
+    .start_index = 0,
+  });
+
+  v3d_ctx_use_batch(&ctx, &batch3);
+  v3d_ctx_add_call(&ctx, &(v3d_call){
+    .is_indexed = false,
+    .num_verts = 3,
     .start_index = 0,
   });
 
