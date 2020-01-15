@@ -310,6 +310,7 @@ void v3d_unifarr_puttex(struct v3d_unifarr *a, uint32_t index, v3d_tex tex, uint
 }
 
 static const uint32_t chroma_alpha_shader[] = {
+  // #include "v3d/shader_chroma_alpha.fx.h"
 };
 
 static const uint32_t tex_shader[] = {
@@ -327,9 +328,9 @@ v3d_shader v3d_shader_create(const char *code)
     MEM_FLAG_COHERENT | MEM_FLAG_ZERO | MEM_FLAG_HINT_PERMALOCK);
   uint8_t *p = _armptr(s.mem);
 
-  if (strcmp(code, "#chroma") == 0)
-    for (uint32_t i = 0; i < _count(chroma_shader); i++)
-      _putu32(&p, chroma_shader[i]);
+  if (strcmp(code, "#chroma_alpha") == 0)
+    for (uint32_t i = 0; i < _count(chroma_alpha_shader); i++)
+      _putu32(&p, chroma_alpha_shader[i]);
   else if (strcmp(code, "#texture") == 0)
     for (uint32_t i = 0; i < _count(tex_shader); i++)
       _putu32(&p, tex_shader[i]);

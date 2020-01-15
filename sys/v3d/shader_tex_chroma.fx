@@ -1,3 +1,8 @@
+# Uniform 0/1: texture
+# Uniform 2: chroma wetness (0 to 1)
+# Varying 0/1: texture coordinate (0 to 1)
+# Varying 2/3/4: chroma (RGB)
+
 # Load texture coordinates
 nop; fmul r0, vary, ra15
 fadd r0, r0, r5; nop
@@ -21,9 +26,9 @@ fadd r1, r1, r5; fmul r2, vary, ra15
 fadd r2, r2, r5; fmul r0, r0, ra0
 fadd r0, r0, rb1; fmul r1, r1, ra0
 fadd r1, r1, rb1; fmul r2, r2, ra0
-fadd r2, r2, rb1; mov r3.8a, r0
+fadd r2, r2, rb1; mov r3.8c, r0
 nop; mov r3.8b, r1
-nop; mov r3.8c, r2; sbwait
+nop; mov r3.8a, r2; sbwait
 nop; mov r3.8d, 1.0
 
 nop; v8muld tlbc, r4, r3; thrend

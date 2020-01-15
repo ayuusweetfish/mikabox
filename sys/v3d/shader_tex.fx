@@ -1,3 +1,6 @@
+# Uniform 0/1: texture
+# Varying 0/1: texture coordinate (0 to 1)
+
 # Load texture coordinates
 nop; fmul r0, vary, ra15
 fadd r0, r0, r5; nop
