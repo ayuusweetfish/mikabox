@@ -15,7 +15,7 @@ void doda()
   v3d_init();
   ctx = v3d_ctx_create();
 
-  va1 = v3d_vertarr_create(4, 6);
+  va1 = v3d_vertarr_create(2504, 6);
   static v3d_vert v = { .varyings = {0, 0, 0, 0, 0, 0} };
   v.x = 250.0f; v.y = 100.0f;
   v.varyings[0] = 0.5f;
@@ -48,13 +48,37 @@ void doda()
   v.varyings[3] = 0.3f;
   v.varyings[4] = 0.3f;
   v.varyings[5] = 0.3f;
-  v3d_vertarr_put(&va1, 3, &v, 1);
+  for (uint16_t i = 0; i < 50; i++)
+  for (uint16_t j = 0; j < 50; j++) {
+    v.x = 100.0f + 6.0f * i; v.y = 100.0f + 6.0f * j;
+    v.varyings[0] = i * 0.02f;
+    v.varyings[1] = j * 0.02f;
+    v.varyings[2] = 0.3f;
+    v.varyings[3] = 0.3f;
+    v.varyings[4] = 0.3f;
+    v.varyings[5] = 0.3f;
+    v3d_vertarr_put(&va1, 4 + i * 50 + j, &v, 1);
+  }
 
   ua1 = v3d_unifarr_create(3);
 
   batch1 = v3d_batch_create(va1, ua1, v3d_shader_create("#texture_chroma_alpha"));
 
-  idxs = v3d_mem_create(256, 128, MEM_FLAG_COHERENT);
+  idxs = v3d_mem_create(25600, 128, MEM_FLAG_COHERENT);
+  static uint16_t p[49][49][3];
+  for (uint16_t i = 0; i < 49; i++)
+  for (uint16_t j = 0; j < 49; j++) {
+    p[i][j][0] = 4 + i * 50 + j;
+    p[i][j][1] = 4 + i * 50 + j + 1;
+    p[i][j][2] = 4 + i * 50 + j + 50;
+  }
+  p[0][0][0] = 0;
+  p[0][0][1] = 1;
+  p[0][0][2] = 2;
+  p[0][1][0] = 4;
+  p[0][1][1] = 14;
+  p[0][1][2] = 504;
+  v3d_mem_copy(&idxs, 0, p, sizeof p);
 
   extern uint8_t _binary_utils_nanikore_bin_start;
   nanikore = v3d_tex_create(512, 256, &_binary_utils_nanikore_bin_start);
@@ -111,26 +135,17 @@ void dodo(uint32_t fb)
 {
   // Render to texture
   v3d_ctx_wait(&ctx);
-  v3d_ctx_anew(&ctx, target, 0x0);
+  v3d_ctx_anew(&ctx, v3d_tex_screen(fb), 0x0);
 
   v3d_ctx_use_batch(&ctx, &batch1);
 
-  v3d_call call = {
-    .is_indexed = false,
-    .num_verts = 3,
-    .start_index = 0,
-  };
   extern bool has_key;
-  for (int i = 0; i < (has_key ? 10 : 1); i++)
-    v3d_ctx_add_call(&ctx, &call);
-
-  uint16_t i[3] = {1, 2, 3};
-  v3d_mem_copy(&idxs, 0, i, sizeof i);
-  v3d_ctx_add_call(&ctx, &(v3d_call){
+  v3d_call call = {
     .is_indexed = true,
-    .num_verts = 3,
+    .num_verts = 3 * (has_key ? 1000 : 1),
     .indices = idxs
-  });
+  };
+  v3d_ctx_add_call(&ctx, &call);
 
   // Any change before issuing will apply
   static uint32_t count = 0;
@@ -150,6 +165,7 @@ void dodo(uint32_t fb)
   v3d_unifarr_putf32(&ua1, 2, sinf(angle) * 0.5f + 0.5f);
 
   v3d_ctx_issue(&ctx);
+/*
   // Render to screen
   v3d_ctx_wait(&ctx);
   v3d_ctx_anew(&ctx, v3d_tex_screen(fb), 0xff000000);
@@ -162,4 +178,5 @@ void dodo(uint32_t fb)
   });
 
   v3d_ctx_issue(&ctx);
+*/
 }
