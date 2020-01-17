@@ -20,18 +20,30 @@ nop; mov r3.8a, ra2
 nop; mov r3.8d, ra3; ldtmu0
 
 # And multiply with texture sample (ARGB)
-nop; v8muld ra0, r3, r4; loadc
+nop; v8muld ra0, r3, r4
 # ra0 = tinted texture, R/A (R represents any chroma channel hereafter)
-# r4 = canvas, Rcan/Acan
 
-nop
+nop; nop
 fsub ra1.8abcd, 1.0, ra0.8d
-nop
+nop; nop; loadc
 # ra1 = 1-A (packed)
+# r4 = canvas, Rcan/Acan
 
 # R' = R + Rcan * (1-A)
 # A' = A + Acan * (1-A)
+
+nop; v8muld r2, r4, ra1
+v8adds r3, r2, ra0; nop
+mov tlbm, r3; nop; loadc
+
+nop; v8muld r2, r4, ra1
+v8adds r3, r2, ra0; nop
+mov tlbm, r3; nop; loadc
+
+nop; v8muld r2, r4, ra1
+v8adds r3, r2, ra0; nop
+mov tlbm, r3; nop; loadc
+
 nop; v8muld r2, r4, ra1; thrend
 v8adds r3, r2, ra0; nop
-
-mov tlbc, r3; sbdone
+mov tlbm, r3; nop; sbdone
