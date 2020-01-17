@@ -156,7 +156,7 @@ static void gpad_upd_callback(unsigned index, const USPiGamePadState *state)
 
 void doda();
 void dodo(uint32_t fb);
-#define DRAW 1
+#define DRAW 0
 
 static void f1(void *_unused)
 {
@@ -252,6 +252,14 @@ static void audio_loop(void *_unused)
   vsync_callback(0);
 }
 
+static void print_loop(void *_unused)
+{
+  while (1) {
+    MsDelay(1000);
+    printf("\nrandom = 0x%08x\n", *RNG_DATA);
+  }
+}
+
 void sys_main()
 {
   for (uint8_t *p = &_bss_begin; p < &_bss_end; p++) *p = 0;
@@ -265,6 +273,14 @@ void sys_main()
   for (uint32_t i = bss_ord_page_begin; i <= bss_ord_page_end; i++)
     mmu_table_section(mmu_table, i << 20, i << 20, 0);
   mmu_enable(mmu_table);
+
+  // Initialize RNG
+  // https://github.com/bztsrc/raspi3-tutorial/blob/master/06_random/rand.c
+  mem_barrier();
+  *RNG_STATUS = 0x40000;
+  *RNG_INTMASK |= 1;
+  *RNG_CTRL |= 1;
+  // Entropy starts accumulating
 
   mem_barrier();
   struct framebuffer *f = mmu_ord_alloc(sizeof(struct framebuffer), 16);
@@ -339,6 +355,12 @@ void sys_main()
   }
   f_closedir(&dir);
 
+  // Continue RNG initialization
+  mem_barrier();
+  printf("Initializing HRNG\n");
+  while (!((*RNG_STATUS) >> 24)) __asm__ __volatile__ ("");
+  printf("Initialized HRNG\n");
+
   uint8_t mac[6];
   get_mac_addr(mac);
   printf("MAC address: %02x %02x %02x %02x %02x %02x\n",
@@ -352,7 +374,8 @@ void sys_main()
 
   co_create(usb_loop, 0);
   co_create(audio_loop, 0);
-  while (1) for (uint8_t i = 1; i <= 2; i++) {
+  co_create(print_loop, 0);
+  while (1) for (uint8_t i = 1; i <= 3; i++) {
     co_next(i);
   }
 

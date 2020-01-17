@@ -32,6 +32,11 @@
 #define TMR_C2  (volatile uint32_t *)(PERI_BASE + 0x3000 + 0x14)
 #define TMR_C3  (volatile uint32_t *)(PERI_BASE + 0x3000 + 0x18)
 
+#define RNG_CTRL    (volatile uint32_t *)(PERI_BASE + 0x104000 + 0x00)
+#define RNG_STATUS  (volatile uint32_t *)(PERI_BASE + 0x104000 + 0x04)
+#define RNG_DATA    (volatile uint32_t *)(PERI_BASE + 0x104000 + 0x08)
+#define RNG_INTMASK (volatile uint32_t *)(PERI_BASE + 0x104000 + 0x10)
+
 void send_mail(uint32_t data, uint8_t channel);
 uint32_t recv_mail(uint8_t channel);
 
