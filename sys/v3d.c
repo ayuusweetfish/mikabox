@@ -309,24 +309,20 @@ void v3d_unifarr_puttex(struct v3d_unifarr *a, uint32_t index, v3d_tex tex, uint
   p[index + 1] = (tex.w << 8) | (tex.h << 20) | cfg;
 }
 
-static const uint32_t chroma_shader[] = {
-  #include "v3d/shader_chroma.fx.h"
+static const uint32_t shader_c[] = {
+  #include "v3d/shader_c.fx.h"
 };
 
-static const uint32_t chroma_alpha_shader[] = {
-  #include "v3d/shader_chroma_alpha.fx.h"
+static const uint32_t shader_ca[] = {
+  #include "v3d/shader_ca.fx.h"
 };
 
-static const uint32_t tex_shader[] = {
-  #include "v3d/shader_tex.fx.h"
+static const uint32_t shader_t[] = {
+  #include "v3d/shader_t.fx.h"
 };
 
-static const uint32_t tex_chroma_shader[] = {
-  #include "v3d/shader_tex_chroma.fx.h"
-};
-
-static const uint32_t tex_chroma_alpha_shader[] = {
-  #include "v3d/shader_tex_chroma_alpha.fx.h"
+static const uint32_t shader_tca[] = {
+  #include "v3d/shader_tca.fx.h"
 };
 
 v3d_shader v3d_shader_create(const char *code)
@@ -337,16 +333,14 @@ v3d_shader v3d_shader_create(const char *code)
 #define use(__shader, __mt) \
   do { shader = (__shader); count = _count(__shader); mt = (__mt); } while (0)
 
-  if (strcmp(code, "#chroma") == 0)
-    use(chroma_shader, false);
-  else if (strcmp(code, "#chroma_alpha") == 0)
-    use(chroma_alpha_shader, false);
-  else if (strcmp(code, "#texture") == 0)
-    use(tex_shader, false);
-  else if (strcmp(code, "#texture_chroma") == 0)
-    use(tex_chroma_shader, false);
-  else if (strcmp(code, "#texture_chroma_alpha") == 0)
-    use(tex_chroma_alpha_shader, true);
+  if (strcmp(code, "#C") == 0)
+    use(shader_c, false);
+  else if (strcmp(code, "#CA") == 0)
+    use(shader_ca, false);
+  else if (strcmp(code, "#T") == 0)
+    use(shader_t, true);
+  else if (strcmp(code, "#TCA") == 0)
+    use(shader_tca, true);
 
 #undef use
   v3d_shader s;

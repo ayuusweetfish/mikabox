@@ -1,7 +1,6 @@
 # Uniform 0/1: texture
 # Varying 0/1: texture coordinate (0 to 1)
 # Varying 2/3/4/5: chroma (RGBA)
-# Premultiplied alpha for everything
 
 # Load texture coordinates and issue TMU load
 nop; fmul r0, vary, ra15
@@ -26,11 +25,8 @@ nop; v8muld ra0, r3, r4
 nop
 fsub r0, 1.0, ra0.8d; nop
 nop; mov r3.8abcd, r0; loadc
-# ra1 = 1-A (packed)
+# r3 = 1-A (packed)
 # r4 = canvas, Rcan/Acan
-
-# R' = R + Rcan * (1-A)
-# A' = A + Acan * (1-A)
 
 nop; v8muld r2, r4, r3; loadc
 v8adds tlbm, r2, ra0; nop

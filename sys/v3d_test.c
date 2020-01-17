@@ -52,7 +52,7 @@ void doda()
 
   ua1 = v3d_unifarr_create(3);
 
-  batch1 = v3d_batch_create(va1, ua1, v3d_shader_create("#texture_chroma_alpha"));
+  batch1 = v3d_batch_create(va1, ua1, v3d_shader_create("#TCA"));
 
   idxs = v3d_mem_create(256, 128, MEM_FLAG_COHERENT);
 
@@ -76,7 +76,7 @@ void doda()
   }
 
   ua2 = v3d_unifarr_create(2);
-  batch2 = v3d_batch_create(va2, ua2, v3d_shader_create("#texture_chroma_alpha"));
+  batch2 = v3d_batch_create(va2, ua2, v3d_shader_create("#TCA"));
 
 #define cw 32
 #define ch 64
@@ -96,15 +96,15 @@ void doda()
   v.varyings[0] = 0.5f; v.varyings[1] = 1.0f; v.varyings[2] = 1.0f; v.varyings[3] = 1.0f;
   v3d_vertarr_put(&va3, 0, &v, 1);
   v.x = 10.0f; v.y = 470.0f;
-  v.varyings[0] = 1.0f; v.varyings[1] = 0.5f; v.varyings[2] = 1.0f; v.varyings[3] = 1.0f;
+  v.varyings[0] = 0.5f; v.varyings[1] = 0.25f; v.varyings[2] = 0.5f; v.varyings[3] = 0.5f;
   v3d_vertarr_put(&va3, 1, &v, 1);
   v.x = 600.0f; v.y = 245.0f;
-  v.varyings[0] = 1.0f; v.varyings[1] = 1.0f; v.varyings[2] = 0.5f; v.varyings[3] = 0.5f;
+  v.varyings[0] = 0.5f; v.varyings[1] = 0.5f; v.varyings[2] = 0.25f; v.varyings[3] = 0.5f;
   v3d_vertarr_put(&va3, 2, &v, 1);
 
   ua3 = v3d_unifarr_create(1);
   v3d_unifarr_putf32(&ua3, 0, 0);
-  batch3 = v3d_batch_create(va3, ua3, v3d_shader_create("#chroma_alpha"));
+  batch3 = v3d_batch_create(va3, ua3, v3d_shader_create("#CA"));
 }
 
 void dodo(uint32_t fb)
@@ -148,6 +148,14 @@ void dodo(uint32_t fb)
 
   v3d_unifarr_puttex(&ua1, 0, nanikore, 0);
   v3d_unifarr_putf32(&ua1, 2, sinf(angle) * 0.5f + 0.5f);
+
+  v3d_ctx_use_batch(&ctx, &batch3);
+  v3d_ctx_add_call(&ctx, &(v3d_call){
+    .is_indexed = false,
+    .num_verts = 3,
+    .start_index = 0
+  });
+
   v3d_ctx_issue(&ctx);
   // Render to screen
   v3d_ctx_wait(&ctx);
