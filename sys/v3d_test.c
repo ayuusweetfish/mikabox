@@ -111,7 +111,8 @@ void dodo(uint32_t fb)
 {
   // Render to texture
   v3d_ctx_wait(&ctx);
-  v3d_ctx_anew(&ctx, target, 0x0);
+  //v3d_ctx_anew(&ctx, target, 0x0);
+  v3d_ctx_anew(&ctx, v3d_tex_screen(fb), 0xff000000);
 
   v3d_ctx_use_batch(&ctx, &batch1);
 
@@ -121,7 +122,7 @@ void dodo(uint32_t fb)
     .start_index = 0,
   };
   extern bool has_key;
-  for (int i = 0; i < (has_key ? 10 : 1); i++)
+  for (int i = 0; i < (has_key ? 10 : 30); i++)
     v3d_ctx_add_call(&ctx, &call);
 
   uint16_t i[3] = {1, 2, 3};
@@ -149,6 +150,7 @@ void dodo(uint32_t fb)
   v3d_unifarr_puttex(&ua1, 0, nanikore, 0);
   v3d_unifarr_putf32(&ua1, 2, sinf(angle) * 0.5f + 0.5f);
 
+/*
   v3d_ctx_issue(&ctx);
   // Render to screen
   v3d_ctx_wait(&ctx);
@@ -160,6 +162,6 @@ void dodo(uint32_t fb)
     .num_verts = 6,
     .start_index = 0,
   });
-
+*/
   v3d_ctx_issue(&ctx);
 }

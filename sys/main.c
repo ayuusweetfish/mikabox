@@ -229,7 +229,10 @@ static void audio_loop(void *_unused)
   mem_barrier();
   doda();
 
-  while (1) {
+  mem_barrier();
+  uint32_t t0 = *TMR_CLO, frames = 0;
+
+  while (!has_key) {
     //printf(AMPiIsActive() ? "\rActive  " : "\rInactive");
     AMPiPoke();
     for (uint32_t i = 0; i < 100000; i++) __asm__ __volatile__ ("");
@@ -238,9 +241,15 @@ static void audio_loop(void *_unused)
 #if DRAW
     dodo((uint32_t)fb_buf);
     fb_flip_buffer();
+    frames++;
 #endif
     co_yield();
   }
+
+  mem_barrier();
+  uint32_t t = (*TMR_CLO - t0);
+  printf("%u us, %d FPS\n", t, (int)(frames / (t * 1e-6)));
+  vsync_callback(0);
 }
 
 void sys_main()

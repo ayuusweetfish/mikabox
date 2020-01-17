@@ -333,26 +333,28 @@ v3d_shader v3d_shader_create(const char *code)
 {
   const uint32_t *shader = NULL;
   uint32_t count = 0;
-#define use(__shader) \
-  do { shader = (__shader); count = _count(__shader); } while (0)
+  bool mt = false;
+#define use(__shader, __mt) \
+  do { shader = (__shader); count = _count(__shader); mt = (__mt); } while (0)
 
   if (strcmp(code, "#chroma") == 0)
-    use(chroma_shader);
+    use(chroma_shader, false);
   else if (strcmp(code, "#chroma_alpha") == 0)
-    use(chroma_alpha_shader);
+    use(chroma_alpha_shader, false);
   else if (strcmp(code, "#texture") == 0)
-    use(tex_shader);
+    use(tex_shader, false);
   else if (strcmp(code, "#texture_chroma") == 0)
-    use(tex_chroma_shader);
+    use(tex_chroma_shader, false);
   else if (strcmp(code, "#texture_chroma_alpha") == 0)
-    use(tex_chroma_alpha_shader);
+    use(tex_chroma_alpha_shader, true);
 
 #undef use
   v3d_shader s;
   s.mem = v3d_mem_create(count * 4, 8,
     MEM_FLAG_COHERENT | MEM_FLAG_ZERO | MEM_FLAG_HINT_PERMALOCK);
-  uint8_t *p = _armptr(s.mem);
+  s.is_multithreaded = mt;
 
+  uint8_t *p = _armptr(s.mem);
   for (uint32_t i = 0; i < count; i++) _putu32(&p, shader[i]);
 
   return s;
@@ -368,7 +370,7 @@ v3d_batch v3d_batch_create(
     MEM_FLAG_COHERENT | MEM_FLAG_NO_INIT | MEM_FLAG_HINT_PERMALOCK);
   uint8_t *p = _armptr(b.mem);
 
-  _putu8(&p, 1);
+  _putu8(&p, !shader.is_multithreaded);
   _putu8(&p, 12 + 4 * vertarr.num_varyings);
   _putu8(&p, 0xcc);
   _putu8(&p, vertarr.num_varyings);
