@@ -82,6 +82,7 @@ void v3d_unifarr_puttex(struct v3d_unifarr *a, uint32_t index, v3d_tex tex, uint
 
 typedef struct v3d_shader {
   v3d_mem mem;
+  bool is_multithreaded;
 } v3d_shader;
 
 v3d_shader v3d_shader_create(const char *code);

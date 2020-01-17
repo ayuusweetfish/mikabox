@@ -64,20 +64,23 @@ void doda()
 
   batch1 = v3d_batch_create(va1, ua1, v3d_shader_create("#texture_chroma_alpha"));
 
-  idxs = v3d_mem_create(25600, 128, MEM_FLAG_COHERENT);
-  static uint16_t p[49][49][3];
+  idxs = v3d_mem_create(32768, 128, MEM_FLAG_COHERENT);
+  static uint16_t p[49][49][6];
   for (uint16_t i = 0; i < 49; i++)
   for (uint16_t j = 0; j < 49; j++) {
     p[i][j][0] = 4 + i * 50 + j;
     p[i][j][1] = 4 + i * 50 + j + 1;
     p[i][j][2] = 4 + i * 50 + j + 50;
+    p[i][j][3] = 4 + i * 50 + j + 51;
+    p[i][j][4] = 4 + i * 50 + j + 1;
+    p[i][j][5] = 4 + i * 50 + j + 50;
   }
   p[0][0][0] = 0;
   p[0][0][1] = 1;
   p[0][0][2] = 2;
-  p[0][1][0] = 4;
-  p[0][1][1] = 14;
-  p[0][1][2] = 504;
+  p[0][0][3] = 4;
+  p[0][0][4] = 14;
+  p[0][0][5] = 504;
   v3d_mem_copy(&idxs, 0, p, sizeof p);
 
   extern uint8_t _binary_utils_nanikore_bin_start;
@@ -139,10 +142,9 @@ void dodo(uint32_t fb)
 
   v3d_ctx_use_batch(&ctx, &batch1);
 
-  extern bool has_key;
   v3d_call call = {
     .is_indexed = true,
-    .num_verts = 3 * (has_key ? 1000 : 1),
+    .num_verts = 3 * 49 * 49 * 2,
     .indices = idxs
   };
   v3d_ctx_add_call(&ctx, &call);

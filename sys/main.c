@@ -341,13 +341,14 @@ void sys_main()
     wavetable[i] = (int16_t)(sin((double)i / 128 * M_PI * 2) * 32767);
   }
 
+/*
   co_create(usb_loop, 0);
   co_create(audio_loop, 0);
   while (1) for (uint8_t i = 1; i <= 2; i++) {
     co_next(i);
   }
+*/
 
-/*
   mem_barrier();
   doda();
 
@@ -371,7 +372,7 @@ void sys_main()
   } while (seconds < 7);
 
   mem_barrier();
-  printf("Frames: %d (%.2f FPS)\n", frame_count, frame_count / 15.0f);
+  printf("Frames: %d (%.2f FPS)\n", frame_count, frame_count / 7.0f);
 
   mem_barrier();
   irq_set_callback(48, vsync_callback, NULL);
@@ -384,7 +385,6 @@ void sys_main()
     *GPSET1 = (1 << 15);
     for (uint32_t i = 0; i < 100000000; i++) __asm__ __volatile__ ("");
   }
-*/
 
 /*
   AMPiInitialize(44100, 4000);
