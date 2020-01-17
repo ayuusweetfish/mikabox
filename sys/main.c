@@ -232,7 +232,7 @@ static void audio_loop(void *_unused)
   mem_barrier();
   uint32_t t0 = *TMR_CLO, frames = 0;
 
-  while (!has_key) {
+  while (1) {
     //printf(AMPiIsActive() ? "\rActive  " : "\rInactive");
     AMPiPoke();
     for (uint32_t i = 0; i < 100000; i++) __asm__ __volatile__ ("");

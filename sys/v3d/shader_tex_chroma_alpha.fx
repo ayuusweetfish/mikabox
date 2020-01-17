@@ -23,27 +23,23 @@ nop; mov r3.8d, ra3; ldtmu0
 nop; v8muld ra0, r3, r4
 # ra0 = tinted texture, R/A (R represents any chroma channel hereafter)
 
-nop; nop
-fsub ra1.8abcd, 1.0, ra0.8d
-nop; nop; loadc
+nop
+fsub r0, 1.0, ra0.8d; nop
+nop; mov r3.8abcd, r0; loadc
 # ra1 = 1-A (packed)
 # r4 = canvas, Rcan/Acan
 
 # R' = R + Rcan * (1-A)
 # A' = A + Acan * (1-A)
 
-nop; v8muld r2, r4, ra1
-v8adds r3, r2, ra0; nop
-mov tlbm, r3; nop; loadc
+nop; v8muld r2, r4, r3; loadc
+v8adds tlbm, r2, ra0; nop
 
-nop; v8muld r2, r4, ra1
-v8adds r3, r2, ra0; nop
-mov tlbm, r3; nop; loadc
+nop; v8muld r2, r4, r3; loadc
+v8adds tlbm, r2, ra0; nop
 
-nop; v8muld r2, r4, ra1
-v8adds r3, r2, ra0; nop
-mov tlbm, r3; nop; loadc
+nop; v8muld r2, r4, r3; loadc
+v8adds tlbm, r2, ra0; nop; thrend
 
-nop; v8muld r2, r4, ra1; thrend
-v8adds r3, r2, ra0; nop
-mov tlbm, r3; nop; sbdone
+nop; v8muld r2, r4, r3
+v8adds tlbm, r2, ra0; nop; sbdone

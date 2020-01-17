@@ -76,7 +76,7 @@ void doda()
   }
 
   ua2 = v3d_unifarr_create(2);
-  batch2 = v3d_batch_create(va2, ua2, v3d_shader_create("#texture"));
+  batch2 = v3d_batch_create(va2, ua2, v3d_shader_create("#texture_chroma_alpha"));
 
 #define cw 32
 #define ch 64
@@ -89,7 +89,7 @@ void doda()
   checker = v3d_tex_create(cw, ch, &c[0][0][0]);
 
   target = v3d_tex_create(800, 480, NULL);
-  v3d_unifarr_puttex(&ua2, 0, target, v3d_magfilt_nearest | v3d_wrap_s_mirror);
+  v3d_unifarr_puttex(&ua2, 0, target, v3d_magfilt_linear | v3d_wrap_s_mirror);
 
   va3 = v3d_vertarr_create(3, 4);
   v.x = 10.0f; v.y = 10.0f;
@@ -111,8 +111,7 @@ void dodo(uint32_t fb)
 {
   // Render to texture
   v3d_ctx_wait(&ctx);
-  //v3d_ctx_anew(&ctx, target, 0x0);
-  v3d_ctx_anew(&ctx, v3d_tex_screen(fb), 0xff000000);
+  v3d_ctx_anew(&ctx, target, 0x0);
 
   v3d_ctx_use_batch(&ctx, &batch1);
 
@@ -122,7 +121,7 @@ void dodo(uint32_t fb)
     .start_index = 0,
   };
   extern bool has_key;
-  for (int i = 0; i < (has_key ? 10 : 30); i++)
+  for (int i = 0; i < (has_key ? 10 : 2); i++)
     v3d_ctx_add_call(&ctx, &call);
 
   uint16_t i[3] = {1, 2, 3};
@@ -149,12 +148,10 @@ void dodo(uint32_t fb)
 
   v3d_unifarr_puttex(&ua1, 0, nanikore, 0);
   v3d_unifarr_putf32(&ua1, 2, sinf(angle) * 0.5f + 0.5f);
-
-/*
   v3d_ctx_issue(&ctx);
   // Render to screen
   v3d_ctx_wait(&ctx);
-  v3d_ctx_anew(&ctx, v3d_tex_screen(fb), 0xff000000);
+  v3d_ctx_anew(&ctx, v3d_tex_screen(fb), 0xffadbecf);
 
   v3d_ctx_use_batch(&ctx, &batch2);
   v3d_ctx_add_call(&ctx, &(v3d_call){
@@ -162,6 +159,6 @@ void dodo(uint32_t fb)
     .num_verts = 6,
     .start_index = 0,
   });
-*/
+
   v3d_ctx_issue(&ctx);
 }

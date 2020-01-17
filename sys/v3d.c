@@ -384,7 +384,7 @@ v3d_batch v3d_batch_create(
 #define CTRL_BEGIN        0x0
 #define CTRL_SIZE         0x4000
 #define TILE_ALLOC_BEGIN  (CTRL_BEGIN + CTRL_SIZE)
-#define TILE_ALLOC_SIZE   0x10000
+#define TILE_ALLOC_SIZE   0x20000
 #define TILE_STATE_BEGIN  (TILE_ALLOC_BEGIN + TILE_ALLOC_SIZE)  // 16-byte aligned
 #define TILE_STATE_SIZE   0x10000
 #define CTX_MEM_TOTAL     (TILE_STATE_BEGIN + TILE_STATE_SIZE)
