@@ -69,6 +69,7 @@ v3d/%.fx.h: v3d/%.fx
 	$(V) mkdir -p $(BUILD_DIR)/$(dir $<)
 	$(V) $(NODE) utils/qpuasm.js $< > $@
 $(BUILD_DIR)/v3d.o: $(FX_H)
+EXTRA_CLEAN += $(FX_H)
 
 $(BUILD_DIR)/%.o: BN = $(basename $<)
 $(BUILD_DIR)/%.o: %.S %.c
