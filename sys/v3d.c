@@ -192,24 +192,7 @@ v3d_tex v3d_tex_screen(uint32_t buf)
 
 #define is_screen(__tex)  ((__tex).mem.handle == 0xfbfbfbfb)
 
-// x and y are coordinates of the top-left corner (left handed/y+ down)
-// XXX: Consider using right handed coordinates instead?
-static inline void microtile(
-  uint32_t *tex, uint16_t w, uint16_t h, uint8_t *buf,
-  uint16_t x, uint16_t y)
-{
-  for (uint16_t y3 = 0; y3 < 4; y3++)
-  for (uint16_t x3 = 0; x3 < 4; x3++) {
-    uint16_t x4 = x + x3;
-    uint16_t y4 = y + y3;
-    uint32_t p = ((uint32_t)y4 * w + x4) * 3;
-    uint32_t value = (0xff << 24) | ((uint32_t)buf[p] << 16) |
-      ((uint32_t)buf[p + 1] << 8) | (uint32_t)buf[p + 2];
-    *(tex++) = value;
-  }
-}
-
-v3d_tex v3d_tex_create(uint16_t w, uint16_t h, uint8_t *buf)
+v3d_tex v3d_tex_create(uint16_t w, uint16_t h, uint8_t *buf, v3d_tex_fmt_t fmt)
 {
   v3d_tex t;
   t.w = w;
@@ -218,6 +201,23 @@ v3d_tex v3d_tex_create(uint16_t w, uint16_t h, uint8_t *buf)
     MEM_FLAG_L1_NONALLOCATING | MEM_FLAG_ZERO | MEM_FLAG_HINT_PERMALOCK);
 
   if (buf == NULL) return t;
+
+  uint8_t nch, roff, goff, boff, aoff = 0xff;
+  switch (fmt) {
+  default:
+  case v3d_tex_fmt_rgb:
+    nch = 3; roff = 0; goff = 1; boff = 2; break;
+  case v3d_tex_fmt_bgr:
+    nch = 3; boff = 0; goff = 1; roff = 2; break;
+  case v3d_tex_fmt_rgba:
+    nch = 4; roff = 0; goff = 1; boff = 2; aoff = 3; break;
+  case v3d_tex_fmt_bgra:
+    nch = 4; boff = 0; goff = 1; roff = 2; aoff = 3; break;
+  case v3d_tex_fmt_argb:
+    nch = 4; aoff = 0; roff = 1; goff = 2; boff = 3; break;
+  case v3d_tex_fmt_abgr:
+    nch = 4; aoff = 0; boff = 1; goff = 2; roff = 3; break;
+  }
 
   uint32_t *tex = (uint32_t *)_armptr(t.mem);
   // 4K tiles
@@ -235,8 +235,19 @@ v3d_tex v3d_tex_create(uint16_t w, uint16_t h, uint8_t *buf)
         for (uint16_t y2 = 0; y2 < 16; y2 += 4)
         for (uint16_t x2 = 0; x2 < 16; x2 += 4) {
           // Microtile
-          microtile(tex, w, h, buf, x1 + x2, y1 + y2);
-          tex += 16;
+          // x1+x2 and y1+y2 are coordinates of the top-left corner
+          for (uint16_t y3 = 0; y3 < 4; y3++)
+          for (uint16_t x3 = 0; x3 < 4; x3++) {
+            uint16_t x4 = x1 + x2 + x3;
+            uint16_t y4 = y1 + y2 + y3;
+            uint32_t p = ((uint32_t)y4 * w + x4) * nch;
+            uint32_t a = (aoff == 0xff ? 0xff : buf[p + aoff]);
+            uint32_t r = buf[p + roff];
+            uint32_t g = buf[p + goff];
+            uint32_t b = buf[p + boff];
+            uint32_t value = (a << 24) | (r << 16) | (g << 8) | b;
+            *(tex++) = value;
+          }
         }
       }
     }

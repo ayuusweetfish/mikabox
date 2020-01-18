@@ -156,7 +156,7 @@ static void gpad_upd_callback(unsigned index, const USPiGamePadState *state)
 
 void doda();
 void dodo(uint32_t fb);
-#define DRAW 0
+#define DRAW 1
 
 static void f1(void *_unused)
 {

@@ -28,8 +28,17 @@ typedef struct v3d_tex {
   v3d_mem mem;    // handle = 0xfbfbfbfb denotes screen
 } v3d_tex;
 
+typedef enum v3d_tex_fmt_t {
+  v3d_tex_fmt_rgb = 0,
+  v3d_tex_fmt_bgr,
+  v3d_tex_fmt_rgba,
+  v3d_tex_fmt_bgra,
+  v3d_tex_fmt_argb,
+  v3d_tex_fmt_abgr,
+} v3d_tex_fmt_t;
+
 v3d_tex v3d_tex_screen(uint32_t buf);
-v3d_tex v3d_tex_create(uint16_t w, uint16_t h, uint8_t *buf);
+v3d_tex v3d_tex_create(uint16_t w, uint16_t h, uint8_t *buf, v3d_tex_fmt_t fmt);
 
 // Vertex and vertex array
 
