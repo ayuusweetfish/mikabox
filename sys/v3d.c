@@ -590,6 +590,6 @@ void v3d_ctx_issue(v3d_ctx *c)
 void v3d_ctx_wait(v3d_ctx *c)
 {
   if (c->ren_ctrl_start != 0)
-    while (*V3D_RFC == 0) co_yield();
+    while (*V3D_RFC == 0) { } // co_yield();
   c->ren_ctrl_start = 0;
 }

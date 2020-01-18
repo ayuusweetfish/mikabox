@@ -12,14 +12,15 @@ static uint32_t idxs;
 static uint32_t nanikore, checker;
 static uint32_t target;
 
+static v3d_ctx c1;
+
 void doda()
 {
   v3d_init();
   ctx = syscall0(256);
 
+  c1 = v3d_ctx_create();
 /*
-  ctx = v3d_ctx_create();
-
   va1 = v3d_vertarr_create(4, 6);
   static v3d_vert v = { .varyings = {0, 0, 0, 0, 0, 0} };
   v.x = 250.0f; v.y = 100.0f;
@@ -117,10 +118,36 @@ void doda()
 
 void dodo(uint32_t fb)
 {
+extern v3d_ctx *zz;
+extern v3d_tex *yy;
+  syscall4(6, 0, 1, 2, 3);
+  syscall4(6, 0, 1, 2, 3);
+  syscall4(6, 0, 1, 2, 3);
+  syscall4(6, 0, 1, 2, 3);
+  syscall4(6, 0, 1, 2, 3);
+  //syscall1(256 + 5, ctx);
+  // v3d_ctx_wait(zz);
   uint32_t scr = syscall1(256 + 18, fb);
+  printf("scr=%u\n", scr);
+/* ????
+   10c58:       e59f0064        ldr     r0, [pc, #100]  ; 10cc4 <dodo+0xec>
+   10c5c:       e1a07000        mov     r7, r0
+   10c60:       e1a0000c        mov     r0, ip
+   10c64:       ef000000        svc     0x00000000
+   10c68:       e59f0058        ldr     r0, [pc, #88]   ; 10cc8 <dodo+0xf0>
+   10c6c:       e1a01005        mov     r1, r5
+   10c70:       ebfff62e        bl      e530 <printf_>
+*/
+
+
   syscall3(256 + 1, ctx, scr, 0xffadbecf);
-  syscall1(256 + 4, ctx);
-  syscall1(256 + 5, ctx);
+  //v3d_ctx_anew(zz, *yy, 0xffadbecf);
+  printf("%p %p\n", zz, yy);
+  // syscall1(256 + 4, ctx);
+  //v3d_ctx_issue(zz);
+  printf("%p d\n", zz);
+
+  return;
 
 /*
   // Render to texture

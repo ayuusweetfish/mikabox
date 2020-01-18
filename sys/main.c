@@ -159,7 +159,7 @@ static void gpad_upd_callback(unsigned index, const USPiGamePadState *state)
 
 void doda();
 void dodo(uint32_t fb);
-#define DRAW 1
+#define DRAW 0
 
 static void f1(void *_unused)
 {
@@ -241,6 +241,7 @@ static void audio_loop(void *_unused)
     AMPiPoke();
     for (uint32_t i = 0; i < 100000; i++) __asm__ __volatile__ ("");
     z++;
+    dodo((uint32_t)fb_buf);
 
 #if DRAW
     dodo((uint32_t)fb_buf);

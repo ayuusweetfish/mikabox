@@ -99,6 +99,8 @@ static pool_decl(v3d_unifarr, 4096, uas);
 static pool_decl(v3d_shader, 256, shaders);
 static pool_decl(v3d_batch, 4096, batches);
 static pool_decl(v3d_mem, 4096, ias);
+v3d_ctx *zz;
+v3d_tex *yy;  // LOOK AT ME YOU NEED TO SET THIS
 #endif
 
 def(GEN, 6, {
@@ -117,6 +119,7 @@ def(GFX, 0, {
   v3d_ctx *c = pool_alloc(&ctxs, &idx);
   if (c != NULL) {
     *c = v3d_ctx_create();
+    zz = c;
     return idx;
   } else {
     return (uint32_t)-1;
@@ -126,8 +129,10 @@ def(GFX, 0, {
 def(GFX, 1, {
   v3d_ctx *c = pool_elm(&ctxs, r0);
   v3d_tex *t = pool_elm(&texs, r1);
-  if (c == NULL || t == NULL) return 0;
-  v3d_ctx_anew(c, *t, r2);
+  //if (c == NULL || t == NULL) return 0;
+  //v3d_ctx_anew(c, *t, r2);
+  printf("gfx 1: %u %u\n", r0, r1);
+  v3d_ctx_anew(zz, *yy, 0xffadbecf);
 })
 
 def(GFX, 2, {
@@ -160,9 +165,12 @@ def(GFX, 4, {
 })
 
 def(GFX, 5, {
+  /*
   v3d_ctx *c = pool_elm(&ctxs, r0);
   if (c == NULL) return 0;
   v3d_ctx_wait(c);
+  */
+  v3d_ctx_wait(zz);
 })
 
 init({
@@ -175,6 +183,7 @@ def(GFX, 18, {
   v3d_tex *t = pool_elm(&texs, 0);
   if (t == NULL) return (uint32_t)-1;
   *t = v3d_tex_screen(r0);
+  yy = t;
   return 0;
 })
 
