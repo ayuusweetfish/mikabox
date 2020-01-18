@@ -71,6 +71,9 @@ v3d/%.fx.h: v3d/%.fx
 $(BUILD_DIR)/v3d.o: $(FX_H)
 EXTRA_CLEAN += $(FX_H)
 
+$(BUILD_DIR)/swi.o: syscalls.h
+$(BUILD_DIR)/syscalls.o: syscalls.h
+
 $(BUILD_DIR)/%.o: BN = $(basename $<)
 $(BUILD_DIR)/%.o: %.S %.c
 	@ printf "  %-7s %-16s %s\n" AS/CC "$(BN).S/c" "$(C_OPTIONS)"
