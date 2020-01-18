@@ -4,7 +4,9 @@
 // https://gcc.gnu.org/onlinedocs/gcc/Modifiers.html
 // https://gcc.gnu.org/onlinedocs/gcc/Machine-Constraints.html
 
-static inline uint32_t syscall0(uint32_t num)
+#define syscall_attr __attribute__((noinline)) static uint32_t
+
+syscall_attr syscall0(uint32_t num)
 {
   register uint32_t r0 __asm__ ("r0");
   __asm__ __volatile__ (
@@ -17,7 +19,7 @@ static inline uint32_t syscall0(uint32_t num)
   return r0;
 }
 
-static inline uint32_t syscall1(uint32_t num, uint32_t arg0)
+syscall_attr syscall1(uint32_t num, uint32_t arg0)
 {
   register uint32_t r0 __asm__ ("r0");
   __asm__ __volatile__ (
@@ -26,12 +28,12 @@ static inline uint32_t syscall1(uint32_t num, uint32_t arg0)
     "swi #0\n"
     : "=&r,&r" (r0)
     : [num] "r,I" (num), [arg0] "r,I" (arg0)
-    : "r7", "lr", "memory", "r1", "r2", "r3", "r4"
+    : "r7", "lr", "memory", "r1", "r2", "r3"
   );
   return r0;
 }
 
-static inline uint32_t syscall2(uint32_t num, uint32_t arg0, uint32_t arg1)
+syscall_attr syscall2(uint32_t num, uint32_t arg0, uint32_t arg1)
 {
   register uint32_t r0 __asm__ ("r0");
   __asm__ __volatile__ (
@@ -46,7 +48,7 @@ static inline uint32_t syscall2(uint32_t num, uint32_t arg0, uint32_t arg1)
   return r0;
 }
 
-static inline uint32_t syscall3(uint32_t num, uint32_t arg0, uint32_t arg1, uint32_t arg2)
+syscall_attr syscall3(uint32_t num, uint32_t arg0, uint32_t arg1, uint32_t arg2)
 {
   register uint32_t r0 __asm__ ("r0");
   __asm__ __volatile__ (
@@ -62,7 +64,7 @@ static inline uint32_t syscall3(uint32_t num, uint32_t arg0, uint32_t arg1, uint
   return r0;
 }
 
-static inline uint32_t syscall4(uint32_t num, uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3)
+syscall_attr syscall4(uint32_t num, uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3)
 {
   register uint32_t r0 __asm__ ("r0");
   __asm__ __volatile__ (

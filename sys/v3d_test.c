@@ -2,6 +2,7 @@
 #include "prop_tag.h"
 #include "swi.h"
 #include "printf/printf.h"
+#include "common.h"
 #include <math.h>
 
 static uint32_t ctx;
@@ -118,34 +119,11 @@ void doda()
 
 void dodo(uint32_t fb)
 {
-extern v3d_ctx *zz;
-extern v3d_tex *yy;
-  syscall4(6, 0, 1, 2, 3);
-  syscall4(6, 0, 1, 2, 3);
-  syscall4(6, 0, 1, 2, 3);
-  syscall4(6, 0, 1, 2, 3);
-  syscall4(6, 0, 1, 2, 3);
-  //syscall1(256 + 5, ctx);
-  // v3d_ctx_wait(zz);
+  syscall1(256 + 5, ctx);
   uint32_t scr = syscall1(256 + 18, fb);
-  printf("scr=%u\n", scr);
-/* ????
-   10c58:       e59f0064        ldr     r0, [pc, #100]  ; 10cc4 <dodo+0xec>
-   10c5c:       e1a07000        mov     r7, r0
-   10c60:       e1a0000c        mov     r0, ip
-   10c64:       ef000000        svc     0x00000000
-   10c68:       e59f0058        ldr     r0, [pc, #88]   ; 10cc8 <dodo+0xf0>
-   10c6c:       e1a01005        mov     r1, r5
-   10c70:       ebfff62e        bl      e530 <printf_>
-*/
-
-
-  syscall3(256 + 1, ctx, scr, 0xffadbecf);
-  //v3d_ctx_anew(zz, *yy, 0xffadbecf);
-  printf("%p %p\n", zz, yy);
-  // syscall1(256 + 4, ctx);
-  //v3d_ctx_issue(zz);
-  printf("%p d\n", zz);
+  syscall3(256 + 1, ctx, scr,
+    (*TMR_CLO & 0x100000) ? 0xffdecabf : 0xffadbecf);
+  syscall1(256 + 4, ctx);
 
   return;
 
