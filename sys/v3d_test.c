@@ -1,18 +1,23 @@
 #include "v3d.h"
 #include "prop_tag.h"
+#include "swi.h"
+#include "printf/printf.h"
 #include <math.h>
 
-static v3d_ctx ctx;
-static v3d_vertarr va1, va2, va3;
-static v3d_unifarr ua1, ua2, ua3;
-static v3d_batch batch1, batch2, batch3;
-static v3d_mem idxs;
-static v3d_tex nanikore, checker;
-static v3d_tex target;
+static uint32_t ctx;
+static uint32_t va1, va2, va3;
+static uint32_t ua1, ua2, ua3;
+static uint32_t batch1, batch2, batch3;
+static uint32_t idxs;
+static uint32_t nanikore, checker;
+static uint32_t target;
 
 void doda()
 {
   v3d_init();
+  ctx = syscall0(256);
+
+/*
   ctx = v3d_ctx_create();
 
   va1 = v3d_vertarr_create(4, 6);
@@ -107,10 +112,17 @@ void doda()
   ua3 = v3d_unifarr_create(1);
   v3d_unifarr_putf32(&ua3, 0, 0);
   batch3 = v3d_batch_create(va3, ua3, v3d_shader_create("#CA"));
+*/
 }
 
 void dodo(uint32_t fb)
 {
+  uint32_t scr = syscall1(256 + 18, fb);
+  syscall3(256 + 1, ctx, scr, 0xffadbecf);
+  syscall1(256 + 4, ctx);
+  syscall1(256 + 5, ctx);
+
+/*
   // Render to texture
   v3d_ctx_wait(&ctx);
   v3d_ctx_anew(&ctx, target, 0x0);
@@ -171,4 +183,5 @@ void dodo(uint32_t fb)
   });
 
   v3d_ctx_issue(&ctx);
+*/
 }

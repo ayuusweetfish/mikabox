@@ -15,6 +15,8 @@
 #include "fatfs/ff.h"
 #include "coroutine.h"
 #include "swi.h"
+#define SYSCALLS_DECL 1
+#include "syscalls.h"
 
 #include <math.h>
 #include <string.h>
@@ -157,7 +159,7 @@ static void gpad_upd_callback(unsigned index, const USPiGamePadState *state)
 
 void doda();
 void dodo(uint32_t fb);
-#define DRAW 0
+#define DRAW 1
 
 static void f1(void *_unused)
 {
@@ -228,6 +230,7 @@ static void audio_loop(void *_unused)
   printf(b ? "Yes\n" : "No\n");
 
   mem_barrier();
+  syscalls_init();
   doda();
 
   mem_barrier();
@@ -259,7 +262,6 @@ static void print_loop(void *_unused)
     MsDelay(1000);
     printf("\nrandom = 0x%08x\n", syscall0(6));
     syscall1(43, 44);
-    syscall0(256);
   }
 }
 

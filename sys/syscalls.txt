@@ -11,13 +11,14 @@ num #in #ou desc
 
 +256: Graphics
 0   0   1   Create context
-1   2   0   Reset context
+1   3   0   Reset context
 2   2   0   Use batch
 3   4   0   Add call
 4   1   0   Issue commands
 5   1   0   Wait for completion
 16  2   1   Create texture
 17  3   0   Update texture
+18  1   0   Framebuffer texture
 32  2   1   Create vertex array
 33  4   0   Bulk copy to vertex array
 64  1   1   Create uniform array
