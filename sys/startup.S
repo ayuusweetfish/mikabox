@@ -15,12 +15,17 @@ startup:
 
 _addr_reset:        .word _reset
 _addr_int_uinstr:   .word _reset
-_addr_int_swi:      .word _reset
+_addr_int_swi:      .word _swi_stub
 _addr_int_pfabort:  .word _reset
 _addr_int_dabort:   .word _reset
 _addr_int_uhandler: .word _reset
 _addr_int_irq:      .word _irq_stub
 _addr_int_fiq:      .word _reset
+
+_swi_stub:
+  stmfd sp!, {ip, lr}
+  bl    swi_handler // External symbol
+  ldmfd sp!, {ip, pc}^
 
 _irq_stub:
   mov   sp, #0x4000

@@ -14,6 +14,7 @@
 #include "sdcard/sdcard.h"
 #include "fatfs/ff.h"
 #include "coroutine.h"
+#include "swi.h"
 
 #include <math.h>
 #include <string.h>
@@ -156,7 +157,7 @@ static void gpad_upd_callback(unsigned index, const USPiGamePadState *state)
 
 void doda();
 void dodo(uint32_t fb);
-#define DRAW 1
+#define DRAW 0
 
 static void f1(void *_unused)
 {
@@ -257,6 +258,9 @@ static void print_loop(void *_unused)
   while (1) {
     MsDelay(1000);
     printf("\nrandom = 0x%08x\n", *RNG_DATA);
+    syscall0(42);
+    syscall1(43, 44);
+    syscall4(45, 46, 47, 48, 49);
   }
 }
 
