@@ -54,7 +54,7 @@ void doda()
 
   batch1 = v3d_batch_create(va1, ua1, v3d_shader_create("#TCA"));
 
-  idxs = v3d_mem_create(256, 128, MEM_FLAG_COHERENT);
+  idxs = v3d_mem_indexbuf(128);
 
   extern uint8_t _binary_utils_nanikore_bin_start;
   nanikore = v3d_tex_create(512, 256);
@@ -127,7 +127,7 @@ void dodo(uint32_t fb)
     v3d_ctx_add_call(&ctx, &call);
 
   uint16_t i[3] = {1, 2, 3};
-  v3d_mem_copy(&idxs, 0, i, sizeof i);
+  v3d_mem_indexcopy(&idxs, 0, i, 3);
   v3d_ctx_add_call(&ctx, &(v3d_call){
     .is_indexed = true,
     .num_verts = 3,

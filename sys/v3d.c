@@ -142,7 +142,7 @@ void v3d_init()
   v3d_printf("QPUs enabled\n");
 }
 
-struct v3d_mem v3d_mem_create(uint32_t size, uint32_t align, uint32_t flags)
+v3d_mem v3d_mem_create(uint32_t size, uint32_t align, uint32_t flags)
 {
   v3d_mem m;
   m.handle = gpumem_alloc(size, align, flags);
@@ -155,26 +155,36 @@ struct v3d_mem v3d_mem_create(uint32_t size, uint32_t align, uint32_t flags)
 #define _align(__x, __align)      ((__x) = (((__x) + (__align) - 1) & ~((__align) - 1)))
 #define _count(__arr)             ((sizeof (__arr)) / (sizeof (__arr)[0]))
 
-void v3d_mem_lock(struct v3d_mem *m)
+void v3d_mem_lock(v3d_mem *m)
 {
   m->addr = gpumem_lock(m->handle);
 }
 
-void v3d_mem_unlock(struct v3d_mem *m)
+void v3d_mem_unlock(v3d_mem *m)
 {
   m->addr = 0;
   gpumem_unlock(m->handle);
 }
 
-void v3d_mem_close(struct v3d_mem *m)
+void v3d_mem_close(v3d_mem *m)
 {
   gpumem_release(m->handle);
 }
 
-void v3d_mem_copy(struct v3d_mem *m, uint32_t offs, void *ptr, uint32_t size)
+void v3d_mem_copy(v3d_mem *m, uint32_t offs, void *ptr, uint32_t size)
 {
   void *p = _armptr(*m) + offs;
   memcpy(p, ptr, size);
+}
+
+v3d_mem v3d_mem_indexbuf(uint32_t count)
+{
+  return v3d_mem_create(count * 2, 128, MEM_FLAG_COHERENT);
+}
+
+void v3d_mem_indexcopy(v3d_mem *m, uint32_t pos, void *ptr, uint32_t count)
+{
+  v3d_mem_copy(m, pos * 2, ptr, count * 2);
 }
 
 v3d_tex v3d_tex_screen(uint32_t buf)
@@ -259,7 +269,7 @@ void v3d_tex_update(v3d_tex *t, uint8_t *buf, v3d_tex_fmt_t fmt)
   }
 }
 
-struct v3d_vertarr v3d_vertarr_create(uint16_t num, uint8_t num_varyings)
+v3d_vertarr v3d_vertarr_create(uint16_t num, uint8_t num_varyings)
 {
   v3d_vertarr a;
   a.num = num;
@@ -271,7 +281,7 @@ struct v3d_vertarr v3d_vertarr_create(uint16_t num, uint8_t num_varyings)
 }
 
 void v3d_vertarr_put(
-  struct v3d_vertarr *a, uint32_t start_index,
+  v3d_vertarr *a, uint32_t start_index,
   const v3d_vert *verts, uint32_t num
 ) {
   uint32_t num_varyings = a->num_varyings;
@@ -295,7 +305,7 @@ void v3d_vertarr_put(
   }
 }
 
-struct v3d_unifarr v3d_unifarr_create(uint8_t num)
+v3d_unifarr v3d_unifarr_create(uint8_t num)
 {
   v3d_unifarr a;
   a.num = num;
@@ -304,19 +314,19 @@ struct v3d_unifarr v3d_unifarr_create(uint8_t num)
   return a;
 }
 
-void v3d_unifarr_putu32(struct v3d_unifarr *a, uint32_t index, uint32_t value)
+void v3d_unifarr_putu32(v3d_unifarr *a, uint32_t index, uint32_t value)
 {
   uint32_t *p = (uint32_t *)_armptr(a->mem);
   p[index] = value;
 }
 
-void v3d_unifarr_putf32(struct v3d_unifarr *a, uint32_t index, float value)
+void v3d_unifarr_putf32(v3d_unifarr *a, uint32_t index, float value)
 {
   float *p = (float *)_armptr(a->mem);
   p[index] = value;
 }
 
-void v3d_unifarr_puttex(struct v3d_unifarr *a, uint32_t index, v3d_tex tex, uint8_t cfg)
+void v3d_unifarr_puttex(v3d_unifarr *a, uint32_t index, v3d_tex tex, uint8_t cfg)
 {
   uint32_t *p = (uint32_t *)_armptr(a->mem);
   p[index] = tex.mem.addr;
@@ -397,7 +407,7 @@ v3d_batch v3d_batch_create(
 #define TILE_STATE_SIZE   0x10000
 #define CTX_MEM_TOTAL     (TILE_STATE_BEGIN + TILE_STATE_SIZE)
 
-struct v3d_ctx v3d_ctx_create()
+v3d_ctx v3d_ctx_create()
 {
   v3d_ctx c;
   c.mem = v3d_mem_create(CTX_MEM_TOTAL, 0x1000,
@@ -407,7 +417,7 @@ struct v3d_ctx v3d_ctx_create()
   return c;
 }
 
-void v3d_ctx_anew(struct v3d_ctx *c, v3d_tex target, uint32_t clear)
+void v3d_ctx_anew(v3d_ctx *c, v3d_tex target, uint32_t clear)
 {
   c->target = target;
   uint16_t w = target.w, h = target.h;
@@ -511,7 +521,7 @@ void v3d_ctx_anew(struct v3d_ctx *c, v3d_tex target, uint32_t clear)
   c->offs = _offset(p, c->mem);
 }
 
-void v3d_ctx_use_batch(struct v3d_ctx *c, const struct v3d_batch *batch)
+void v3d_ctx_use_batch(v3d_ctx *c, const v3d_batch *batch)
 {
   uint8_t *p = _armptr(c->mem) + c->offs;
 
@@ -522,7 +532,7 @@ void v3d_ctx_use_batch(struct v3d_ctx *c, const struct v3d_batch *batch)
   c->offs = _offset(p, c->mem);
 }
 
-void v3d_ctx_add_call(struct v3d_ctx *c, const struct v3d_call *call)
+void v3d_ctx_add_call(v3d_ctx *c, const v3d_call *call)
 {
   uint8_t *p = _armptr(c->mem) + c->offs;
 
@@ -544,7 +554,7 @@ void v3d_ctx_add_call(struct v3d_ctx *c, const struct v3d_call *call)
   c->offs = _offset(p, c->mem);
 }
 
-void v3d_ctx_issue(struct v3d_ctx *c)
+void v3d_ctx_issue(v3d_ctx *c)
 {
   uint8_t *p = _armptr(c->mem) + c->offs;
 
@@ -577,7 +587,7 @@ void v3d_ctx_issue(struct v3d_ctx *c)
   *V3D_CT1EA = c->ren_ctrl_end;
 }
 
-void v3d_ctx_wait(struct v3d_ctx *c)
+void v3d_ctx_wait(v3d_ctx *c)
 {
   if (c->ren_ctrl_start != 0)
     while (*V3D_RFC == 0) co_yield();

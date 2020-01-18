@@ -13,13 +13,16 @@ typedef struct v3d_mem {
   uint32_t addr;  // Bus address
 } v3d_mem;
 
-struct v3d_mem v3d_mem_create(uint32_t size, uint32_t align, uint32_t flags);
-void v3d_mem_lock(struct v3d_mem *m);
-void v3d_mem_unlock(struct v3d_mem *m);
-void v3d_mem_close(struct v3d_mem *m);
-void v3d_mem_copy(struct v3d_mem *m, uint32_t offs, void *ptr, uint32_t size);
+v3d_mem v3d_mem_create(uint32_t size, uint32_t align, uint32_t flags);
+void v3d_mem_lock(v3d_mem *m);
+void v3d_mem_unlock(v3d_mem *m);
+void v3d_mem_close(v3d_mem *m);
+void v3d_mem_copy(v3d_mem *m, uint32_t offs, void *ptr, uint32_t size);
 
-#define v3d_close(__objptr) v3d_mem_close((__objptr)->m)
+v3d_mem v3d_mem_indexbuf(uint32_t count);
+void v3d_mem_indexcopy(v3d_mem *m, uint32_t pos, void *ptr, uint32_t count);
+
+#define v3d_close(__objptr) v3d_mem_close(&(__objptr)->mem)
 
 // Texture
 
@@ -54,9 +57,9 @@ typedef struct v3d_vertarr {
   v3d_mem mem;
 } v3d_vertarr;
 
-struct v3d_vertarr v3d_vertarr_create(uint16_t num, uint8_t num_varyings);
+v3d_vertarr v3d_vertarr_create(uint16_t num, uint8_t num_varyings);
 void v3d_vertarr_put(
-  struct v3d_vertarr *a, uint32_t start_index,
+  v3d_vertarr *a, uint32_t start_index,
   const v3d_vert *verts, uint32_t num
 );
 
@@ -67,10 +70,10 @@ typedef struct v3d_unifarr {
   v3d_mem mem;
 } v3d_unifarr;
 
-struct v3d_unifarr v3d_unifarr_create(uint8_t num);
-void v3d_unifarr_putu32(struct v3d_unifarr *a, uint32_t index, uint32_t value);
-void v3d_unifarr_putf32(struct v3d_unifarr *a, uint32_t index, float value);
-void v3d_unifarr_puttex(struct v3d_unifarr *a, uint32_t index, v3d_tex tex, uint8_t cfg);
+v3d_unifarr v3d_unifarr_create(uint8_t num);
+void v3d_unifarr_putu32(v3d_unifarr *a, uint32_t index, uint32_t value);
+void v3d_unifarr_putf32(v3d_unifarr *a, uint32_t index, float value);
+void v3d_unifarr_puttex(v3d_unifarr *a, uint32_t index, v3d_tex tex, uint8_t cfg);
 #define v3d_wrap_s_repeat   (0 << 0)
 #define v3d_wrap_s_clamp    (1 << 0)
 #define v3d_wrap_s_mirror   (2 << 0)
@@ -135,11 +138,11 @@ typedef struct v3d_ctx {
   uint32_t bin_ctrl_end;
 } v3d_ctx;
 
-struct v3d_ctx v3d_ctx_create();
-void v3d_ctx_anew(struct v3d_ctx *c, v3d_tex target, uint32_t clear);
-void v3d_ctx_use_batch(struct v3d_ctx *c, const struct v3d_batch *batch);
-void v3d_ctx_add_call(struct v3d_ctx *c, const struct v3d_call *call);
-void v3d_ctx_issue(struct v3d_ctx *c);
-void v3d_ctx_wait(struct v3d_ctx *c);
+v3d_ctx v3d_ctx_create();
+void v3d_ctx_anew(v3d_ctx *c, v3d_tex target, uint32_t clear);
+void v3d_ctx_use_batch(v3d_ctx *c, const v3d_batch *batch);
+void v3d_ctx_add_call(v3d_ctx *c, const v3d_call *call);
+void v3d_ctx_issue(v3d_ctx *c);
+void v3d_ctx_wait(v3d_ctx *c);
 
 #endif
