@@ -2,6 +2,7 @@
 #include "prop_tag.h"
 #include "swi.h"
 #include "printf/printf.h"
+#include "common.h"
 #include <math.h>
 
 static uint32_t ctx;
@@ -12,14 +13,15 @@ static uint32_t idxs;
 static uint32_t nanikore, checker;
 static uint32_t target;
 
+static v3d_ctx c1;
+
 void doda()
 {
   v3d_init();
   ctx = syscall0(256);
 
+  c1 = v3d_ctx_create();
 /*
-  ctx = v3d_ctx_create();
-
   va1 = v3d_vertarr_create(4, 6);
   static v3d_vert v = { .varyings = {0, 0, 0, 0, 0, 0} };
   v.x = 250.0f; v.y = 100.0f;
@@ -117,10 +119,13 @@ void doda()
 
 void dodo(uint32_t fb)
 {
-  uint32_t scr = syscall1(256 + 18, fb);
-  syscall3(256 + 1, ctx, scr, 0xffadbecf);
-  syscall1(256 + 4, ctx);
   syscall1(256 + 5, ctx);
+  uint32_t scr = syscall1(256 + 18, fb);
+  syscall3(256 + 1, ctx, scr,
+    (*TMR_CLO & 0x100000) ? 0xffdecabf : 0xffadbecf);
+  syscall1(256 + 4, ctx);
+
+  return;
 
 /*
   // Render to texture
