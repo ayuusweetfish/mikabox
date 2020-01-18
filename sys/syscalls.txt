@@ -5,8 +5,8 @@ num #in #ou desc
 1   0   0   Yield from update/synth/draw routine
 2   0   0   Return from update/synth/draw routine
 3   0   0   Get number of players connected
-4   0   4   Get buttons
-5   1   4   Get axes for a player
+4   1   1   Get buttons for a player
+5   1   1   Get axes for a player
 6   0   1   Get a 32-bit random number
 
 +256: Graphics

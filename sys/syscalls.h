@@ -5,10 +5,11 @@
 
 #if SYSCALLS_DECL
   #define def(__grp, __id, __fn)   \
-    void FN(__grp, __id)(uint32_t r0, uint32_t r1, uint32_t r2, uint32_t r3);
+    uint32_t FN(__grp, __id)(uint32_t r0, uint32_t r1, uint32_t r2, uint32_t r3);
 #elif SYSCALLS_IMPL
   #define def(__grp, __id, __fn)   \
-    void FN(__grp, __id)(uint32_t r0, uint32_t r1, uint32_t r2, uint32_t r3) __fn
+    uint32_t FN(__grp, __id)(uint32_t r0, uint32_t r1, uint32_t r2, uint32_t r3) \
+    { __fn return 0; }
 #elif SYSCALLS_TABLE
   #define def(__grp, __id, __fn)   \
     [SYSCALL_GRP_OFFS_##__grp + __id] = &FN(__grp, __id),
@@ -21,6 +22,7 @@
 
 #if SYSCALLS_IMPL
 #include "printf/printf.h"
+#include "common.h"
 #include "v3d.h"
 
 #define pool_type(__type, __count) struct { \
@@ -44,10 +46,12 @@
 #define pool_elm_offs(__p)  (*((size_t *)(__p) + 2))
 #define pool_used_offs(__p) (*((size_t *)(__p) + 3))
 
+#define pool_elm(__p, __i) \
+  ((void *)((uint8_t *)(__p) + pool_elm_offs(__p) + (__i) * pool_sz(__p)))
 #define pool_used(__p) \
   ((uint32_t *)((uint8_t *)(__p) + pool_used_offs(__p)))
 
-static inline size_t pool_get(void *p)
+static inline void *pool_alloc(void *p, size_t *idx)
 {
   size_t cnt = pool_cnt(p);
   uint32_t *used = pool_used(p);
@@ -56,11 +60,12 @@ static inline size_t pool_get(void *p)
       size_t bit = __builtin_ctz(~used[j]);
       if (i + bit < cnt) {
         used[j] |= (1 << bit);
-        return i + bit;
+        *idx = i + bit;
+        return pool_elm(p, i + bit);
       }
     }
   }
-  return cnt;
+  return NULL;
 }
 
 static inline void pool_release(void *p, size_t idx)
@@ -79,19 +84,26 @@ static pool_decl(v3d_shader, 256, shaders);
 static pool_decl(v3d_batch, 4096, batches);
 #endif
 
+def(GEN, 6, {
+  mem_barrier();
+  uint32_t data = *RNG_DATA;
+  mem_barrier();
+  return data;
+})
+
 def(GEN, 43, {
   printf("from syscall! %u\n", r0);
 })
 
 def(GFX, 0, {
-  printf("graphics!\n");
-  for (uint32_t i = 0; i < 40; i++)
-    printf(" %zu", pool_get(&shaders));
-  printf("\n");
-  for (uint32_t i = 1; i < 40; i += 2) pool_release(&shaders, i);
-  for (uint32_t i = 0; i < 40; i++)
-    printf(" %zu", pool_get(&shaders));
-  printf("\n");
+  size_t idx;
+  v3d_ctx *c = pool_alloc(&ctxs, &idx);
+  if (c != NULL) {
+    *c = v3d_ctx_create();
+    return idx;
+  } else {
+    return (uint32_t)-1;
+  }
 })
 
 #undef impl

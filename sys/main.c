@@ -257,7 +257,7 @@ static void print_loop(void *_unused)
 {
   while (1) {
     MsDelay(1000);
-    printf("\nrandom = 0x%08x\n", *RNG_DATA);
+    printf("\nrandom = 0x%08x\n", syscall0(6));
     syscall1(43, 44);
     syscall0(256);
   }
