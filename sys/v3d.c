@@ -192,15 +192,19 @@ v3d_tex v3d_tex_screen(uint32_t buf)
 
 #define is_screen(__tex)  ((__tex).mem.handle == 0xfbfbfbfb)
 
-v3d_tex v3d_tex_create(uint16_t w, uint16_t h, uint8_t *buf, v3d_tex_fmt_t fmt)
+v3d_tex v3d_tex_create(uint16_t w, uint16_t h)
 {
   v3d_tex t;
   t.w = w;
   t.h = h;
   t.mem = v3d_mem_create((uint32_t)w * h * 4, 4096,
-    MEM_FLAG_L1_NONALLOCATING | MEM_FLAG_ZERO | MEM_FLAG_HINT_PERMALOCK);
+    MEM_FLAG_COHERENT | MEM_FLAG_ZERO | MEM_FLAG_HINT_PERMALOCK);
+  return t;
+}
 
-  if (buf == NULL) return t;
+void v3d_tex_update(v3d_tex *t, uint8_t *buf, v3d_tex_fmt_t fmt)
+{
+  // XXX: Not for screen
 
   uint8_t nch, roff, goff, boff, aoff = 0xff;
   switch (fmt) {
@@ -219,7 +223,8 @@ v3d_tex v3d_tex_create(uint16_t w, uint16_t h, uint8_t *buf, v3d_tex_fmt_t fmt)
     nch = 4; aoff = 0; boff = 1; goff = 2; roff = 3; break;
   }
 
-  uint32_t *tex = (uint32_t *)_armptr(t.mem);
+  uint32_t *tex = (uint32_t *)_armptr(t->mem);
+  uint16_t w = t->w, h = t->h;
   // 4K tiles
   for (uint16_t y0i = 0; y0i < h / 32; y0i++) {
     uint16_t y0 = y0i * 32;
@@ -252,8 +257,6 @@ v3d_tex v3d_tex_create(uint16_t w, uint16_t h, uint8_t *buf, v3d_tex_fmt_t fmt)
       }
     }
   }
-
-  return t;
 }
 
 struct v3d_vertarr v3d_vertarr_create(uint16_t num, uint8_t num_varyings)

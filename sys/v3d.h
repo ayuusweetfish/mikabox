@@ -38,7 +38,8 @@ typedef enum v3d_tex_fmt_t {
 } v3d_tex_fmt_t;
 
 v3d_tex v3d_tex_screen(uint32_t buf);
-v3d_tex v3d_tex_create(uint16_t w, uint16_t h, uint8_t *buf, v3d_tex_fmt_t fmt);
+v3d_tex v3d_tex_create(uint16_t w, uint16_t h);
+void v3d_tex_update(v3d_tex *tex, uint8_t *buf, v3d_tex_fmt_t fmt);
 
 // Vertex and vertex array
 

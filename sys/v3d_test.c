@@ -57,7 +57,8 @@ void doda()
   idxs = v3d_mem_create(256, 128, MEM_FLAG_COHERENT);
 
   extern uint8_t _binary_utils_nanikore_bin_start;
-  nanikore = v3d_tex_create(512, 256, &_binary_utils_nanikore_bin_start, v3d_tex_fmt_rgb);
+  nanikore = v3d_tex_create(512, 256);
+  v3d_tex_update(&nanikore, &_binary_utils_nanikore_bin_start, v3d_tex_fmt_rgb);
 
   va2 = v3d_vertarr_create(6, 6);
   v.varyings[2] = 1.0;
@@ -86,9 +87,10 @@ void doda()
       c[i][j][0] = c[i][j][1] = c[i][j][2] =
         ((i < 4 && j < 4) || ((i ^ j) & 4)) ? 0xff : 0xcc;
 
-  checker = v3d_tex_create(cw, ch, &c[0][0][0], v3d_tex_fmt_rgb);
+  checker = v3d_tex_create(cw, ch);
+  v3d_tex_update(&checker, &c[0][0][0], v3d_tex_fmt_rgb);
 
-  target = v3d_tex_create(800, 480, NULL, v3d_tex_fmt_rgb);
+  target = v3d_tex_create(800, 480);
   v3d_unifarr_puttex(&ua2, 0, target, v3d_magfilt_linear | v3d_wrap_s_mirror);
 
   va3 = v3d_vertarr_create(3, 4);
