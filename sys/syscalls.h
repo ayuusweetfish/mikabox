@@ -126,42 +126,42 @@ def(GFX, 0, {
 def(GFX, 1, {
   v3d_ctx *c = pool_elm(&ctxs, r0);
   v3d_tex *t = pool_elm(&texs, r1);
-  if (c == NULL || t == NULL) return 0;
+  if (c == NULL || t == NULL) return (uint32_t)-2;
   v3d_ctx_anew(c, *t, r2);
 })
 
 def(GFX, 2, {
   v3d_ctx *c = pool_elm(&ctxs, r0);
   v3d_batch *b = pool_elm(&batches, r1);
-  if (c == NULL || b == NULL) return 0;
+  if (c == NULL || b == NULL) return (uint32_t)-2;
   v3d_ctx_use_batch(c, b);
 })
 
 def(GFX, 3, {
   v3d_ctx *c = pool_elm(&ctxs, r0);
-  if (c == NULL) return 0;
+  if (c == NULL) return (uint32_t)-2;
   v3d_call call;
-  call.is_indexed = !!r0;
-  call.num_verts = r1;
-  if (r0) { // Indexed
-    v3d_mem *m = pool_elm(&ias, r2);
-    if (m == NULL) return 0;
+  call.is_indexed = !!r1;
+  call.num_verts = r2;
+  if (r1) { // Indexed
+    v3d_mem *m = pool_elm(&ias, r3);
+    if (m == NULL) return (uint32_t)-2;
     call.indices = *m;
   } else {
-    call.start_index = r2;
+    call.start_index = r3;
   }
   v3d_ctx_add_call(c, &call);
 })
 
 def(GFX, 4, {
   v3d_ctx *c = pool_elm(&ctxs, r0);
-  if (c == NULL) return 0;
+  if (c == NULL) return (uint32_t)-2;
   v3d_ctx_issue(c);
 })
 
 def(GFX, 5, {
   v3d_ctx *c = pool_elm(&ctxs, r0);
-  if (c == NULL) return 0;
+  if (c == NULL) return (uint32_t)-2;
   v3d_ctx_wait(c);
 })
 
@@ -173,9 +173,53 @@ init({
 
 def(GFX, 18, {
   v3d_tex *t = pool_elm(&texs, 0);
-  if (t == NULL) return (uint32_t)-1;
+  if (t == NULL) return (uint32_t)-2;
   *t = v3d_tex_screen(r0);
   return 0;
+})
+
+def(GFX, 32, {
+  size_t idx;
+  v3d_vertarr *a = pool_alloc(&vas, &idx);
+  if (a == NULL) return (uint32_t)-1;
+  *a = v3d_vertarr_create(r0, r1);
+  return idx;
+})
+
+def(GFX, 33, {
+  v3d_vertarr *a = pool_elm(&vas, r0);
+  if (a == NULL) return (uint32_t)-2;
+  v3d_vertarr_put(a, r1, (const v3d_vert *)r2, r3);
+})
+
+def(GFX, 64, {
+  size_t idx;
+  v3d_unifarr *a = pool_alloc(&uas, &idx);
+  if (a == NULL) return (uint32_t)-1;
+  *a = v3d_unifarr_create(r0);
+  return idx;
+})
+
+def(GFX, 96, {
+  size_t idx;
+  v3d_shader *s = pool_alloc(&shaders, &idx);
+  if (s == NULL) return (uint32_t)-1;
+  *s = v3d_shader_create((const char *)r0);
+  return idx;
+})
+
+def(GFX, 128, {
+  v3d_vertarr *va = pool_elm(&vas, r0);
+  v3d_unifarr *ua = pool_elm(&uas, r1);
+  v3d_shader *s = pool_elm(&shaders, r2);
+  if (va == NULL || ua == NULL || s == NULL)
+    return (uint32_t)-2;
+
+  size_t idx;
+  v3d_batch *b = pool_alloc(&batches, &idx);
+  if (b == NULL) return (uint32_t)-1;
+  *b = v3d_batch_create(*va, *ua, *s);
+  return idx;
 })
 
 #undef def

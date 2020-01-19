@@ -241,9 +241,9 @@ static void audio_loop(void *_unused)
     AMPiPoke();
     for (uint32_t i = 0; i < 100000; i++) __asm__ __volatile__ ("");
     z++;
+    dodo((uint32_t)fb_buf);
 
 #if DRAW
-    dodo((uint32_t)fb_buf);
     fb_flip_buffer();
     frames++;
 #endif
@@ -260,7 +260,7 @@ static void print_loop(void *_unused)
 {
   while (1) {
     MsDelay(1000);
-    printf("\nrandom = 0x%08x\n", syscall(6));
+    //printf("\nrandom = 0x%08x\n", syscall(6));
     syscall(43, 44);
   }
 }

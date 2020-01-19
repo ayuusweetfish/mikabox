@@ -13,15 +13,30 @@ static uint32_t idxs;
 static uint32_t nanikore, checker;
 static uint32_t target;
 
-static v3d_ctx c1;
-
 void doda()
 {
   v3d_init();
   ctx = syscall(256);
 
-  c1 = v3d_ctx_create();
+  static v3d_vert v = { .varyings = {0, 0, 0, 0, 0, 0} };
+
+  va3 = syscall(256 + 32, 3, 4);
+  v.x = 10.0f; v.y = 10.0f;
+  v.varyings[0] = 0.5f; v.varyings[1] = 1.0f; v.varyings[2] = 1.0f; v.varyings[3] = 1.0f;
+  syscall(256 + 33, va3, 0, (uint32_t)&v, 1);
+  v.x = 10.0f; v.y = 470.0f;
+  v.varyings[0] = 0.5f; v.varyings[1] = 0.25f; v.varyings[2] = 0.5f; v.varyings[3] = 0.5f;
+  syscall(256 + 33, va3, 1, (uint32_t)&v, 1);
+  v.x = 600.0f; v.y = 245.0f;
+  v.varyings[0] = 0.5f; v.varyings[1] = 0.5f; v.varyings[2] = 0.25f; v.varyings[3] = 0.5f;
+  syscall(256 + 33, va3, 2, (uint32_t)&v, 1);
+
+  ua3 = syscall(256 + 64, 1);
+  batch3 = syscall(256 + 128, va3, ua3, syscall(256 + 96, (uint32_t)"#CA"));
+  //printf("%u %u %u\n", va3, ua3, batch3);
+
 /*
+  ctx = v3d_ctx_create();
   va1 = v3d_vertarr_create(4, 6);
   static v3d_vert v = { .varyings = {0, 0, 0, 0, 0, 0} };
   v.x = 250.0f; v.y = 100.0f;
@@ -31,7 +46,8 @@ void doda()
   v.varyings[3] = 0.3f;
   v.varyings[4] = 0.3f;
   v.varyings[5] = 0.3f;
-  v3d_vertarr_put(&va1, 0, &v, 1);
+  //v3d_vertarr_put(&va1, 0, &v, 1);
+  syscall(256 + 33, va1, 0, (uint32_t)&v, 1);
   v.x = 100.0f; v.y = 400.0f;
   v.varyings[0] = 0.0f;
   v.varyings[1] = 1.0f;
@@ -39,7 +55,8 @@ void doda()
   v.varyings[3] = 0.3f;
   v.varyings[4] = 0.3f;
   v.varyings[5] = 0.3f;
-  v3d_vertarr_put(&va1, 1, &v, 1);
+  //v3d_vertarr_put(&va1, 1, &v, 1);
+  syscall(256 + 33, va1, 1, (uint32_t)&v, 1);
   v.x = 400.0f; v.y = 400.0f;
   v.varyings[0] = 1.0f;
   v.varyings[1] = 1.0f;
@@ -47,7 +64,8 @@ void doda()
   v.varyings[3] = 0.3f;
   v.varyings[4] = 0.3f;
   v.varyings[5] = 0.3f;
-  v3d_vertarr_put(&va1, 2, &v, 1);
+  //v3d_vertarr_put(&va1, 2, &v, 1);
+  syscall(256 + 33, va1, 2, (uint32_t)&v, 1);
   v.x = 400.0f; v.y = 100.0f;
   v.varyings[0] = 1.0f;
   v.varyings[1] = 0.0f;
@@ -55,7 +73,8 @@ void doda()
   v.varyings[3] = 0.3f;
   v.varyings[4] = 0.3f;
   v.varyings[5] = 0.3f;
-  v3d_vertarr_put(&va1, 3, &v, 1);
+  //v3d_vertarr_put(&va1, 3, &v, 1);
+  syscall(256 + 33, va1, 3, (uint32_t)&v, 1);
 
   ua1 = v3d_unifarr_create(3);
 
@@ -119,17 +138,17 @@ void doda()
 
 void dodo(uint32_t fb)
 {
-  syscall(6, 4, 5, 6);
-  syscall(6, 0, 1, 2, 3);
-  syscall(256 + 5 + syscall(7777), ctx);
+  syscall(256 + 5, ctx);
+
   uint32_t scr = syscall(256 + 18, fb);
-  syscall(6, 4, 5, 6);
-  syscall(6, 0, 1, 2, 3);
   syscall(256 + 1, ctx, scr,
     (*TMR_CLO & 0x100000) ? 0xffdecabf : syscall(6, 0, 1, 2, 3));
-  syscall(256 + 4, ctx);
 
-  return;
+  // Use batch
+  syscall(256 + 2, ctx, batch3);
+  syscall(256 + 3, ctx, 0, 3, 0);
+
+  syscall(256 + 4, ctx);
 
 /*
   // Render to texture
