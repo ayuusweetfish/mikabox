@@ -159,6 +159,7 @@ static void gpad_upd_callback(unsigned index, const USPiGamePadState *state)
 
 void doda();
 void dodo(uint32_t fb);
+void donk();
 #define DRAW 1
 
 static void f1(void *_unused)
@@ -246,6 +247,10 @@ static void audio_loop(void *_unused)
       if (!last_has_key) charbuf_invalidate();
       charbuf_flush();
     } else dodo((uint32_t)fb_buf);
+    if (syscall(6) & 1) {
+      donk();
+      doda();
+    }
     last_has_key = has_key;
     fb_flip_buffer();
 #endif
@@ -380,6 +385,9 @@ void sys_main()
   for (uint32_t i = 0; i < 256; i++) {
     wavetable[i] = (int16_t)(sin((double)i / 128 * M_PI * 2) * 32767);
   }
+
+  mem_barrier();
+  v3d_init();
 
   mem_barrier();
   syscalls_init();

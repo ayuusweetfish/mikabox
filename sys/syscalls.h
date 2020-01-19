@@ -165,6 +165,14 @@ def(GFX, 5, {
   v3d_ctx_wait(c);
 })
 
+def(GFX, 15, {
+  v3d_ctx *c = pool_elm(&ctxs, r0);
+  if (c == NULL) return (uint32_t)-2;
+  v3d_ctx_wait(c);
+  v3d_close(c);
+  pool_release(&ctxs, r0);
+})
+
 def(GFX, 16, {
   size_t idx;
   v3d_tex *t = pool_alloc(&texs, &idx);
@@ -192,6 +200,14 @@ def(GFX, 18, {
   return 0;
 })
 
+def(GFX, 31, {
+  if (r0 == 0) return (uint32_t)-3;
+  v3d_tex *t = pool_elm(&texs, r0);
+  if (t == NULL) return (uint32_t)-2;
+  v3d_close(t);
+  pool_release(&texs, r0);
+})
+
 def(GFX, 32, {
   size_t idx;
   v3d_vertarr *a = pool_alloc(&vas, &idx);
@@ -204,6 +220,13 @@ def(GFX, 33, {
   v3d_vertarr *a = pool_elm(&vas, r0);
   if (a == NULL) return (uint32_t)-2;
   v3d_vertarr_put(a, r1, (const v3d_vert *)r2, r3);
+})
+
+def(GFX, 47, {
+  v3d_vertarr *a = pool_elm(&vas, r0);
+  if (a == NULL) return (uint32_t)-2;
+  v3d_close(a);
+  pool_release(&vas, r0);
 })
 
 def(GFX, 48, {
@@ -227,12 +250,26 @@ def(GFX, 50, {
   v3d_unifarr_puttex(a, r1, *t, r3);
 })
 
+def(GFX, 63, {
+  v3d_unifarr *a = pool_elm(&uas, r0);
+  if (a == NULL) return (uint32_t)-2;
+  v3d_close(a);
+  pool_release(&uas, r0);
+})
+
 def(GFX, 64, {
   size_t idx;
   v3d_shader *s = pool_alloc(&shaders, &idx);
   if (s == NULL) return (uint32_t)-1;
   *s = v3d_shader_create((const char *)r0);
   return idx;
+})
+
+def(GFX, 79, {
+  v3d_shader *s = pool_elm(&shaders, r0);
+  if (s == NULL) return (uint32_t)-2;
+  v3d_close(s);
+  pool_release(&shaders, r0);
 })
 
 def(GFX, 80, {
@@ -249,6 +286,13 @@ def(GFX, 80, {
   return idx;
 })
 
+def(GFX, 95, {
+  v3d_batch *b = pool_elm(&batches, r0);
+  if (b == NULL) return (uint32_t)-2;
+  v3d_close(b);
+  pool_release(&batches, r0);
+})
+
 def(GFX, 96, {
   size_t idx;
   v3d_mem *m = pool_alloc(&ias, &idx);
@@ -261,6 +305,13 @@ def(GFX, 97, {
   v3d_mem *m = pool_elm(&ias, r0);
   if (m == NULL) return (uint32_t)-2;
   v3d_mem_indexcopy(m, r1, (void *)r2, r3);
+})
+
+def(GFX, 111, {
+  v3d_mem *m = pool_elm(&ias, r0);
+  if (m == NULL) return (uint32_t)-2;
+  v3d_mem_close(m);
+  pool_release(&ias, r0);
 })
 
 #undef def

@@ -8,14 +8,33 @@
 static uint32_t ctx;
 static uint32_t va1, va2, va3;
 static uint32_t ua1, ua2, ua3;
+static uint32_t sca, stca;
 static uint32_t batch1, batch2, batch3;
 static uint32_t idxs;
 static uint32_t nanikore, checker;
 static uint32_t target;
 
+void donk()
+{
+  syscall(256 + 15, ctx);
+  syscall(256 + 47, va1);
+  syscall(256 + 47, va2);
+  syscall(256 + 47, va3);
+  syscall(256 + 63, ua1);
+  syscall(256 + 63, ua2);
+  syscall(256 + 63, ua3);
+  syscall(256 + 79, sca);
+  syscall(256 + 79, stca);
+  syscall(256 + 95, batch1);
+  syscall(256 + 95, batch2);
+  syscall(256 + 95, batch3);
+  syscall(256 + 111, idxs);
+  syscall(256 + 31, nanikore);
+  syscall(256 + 31, target);
+}
+
 void doda()
 {
-  v3d_init();
   ctx = syscall(256);
 
   static v3d_vert v = { .varyings = {0, 0, 0, 0, 0, 0} };
@@ -32,7 +51,8 @@ void doda()
   syscall(256 + 33, va3, 2, (uint32_t)&v, 1);
 
   ua3 = syscall(256 + 48, 1);
-  batch3 = syscall(256 + 80, va3, ua3, syscall(256 + 64, (uint32_t)"#CA"));
+  sca = syscall(256 + 64, (uint32_t)"#CA");
+  batch3 = syscall(256 + 80, va3, ua3, sca);
 
 /*
   ctx = v3d_ctx_create();
@@ -88,7 +108,8 @@ void doda()
   ua1 = syscall(256 + 48, 3);
   syscall(256 + 50, ua1, 0, nanikore, 0);
 
-  batch1 = syscall(256 + 80, va1, ua1, syscall(256 + 64, (uint32_t)"#TCA"));
+  stca = syscall(256 + 64, (uint32_t)"#TCA");
+  batch1 = syscall(256 + 80, va1, ua1, stca);
 
   target = syscall(256 + 16, 800, 480);
 
@@ -103,7 +124,7 @@ void doda()
 
   ua2 = syscall(256 + 48, 2);
   syscall(256 + 50, ua2, 0, target, 0);
-  batch2 = syscall(256 + 80, va2, ua2, syscall(256 + 64, (uint32_t)"#TCA"));
+  batch2 = syscall(256 + 80, va2, ua2, stca);
 
 /*
   ua1 = v3d_unifarr_create(3);
