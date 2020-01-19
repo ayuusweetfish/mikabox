@@ -165,6 +165,20 @@ def(GFX, 5, {
   v3d_ctx_wait(c);
 })
 
+def(GFX, 16, {
+  size_t idx;
+  v3d_tex *t = pool_alloc(&texs, &idx);
+  if (t == NULL) return (uint32_t)-1;
+  *t = v3d_tex_create(r0, r1);
+  return idx;
+})
+
+def(GFX, 17, {
+  v3d_tex *t = pool_elm(&texs, r0);
+  if (t == NULL) return (uint32_t)-2;
+  v3d_tex_update(t, (uint8_t *)r1, (v3d_tex_fmt_t)r2);
+})
+
 init({
   size_t idx;
   v3d_tex *t = pool_alloc(&texs, &idx);
@@ -198,6 +212,19 @@ def(GFX, 64, {
   if (a == NULL) return (uint32_t)-1;
   *a = v3d_unifarr_create(r0);
   return idx;
+})
+
+def(GFX, 65, {
+  v3d_unifarr *a = pool_elm(&uas, r0);
+  if (a == NULL) return (uint32_t)-2;
+  v3d_unifarr_putu32(a, r1, r2);
+})
+
+def(GFX, 66, {
+  v3d_unifarr *a = pool_elm(&uas, r0);
+  v3d_tex *t = pool_elm(&texs, r2);
+  if (a == NULL || t == NULL) return (uint32_t)-2;
+  v3d_unifarr_puttex(a, r1, *t, r3);
 })
 
 def(GFX, 96, {

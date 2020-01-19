@@ -33,12 +33,13 @@ void doda()
 
   ua3 = syscall(256 + 64, 1);
   batch3 = syscall(256 + 128, va3, ua3, syscall(256 + 96, (uint32_t)"#CA"));
-  //printf("%u %u %u\n", va3, ua3, batch3);
 
 /*
   ctx = v3d_ctx_create();
   va1 = v3d_vertarr_create(4, 6);
   static v3d_vert v = { .varyings = {0, 0, 0, 0, 0, 0} };
+*/
+  va1 = syscall(256 + 32, 4, 6);
   v.x = 250.0f; v.y = 100.0f;
   v.varyings[0] = 0.5f;
   v.varyings[1] = 0.0f;
@@ -76,6 +77,16 @@ void doda()
   //v3d_vertarr_put(&va1, 3, &v, 1);
   syscall(256 + 33, va1, 3, (uint32_t)&v, 1);
 
+  extern uint8_t _binary_utils_nanikore_bin_start;
+  nanikore = syscall(256 + 16, 512, 256);
+  syscall(256 + 17, nanikore, (uint32_t)&_binary_utils_nanikore_bin_start, 0);
+
+  ua1 = syscall(256 + 64, 3);
+  syscall(256 + 66, ua1, 0, nanikore, 0);
+
+  batch1 = syscall(256 + 128, va1, ua1, syscall(256 + 96, (uint32_t)"#TCA"));
+
+/*
   ua1 = v3d_unifarr_create(3);
 
   batch1 = v3d_batch_create(va1, ua1, v3d_shader_create("#TCA"));
@@ -146,6 +157,10 @@ void dodo(uint32_t fb)
 
   // Use batch
   syscall(256 + 2, ctx, batch3);
+  syscall(256 + 3, ctx, 0, 3, 0);
+
+  printf("%u %u %u %u\n", va1, nanikore, ua1, batch1);
+  syscall(256 + 2, ctx, batch1);
   syscall(256 + 3, ctx, 0, 3, 0);
 
   syscall(256 + 4, ctx);

@@ -241,12 +241,14 @@ static void audio_loop(void *_unused)
     AMPiPoke();
     for (uint32_t i = 0; i < 100000; i++) __asm__ __volatile__ ("");
     z++;
-    dodo((uint32_t)fb_buf);
+    if (has_key) charbuf_flush();
+    else dodo((uint32_t)fb_buf);
 
 #if DRAW
     fb_flip_buffer();
-    frames++;
 #endif
+    frames++;
+
     co_yield();
   }
 
