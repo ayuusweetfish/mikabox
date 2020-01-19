@@ -119,10 +119,16 @@ void doda()
 
 void dodo(uint32_t fb)
 {
-  syscall1(256 + 5, ctx);
+  syscall3(6, 4, 5, 6);
+  syscall4(6, 0, 1, 2, 3);
+  syscall1(256 + 5 + syscall0(7777), ctx);
+  syscall3(6, 4, 5, 6);
+  syscall4(6, 0, 1, 2, 3);
   uint32_t scr = syscall1(256 + 18, fb);
+  syscall3(6, 4, 5, 6);
+  syscall4(6, 0, 1, 2, 3);
   syscall3(256 + 1, ctx, scr,
-    (*TMR_CLO & 0x100000) ? 0xffdecabf : 0xffadbecf);
+    (*TMR_CLO & 0x100000) ? 0xffdecabf : syscall4(6, 0, 1, 2, 3));
   syscall1(256 + 4, ctx);
 
   return;
