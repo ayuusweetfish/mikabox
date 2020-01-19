@@ -206,7 +206,7 @@ def(GFX, 33, {
   v3d_vertarr_put(a, r1, (const v3d_vert *)r2, r3);
 })
 
-def(GFX, 64, {
+def(GFX, 48, {
   size_t idx;
   v3d_unifarr *a = pool_alloc(&uas, &idx);
   if (a == NULL) return (uint32_t)-1;
@@ -214,20 +214,20 @@ def(GFX, 64, {
   return idx;
 })
 
-def(GFX, 65, {
+def(GFX, 49, {
   v3d_unifarr *a = pool_elm(&uas, r0);
   if (a == NULL) return (uint32_t)-2;
   v3d_unifarr_putu32(a, r1, r2);
 })
 
-def(GFX, 66, {
+def(GFX, 50, {
   v3d_unifarr *a = pool_elm(&uas, r0);
   v3d_tex *t = pool_elm(&texs, r2);
   if (a == NULL || t == NULL) return (uint32_t)-2;
   v3d_unifarr_puttex(a, r1, *t, r3);
 })
 
-def(GFX, 96, {
+def(GFX, 64, {
   size_t idx;
   v3d_shader *s = pool_alloc(&shaders, &idx);
   if (s == NULL) return (uint32_t)-1;
@@ -235,7 +235,7 @@ def(GFX, 96, {
   return idx;
 })
 
-def(GFX, 128, {
+def(GFX, 80, {
   v3d_vertarr *va = pool_elm(&vas, r0);
   v3d_unifarr *ua = pool_elm(&uas, r1);
   v3d_shader *s = pool_elm(&shaders, r2);
@@ -249,7 +249,7 @@ def(GFX, 128, {
   return idx;
 })
 
-def(GFX, 144, {
+def(GFX, 96, {
   size_t idx;
   v3d_mem *m = pool_alloc(&ias, &idx);
   if (m == NULL) return (uint32_t)-1;
@@ -257,7 +257,7 @@ def(GFX, 144, {
   return idx;
 })
 
-def(GFX, 145, {
+def(GFX, 97, {
   v3d_mem *m = pool_elm(&ias, r0);
   if (m == NULL) return (uint32_t)-2;
   v3d_mem_indexcopy(m, r1, (void *)r2, r3);

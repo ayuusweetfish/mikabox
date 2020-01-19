@@ -16,18 +16,25 @@ num #in #ou desc
 3   4   0   Add call
 4   1   0   Issue commands
 5   1   0   Wait for completion
+15  1   0   Close context
 16  2   1   Create texture
 17  3   0   Update texture
 18  1   0   Framebuffer texture
+31  1   0   Close texture
 32  2   1   Create vertex array
 33  4   0   Bulk copy to vertex array
-64  1   1   Create uniform array
-65  3   0   Put u32/f32 into uniform array
-66  4   0   Put texture into uniform array
-96  1   1   Create shader
-128 3   1   Create batch
-144 1   1   Create index array
-145 4   0   Bulk copy to index array
+47  1   0   Close vertex array
+48  1   1   Create uniform array
+49  3   0   Put u32/f32 into uniform array
+50  4   0   Put texture into uniform array
+63  1   0   Close uniform array
+64  1   1   Create shader
+79  1   0   Close shader
+80  3   1   Create batch
+95  1   0   Close batch
+96  1   1   Create index array
+97  4   0   Bulk copy to index array
+111 1   0   Close index array
 
 +512: Storage
 

@@ -31,8 +31,8 @@ void doda()
   v.varyings[0] = 0.5f; v.varyings[1] = 0.5f; v.varyings[2] = 0.25f; v.varyings[3] = 0.5f;
   syscall(256 + 33, va3, 2, (uint32_t)&v, 1);
 
-  ua3 = syscall(256 + 64, 1);
-  batch3 = syscall(256 + 128, va3, ua3, syscall(256 + 96, (uint32_t)"#CA"));
+  ua3 = syscall(256 + 48, 1);
+  batch3 = syscall(256 + 80, va3, ua3, syscall(256 + 64, (uint32_t)"#CA"));
 
 /*
   ctx = v3d_ctx_create();
@@ -78,17 +78,17 @@ void doda()
   syscall(256 + 33, va1, 3, (uint32_t)&v, 1);
 
   uint16_t i[6] = {0, 1, 2, 1, 2, 3};
-  idxs = syscall(256 + 144, 128);
-  syscall(256 + 145, idxs, 0, (uint32_t)&i[0], 6);
+  idxs = syscall(256 + 96, 128);
+  syscall(256 + 97, idxs, 0, (uint32_t)&i[0], 6);
 
   extern uint8_t _binary_utils_nanikore_bin_start;
   nanikore = syscall(256 + 16, 512, 256);
   syscall(256 + 17, nanikore, (uint32_t)&_binary_utils_nanikore_bin_start, 0);
 
-  ua1 = syscall(256 + 64, 3);
-  syscall(256 + 66, ua1, 0, nanikore, 0);
+  ua1 = syscall(256 + 48, 3);
+  syscall(256 + 50, ua1, 0, nanikore, 0);
 
-  batch1 = syscall(256 + 128, va1, ua1, syscall(256 + 96, (uint32_t)"#TCA"));
+  batch1 = syscall(256 + 80, va1, ua1, syscall(256 + 64, (uint32_t)"#TCA"));
 
   target = syscall(256 + 16, 800, 480);
 
@@ -101,9 +101,9 @@ void doda()
     syscall(256 + 33, va2, x + x + y, (uint32_t)&v, 1);
   }
 
-  ua2 = syscall(256 + 64, 2);
-  syscall(256 + 66, ua2, 0, target, 0);
-  batch2 = syscall(256 + 128, va2, ua2, syscall(256 + 96, (uint32_t)"#TCA"));
+  ua2 = syscall(256 + 48, 2);
+  syscall(256 + 50, ua2, 0, target, 0);
+  batch2 = syscall(256 + 80, va2, ua2, syscall(256 + 64, (uint32_t)"#TCA"));
 
 /*
   ua1 = v3d_unifarr_create(3);
