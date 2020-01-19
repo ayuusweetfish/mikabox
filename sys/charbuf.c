@@ -142,3 +142,8 @@ void charbuf_flush()
     }
   }
 }
+
+void charbuf_invalidate()
+{
+  memset(last, -1, sizeof last);
+}

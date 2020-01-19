@@ -230,21 +230,23 @@ static void audio_loop(void *_unused)
   printf(b ? "Yes\n" : "No\n");
 
   mem_barrier();
-  syscalls_init();
-  doda();
-
-  mem_barrier();
   uint32_t t0 = *TMR_CLO, frames = 0;
+
+  doda();
 
   while (1) {
     //printf(AMPiIsActive() ? "\rActive  " : "\rInactive");
     AMPiPoke();
     for (uint32_t i = 0; i < 100000; i++) __asm__ __volatile__ ("");
     z++;
-    if (has_key) charbuf_flush();
-    else dodo((uint32_t)fb_buf);
 
 #if DRAW
+    static bool last_has_key = false;
+    if (has_key) {
+      if (!last_has_key) charbuf_invalidate();
+      charbuf_flush();
+    } else dodo((uint32_t)fb_buf);
+    last_has_key = has_key;
     fb_flip_buffer();
 #endif
     frames++;
@@ -378,6 +380,9 @@ void sys_main()
   for (uint32_t i = 0; i < 256; i++) {
     wavetable[i] = (int16_t)(sin((double)i / 128 * M_PI * 2) * 32767);
   }
+
+  mem_barrier();
+  syscalls_init();
 
   co_create(usb_loop, 0);
   co_create(audio_loop, 0);
