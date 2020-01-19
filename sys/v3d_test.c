@@ -77,6 +77,10 @@ void doda()
   //v3d_vertarr_put(&va1, 3, &v, 1);
   syscall(256 + 33, va1, 3, (uint32_t)&v, 1);
 
+  uint16_t i[6] = {0, 1, 2, 1, 2, 3};
+  idxs = syscall(256 + 144, 128);
+  syscall(256 + 145, idxs, 0, (uint32_t)&i[0], 6);
+
   extern uint8_t _binary_utils_nanikore_bin_start;
   nanikore = syscall(256 + 16, 512, 256);
   syscall(256 + 17, nanikore, (uint32_t)&_binary_utils_nanikore_bin_start, 0);
@@ -85,6 +89,21 @@ void doda()
   syscall(256 + 66, ua1, 0, nanikore, 0);
 
   batch1 = syscall(256 + 128, va1, ua1, syscall(256 + 96, (uint32_t)"#TCA"));
+
+  target = syscall(256 + 16, 800, 480);
+
+  va2 = syscall(256 + 32, 4, 6);
+  for (uint8_t x = 0; x <= 1; x++)
+  for (uint8_t y = 0; y <= 1; y++) {
+    v.x = 300.0f + 400.0f * x; v.y = 20.0f + 240.0f * y;
+    v.varyings[0] = x; v.varyings[1] = y;
+    v.varyings[2] = 1.0f; v.varyings[3] = 1.0f; v.varyings[4] = 1.0f; v.varyings[5] = 1.0f;
+    syscall(256 + 33, va2, x + x + y, (uint32_t)&v, 1);
+  }
+
+  ua2 = syscall(256 + 64, 2);
+  syscall(256 + 66, ua2, 0, target, 0);
+  batch2 = syscall(256 + 128, va2, ua2, syscall(256 + 96, (uint32_t)"#TCA"));
 
 /*
   ua1 = v3d_unifarr_create(3);
@@ -152,16 +171,25 @@ void dodo(uint32_t fb)
   syscall(256 + 5, ctx);
 
   uint32_t scr = syscall(256 + 18, fb);
+  syscall(256 + 1, ctx, target, 0x0);
+
+  // Use batch
+  syscall(256 + 2, ctx, batch1);
+  syscall(256 + 3, ctx, 1, 6, idxs);
+
+  // Issue and wait
+  syscall(256 + 4, ctx);
+  syscall(256 + 5, ctx);
+
+  // Start anew
   syscall(256 + 1, ctx, scr,
     (*TMR_CLO & 0x100000) ? 0xffdecabf : syscall(6, 0, 1, 2, 3));
 
-  // Use batch
   syscall(256 + 2, ctx, batch3);
   syscall(256 + 3, ctx, 0, 3, 0);
 
-  printf("%u %u %u %u\n", va1, nanikore, ua1, batch1);
-  syscall(256 + 2, ctx, batch1);
-  syscall(256 + 3, ctx, 0, 3, 0);
+  syscall(256 + 2, ctx, batch2);
+  syscall(256 + 3, ctx, 1, 6, idxs);
 
   syscall(256 + 4, ctx);
 

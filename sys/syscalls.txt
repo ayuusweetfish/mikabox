@@ -26,6 +26,8 @@ num #in #ou desc
 66  4   0   Put texture into uniform array
 96  1   1   Create shader
 128 3   1   Create batch
+144 1   1   Create index array
+145 4   0   Bulk copy to index array
 
 +512: Storage
 

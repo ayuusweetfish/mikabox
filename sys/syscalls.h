@@ -249,6 +249,20 @@ def(GFX, 128, {
   return idx;
 })
 
+def(GFX, 144, {
+  size_t idx;
+  v3d_mem *m = pool_alloc(&ias, &idx);
+  if (m == NULL) return (uint32_t)-1;
+  *m = v3d_mem_indexbuf(r0);
+  return idx;
+})
+
+def(GFX, 145, {
+  v3d_mem *m = pool_elm(&ias, r0);
+  if (m == NULL) return (uint32_t)-2;
+  v3d_mem_indexcopy(m, r1, (void *)r2, r3);
+})
+
 #undef def
 #undef init
 #undef FN
