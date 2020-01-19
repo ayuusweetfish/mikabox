@@ -35,6 +35,7 @@ void syscalls_init();
 #include "common.h"
 #include "v3d.h"
 #include "fatfs/ff.h"
+#include <string.h>
 
 #define pool_type(__type, __count) struct { \
   const size_t sz, cnt; \
@@ -103,6 +104,8 @@ static pool_decl(v3d_batch, 4096, batches);
 static pool_decl(v3d_mem, 4096, ias);
 
 static pool_decl(FIL, 4096, files);
+static pool_decl(DIR, 256, dirs);
+static FILINFO finfo;
 
 #define syscall_log(_fmt, ...) \
   printf("%s: " _fmt, __func__, ##__VA_ARGS__)
@@ -446,6 +449,79 @@ def(FIL, 10, {
   FIL *f = pool_elm(&files, r0);
   if (f == NULL) return (uint32_t)-2;
   return f_error(f);
+})
+
+def(FIL, 16, {
+  size_t idx;
+  DIR *d = pool_alloc(&dirs, &idx);
+  if (d == NULL) return (uint32_t)-1;
+  FRESULT r = f_opendir(d, (const char *)r0);
+  if (r != FR_OK) {
+    syscall_log("f_opendir() returns %d (%s)\n", (int)r, f_strerr(r));
+    return (uint32_t)-3;
+  }
+  return idx;
+})
+
+def(FIL, 17, {
+  DIR *d = pool_elm(&dirs, r0);
+  if (d == NULL) return (uint32_t)-2;
+  FRESULT r = f_closedir(d);
+  if (r != FR_OK) {
+    syscall_log("f_closedir() returns %d (%s)\n", (int)r, f_strerr(r));
+    return (uint32_t)-3;
+  }
+})
+
+def(FIL, 18, {
+  DIR *d = pool_elm(&dirs, r0);
+  if (d == NULL) return 0;
+  FRESULT r = f_readdir(d, &finfo);
+  if (r != FR_OK) {
+    syscall_log("f_readdir() returns %d (%s)\n", (int)r, f_strerr(r));
+    return 0;
+  }
+  if (finfo.fname[0] == 0) {
+    return 0;
+  } else {
+    char *fname = (char *)r1;
+    strcpy(fname, finfo.fname);
+    return (finfo.fattrib & AM_DIR) ? 2 : 1;
+  }
+})
+
+def(FIL, 32, {
+  FRESULT r = f_stat((const char *)r0, &finfo);
+  if (r != FR_OK) {
+    if (r != FR_NO_FILE && r != FR_NO_PATH && r != FR_INVALID_NAME)
+      syscall_log("f_stat() returns %d (%s)\n", (int)r, f_strerr(r));
+    return 0;
+  }
+  return (finfo.fattrib & AM_DIR) ? 2 : 1;
+})
+
+def(FIL, 33, {
+  FRESULT r = f_unlink((const char *)r0);
+  if (r != FR_OK) {
+    syscall_log("f_unlink() returns %d (%s)\n", (int)r, f_strerr(r));
+    return 0;
+  }
+})
+
+def(FIL, 34, {
+  FRESULT r = f_rename((const char *)r0, (const char *)r1);
+  if (r != FR_OK) {
+    syscall_log("f_rename() returns %d (%s)\n", (int)r, f_strerr(r));
+    return 0;
+  }
+})
+
+def(FIL, 35, {
+  FRESULT r = f_mkdir((const char *)r0);
+  if (r != FR_OK) {
+    syscall_log("f_mkdir() returns %d (%s)\n", (int)r, f_strerr(r));
+    return 0;
+  }
 })
 
 #undef def

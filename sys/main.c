@@ -347,30 +347,21 @@ void sys_main()
   _putchar('\n');
 
   FATFS fs;
-  DIR dir;
-  FILINFO finfo;
   FRESULT fr;
+  char buff[64] = { 0 };
 
   fr = f_mount(&fs, "", 1);
   printf("f_mount() returned %d\n", (int32_t)fr);
-  fr = f_opendir(&dir, "/");
-  printf("f_opendir() returned %d\n", (int32_t)fr);
-  while (1) {
-    fr = f_readdir(&dir, &finfo);
-    if (fr != FR_OK || finfo.fname[0] == 0) break;
-    printf("%4d.%2d.%2d %2d:%2d:%2d  ",
-      ((finfo.fdate >> 9) & 127) + 1980,
-      (finfo.fdate >> 5) & 15,
-      (finfo.fdate >> 0) & 15,
-      (finfo.ftime >> 11) & 31,
-      (finfo.ftime >> 5) & 63,
-      (finfo.ftime >> 0) & 31);
-    printf("%s%s\n", finfo.fname, (finfo.fattrib & AM_DIR) ? "/" : "");
-  }
-  f_closedir(&dir);
+
+  // List directory contents
+  printf("====\n");
+  uint32_t di = syscall(512 + 16, (uint32_t)"/");
+  uint32_t type;
+  while ((type = syscall(512 + 18, di, (uint32_t)buff)) != 0)
+    printf("%s%s\n", buff, type == 2 ? "/" : "");
+  syscall(512 + 17, di);
 
   printf("====\n");
-  char buff[64] = { 0 };
   strcpy(buff, "huhuhuu~~~");
   uint32_t fi, cnt;
 
@@ -405,6 +396,22 @@ void sys_main()
   cnt = syscall(512 + 2, fi, (uint32_t)buff, sizeof buff - 1);
   printf("fi = %u, bytes read %u, contents %s\n", fi, cnt, buff);
   syscall(512 + 1, fi);
+
+  // Management
+  printf("====\n");
+  syscall(512 + 35, (uint32_t)"/mkmk");
+  syscall(512 + 35, (uint32_t)"/mkmk/qwq");
+  printf("/haha.txt  %u\n", syscall(512 + 32, (uint32_t)"/haha.txt"));
+  printf("/haha.txt/ %u\n", syscall(512 + 32, (uint32_t)"/haha.txt/"));
+  printf("/mkmk      %u\n", syscall(512 + 32, (uint32_t)"/mkmk"));
+  printf("/mkmk/     %u\n", syscall(512 + 32, (uint32_t)"/mkmk/"));
+  printf("/mkmk/qwq  %u\n", syscall(512 + 32, (uint32_t)"/mkmk/qwq"));
+  printf("/zzz       %u\n", syscall(512 + 32, (uint32_t)"/zzz"));
+  syscall(512 + 33, (uint32_t)"/mkmk/qwq");
+  syscall(512 + 34, (uint32_t)"/mkmk", (uint32_t)"/zzz");
+  printf("/zzz       %u*\n", syscall(512 + 32, (uint32_t)"/zzz"));
+  syscall(512 + 33, (uint32_t)"/zzz");
+  printf("/zzz       %u**\n", syscall(512 + 32, (uint32_t)"/zzz"));
 
   while (1) { }
 
