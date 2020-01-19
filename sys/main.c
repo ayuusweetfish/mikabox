@@ -160,7 +160,7 @@ static void gpad_upd_callback(unsigned index, const USPiGamePadState *state)
 void doda();
 void dodo(uint32_t fb);
 void donk();
-#define DRAW 1
+#define DRAW 0
 
 static void f1(void *_unused)
 {
@@ -368,6 +368,18 @@ void sys_main()
     printf("%s%s\n", finfo.fname, (finfo.fattrib & AM_DIR) ? "/" : "");
   }
   f_closedir(&dir);
+
+  printf("====\n");
+  FIL file;
+  fr = f_open(&file, "/haha.txt", FA_WRITE | FA_CREATE_ALWAYS);
+  printf("f_open() returned %d\n", (int32_t)fr);
+  uint32_t cnt;
+  fr = f_write(&file, "huhuhuu", 7, &cnt);
+  printf("f_puts() returned %d (bytes written %u)\n", (int32_t)fr, cnt);
+  fr = f_close(&file);
+  printf("f_close() returned %d\n", (int32_t)fr);
+
+  while (1) { }
 
   // Continue RNG initialization
   mem_barrier();
