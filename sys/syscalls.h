@@ -25,6 +25,7 @@
 
 #define SYSCALL_GRP_OFFS_GEN  0
 #define SYSCALL_GRP_OFFS_GFX  256
+#define SYSCALL_GRP_OFFS_FIL  512
 
 #if SYSCALLS_DECL
 void syscalls_init();
@@ -33,6 +34,7 @@ void syscalls_init();
 #include "printf/printf.h"
 #include "common.h"
 #include "v3d.h"
+#include "fatfs/ff.h"
 
 #define pool_type(__type, __count) struct { \
   const size_t sz, cnt; \
@@ -99,6 +101,8 @@ static pool_decl(v3d_unifarr, 4096, uas);
 static pool_decl(v3d_shader, 256, shaders);
 static pool_decl(v3d_batch, 4096, batches);
 static pool_decl(v3d_mem, 4096, ias);
+
+static pool_decl(FIL, 4096, files);
 #endif
 
 def(GEN, 6, {
@@ -312,6 +316,38 @@ def(GFX, 111, {
   if (m == NULL) return (uint32_t)-2;
   v3d_mem_close(m);
   pool_release(&ias, r0);
+})
+
+def(FIL, 0, {
+  size_t idx;
+  FIL *f = pool_alloc(&files, &idx);
+  if (f == NULL) return (uint32_t)-1;
+  FRESULT r = f_open(f, (const char *)r0, r1 & 0xff);
+  if (r != FR_OK) {
+    // TODO: Internal log
+    return (uint32_t)-3;
+  }
+  return idx;
+})
+
+def(FIL, 1, {
+  FIL *f = pool_elm(&files, r0);
+  if (f == NULL) return (uint32_t)-2;
+  FRESULT r = f_close(f);
+  if (r != FR_OK) {
+    return (uint32_t)-3;
+  }
+})
+
+def(FIL, 2, {
+  FIL *f = pool_elm(&files, r0);
+  if (f == NULL) return (uint32_t)-2;
+  UINT br;
+  FRESULT r = f_read(f, (void *)r1, r2, &br);
+  if (r != FR_OK) {
+    return (uint32_t)-3;
+  }
+  return br;
 })
 
 #undef def
