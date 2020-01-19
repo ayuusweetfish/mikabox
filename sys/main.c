@@ -370,20 +370,41 @@ void sys_main()
   f_closedir(&dir);
 
   printf("====\n");
-  FIL file;
-  fr = f_open(&file, "/haha.txt", FA_WRITE | FA_CREATE_ALWAYS);
-  printf("f_open() returned %d\n", (int32_t)fr);
-  uint32_t cnt;
-  fr = f_write(&file, "huhuhuu", 7, &cnt);
-  printf("f_puts() returned %d (bytes written %u)\n", (int32_t)fr, cnt);
-  fr = f_close(&file);
-  printf("f_close() returned %d\n", (int32_t)fr);
-
-  uint32_t fi = syscall(512, (uint32_t)"/haha1.txt", FA_READ);
   char buff[64] = { 0 };
-  uint32_t br = syscall(512 + 2, fi, (uint32_t)&buff[0], 16);
+  strcpy(buff, "huhuhuu~~~");
+  uint32_t fi, cnt;
+
+  // Write something
+  fi = syscall(512, (uint32_t)"/haha.txt", FA_WRITE | FA_CREATE_ALWAYS);
+  cnt = syscall(512 + 3, fi, (uint32_t)buff, strlen(buff));
   syscall(512 + 1, fi);
-  printf("fi = %u, bytes read %u, contents %s\n", fi, br, buff);
+
+  // Read it back
+  fi = syscall(512, (uint32_t)"/haha.txt", FA_READ);
+  cnt = syscall(512 + 2, fi, (uint32_t)buff, sizeof buff - 1);
+  printf("fi = %u, bytes read %u, contents %s\n", fi, cnt, buff);
+  // And repeat
+  syscall(512 + 4, fi, 4);
+  cnt = syscall(512 + 2, fi, (uint32_t)buff, sizeof buff - 1);
+  buff[cnt] = '\0';
+  printf("fi = %u, bytes read %u, contents %s\n", fi, cnt, buff);
+  syscall(512 + 1, fi);
+
+  // Write more
+  fi = syscall(512, (uint32_t)"/haha.txt", FA_WRITE | FA_OPEN_APPEND);
+  strcpy(buff, " hiya!");
+  syscall(512 + 3, fi, (uint32_t)buff, strlen(buff));
+  syscall(512 + 4, fi, 12);
+  strcpy(buff, "e");
+  syscall(512 + 3, fi, (uint32_t)buff, strlen(buff));
+  syscall(512 + 4, fi, 24); // Expand file size
+  syscall(512 + 1, fi);
+
+  // And read once more
+  fi = syscall(512, (uint32_t)"/haha.txt", FA_READ);
+  cnt = syscall(512 + 2, fi, (uint32_t)buff, sizeof buff - 1);
+  printf("fi = %u, bytes read %u, contents %s\n", fi, cnt, buff);
+  syscall(512 + 1, fi);
 
   while (1) { }
 

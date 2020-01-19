@@ -382,6 +382,72 @@ def(FIL, 2, {
   return br;
 })
 
+def(FIL, 3, {
+  FIL *f = pool_elm(&files, r0);
+  if (f == NULL) return (uint32_t)-2;
+  UINT bw;
+  FRESULT r = f_write(f, (void *)r1, r2, &bw);
+  if (r != FR_OK) {
+    syscall_log("f_write() returns %d (%s)\n", (int)r, f_strerr(r));
+    return (uint32_t)-3;
+  }
+  return bw;
+})
+
+def(FIL, 4, {
+  FIL *f = pool_elm(&files, r0);
+  if (f == NULL) return (uint32_t)-2;
+  FRESULT r = f_lseek(f, (FSIZE_t)r1);
+  if (r != FR_OK) {
+    syscall_log("f_lseek() returns %d (%s)\n", (int)r, f_strerr(r));
+    return (uint32_t)-3;
+  }
+})
+
+def(FIL, 5, {
+  FIL *f = pool_elm(&files, r0);
+  if (f == NULL) return (uint32_t)-2;
+  FRESULT r = f_truncate(f);
+  if (r != FR_OK) {
+    syscall_log("f_truncate() returns %d (%s)\n", (int)r, f_strerr(r));
+    return (uint32_t)-3;
+  }
+})
+
+def(FIL, 6, {
+  FIL *f = pool_elm(&files, r0);
+  if (f == NULL) return (uint32_t)-2;
+  FRESULT r = f_sync(f);
+  if (r != FR_OK) {
+    syscall_log("f_sync() returns %d (%s)\n", (int)r, f_strerr(r));
+    return (uint32_t)-3;
+  }
+})
+
+def(FIL, 7, {
+  FIL *f = pool_elm(&files, r0);
+  if (f == NULL) return (uint32_t)-2;
+  return f_tell(f);
+})
+
+def(FIL, 8, {
+  FIL *f = pool_elm(&files, r0);
+  if (f == NULL) return (uint32_t)-2;
+  return f_eof(f);
+})
+
+def(FIL, 9, {
+  FIL *f = pool_elm(&files, r0);
+  if (f == NULL) return (uint32_t)-2;
+  return f_size(f);
+})
+
+def(FIL, 10, {
+  FIL *f = pool_elm(&files, r0);
+  if (f == NULL) return (uint32_t)-2;
+  return f_error(f);
+})
+
 #undef def
 #undef init
 #undef FN

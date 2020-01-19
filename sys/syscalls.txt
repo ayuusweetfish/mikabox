@@ -37,7 +37,7 @@ num #in #ou desc
 111 1   0   Close index array
 
 +512: Storage
-0   2   1   Open
+0   2   1   Open file
 1   1   0   Close file
 2   3   1   Read
 3   3   1   Write
