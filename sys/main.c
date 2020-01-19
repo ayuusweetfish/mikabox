@@ -379,7 +379,7 @@ void sys_main()
   fr = f_close(&file);
   printf("f_close() returned %d\n", (int32_t)fr);
 
-  uint32_t fi = syscall(512, (uint32_t)"/haha.txt", FA_READ);
+  uint32_t fi = syscall(512, (uint32_t)"/haha1.txt", FA_READ);
   char buff[64] = { 0 };
   uint32_t br = syscall(512 + 2, fi, (uint32_t)&buff[0], 16);
   syscall(512 + 1, fi);

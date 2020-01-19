@@ -103,6 +103,36 @@ static pool_decl(v3d_batch, 4096, batches);
 static pool_decl(v3d_mem, 4096, ias);
 
 static pool_decl(FIL, 4096, files);
+
+#define syscall_log(_fmt, ...) \
+  printf("%s: " _fmt, __func__, ##__VA_ARGS__)
+
+static inline const char *f_strerr(FRESULT fr)
+{
+  static const char *const strs[] = {
+    "FR_OK",
+    "FR_DISK_ERR",
+    "FR_INT_ERR",
+    "FR_NOT_READY",
+    "FR_NO_FILE",
+    "FR_NO_PATH",
+    "FR_INVALID_NAME",
+    "FR_DENIED",
+    "FR_EXIST",
+    "FR_INVALID_OBJECT",
+    "FR_WRITE_PROTECTED",
+    "FR_INVALID_DRIVE",
+    "FR_NOT_ENABLED",
+    "FR_NO_FILESYSTEM",
+    "FR_MKFS_ABORTED",
+    "FR_TIMEOUT",
+    "FR_LOCKED",
+    "FR_NOT_ENOUGH_CORE",
+    "FR_TOO_MANY_OPEN_FILES",
+    "FR_INVALID_PARAMETER",
+  };
+  return strs[fr];
+}
 #endif
 
 def(GEN, 6, {
@@ -324,7 +354,7 @@ def(FIL, 0, {
   if (f == NULL) return (uint32_t)-1;
   FRESULT r = f_open(f, (const char *)r0, r1 & 0xff);
   if (r != FR_OK) {
-    // TODO: Internal log
+    syscall_log("f_open() returns %d (%s)\n", (int)r, f_strerr(r));
     return (uint32_t)-3;
   }
   return idx;
@@ -335,6 +365,7 @@ def(FIL, 1, {
   if (f == NULL) return (uint32_t)-2;
   FRESULT r = f_close(f);
   if (r != FR_OK) {
+    syscall_log("f_close() returns %d (%s)\n", (int)r, f_strerr(r));
     return (uint32_t)-3;
   }
 })
@@ -345,6 +376,7 @@ def(FIL, 2, {
   UINT br;
   FRESULT r = f_read(f, (void *)r1, r2, &br);
   if (r != FR_OK) {
+    syscall_log("f_read() returns %d (%s)\n", (int)r, f_strerr(r));
     return (uint32_t)-3;
   }
   return br;
