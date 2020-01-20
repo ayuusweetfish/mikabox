@@ -287,7 +287,7 @@ static uint8_t user_stack[1048576] __attribute__((aligned(16)));
 static void userqwq()
 {
   printf("From user mode!\n");
-  printf("Random = 0x%08llx\n", syscall(6));
+  printf("Random = 0x%08llx\n", syscall64(6));
   while (1) { }
 }
 

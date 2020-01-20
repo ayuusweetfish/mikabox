@@ -19,7 +19,9 @@ uint64_t syscall4(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t);
    (_argc) == 2 ? syscall2(_1, _2, _0) : \
    (_argc) == 3 ? syscall3(_1, _2, _3, _0) : \
    (_argc) == 4 ? syscall4(_1, _2, _3, _4, _0) : 0)
-#define syscall(...) \
+#define syscall64(...) \
   VA_SYSCALL(VA_ARGC(__VA_ARGS__) - 1, __VA_ARGS__, 0, 0, 0, 0)
+#define syscall(...) ((uint32_t)syscall64(__VA_ARGS__))
+#pragma GCC diagnostic ignored "-Wunused-value"
 
 #endif
