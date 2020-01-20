@@ -32,15 +32,15 @@ struct reg_set {
 } __attribute__((packed, aligned(8)));
 
 struct coroutine {
+  struct reg_set regs;
   enum co_state {
     CO_STATE_NEW = 0,
     CO_STATE_RUN,
     CO_STATE_YIELD,
     CO_STATE_DONE
   } state;
-  struct reg_set regs;
-  uint8_t stack[CO_STACK];
-};
+  uint8_t stack[CO_STACK] __attribute__((aligned(8)));
+} __attribute__((aligned(8)));
 
 void co_create(struct coroutine *co, void (*fn)(uint32_t));
 void co_start(struct coroutine *co, uint32_t arg);
