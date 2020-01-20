@@ -174,9 +174,8 @@ static void f1(uint32_t _unused)
   }
 }
 
-static void f2(uint32_t arg)
+static void f2(uint32_t max)
 {
-  uint32_t max = (uint32_t)arg;
   for (uint32_t i = 0, s = 0; max == 0 || i < max; s += (++i)) {
     printf("f2: %u %u\n", i, s);
     co_yield();
@@ -187,8 +186,12 @@ static void f3(uint32_t _unused)
 {
   for (uint32_t i = 0; i < 10; i++) {
     printf("f3: Start over\n");
+    co_create(&c2, f2);
+    while (c2.state != CO_STATE_DONE) {
+      for (uint32_t i = 0; i < 1e8; i++) __asm__ __volatile__ ("");
+      co_start(&c2, i + 4);
+    }
     co_yield();
-    f2(4);
   }
 }
 
@@ -417,10 +420,10 @@ void sys_main()
   syscall(512 + 33, (uint32_t)"/zzz");
   printf("/zzz       %u**\n", syscall(512 + 32, (uint32_t)"/zzz"));
 
-  co_create(&c1, f1);
+  co_create(&c1, f3);
   while (c1.state != CO_STATE_DONE) {
     co_next(&c1);
-    for (uint32_t i = 0; i < 1e8; i++) __asm__ __volatile__ ("");
+    for (uint32_t i = 0; i < 3e8; i++) __asm__ __volatile__ ("");
   }
   printf("Done!\n");
 
