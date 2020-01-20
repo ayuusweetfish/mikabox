@@ -18,7 +18,9 @@ extern "C" {
 #define CO_STACK  65536
 
 struct reg_set {
-  uint64_t d[16];
+  // AAPCS32 2019Q1.1, Ch. 6.1.1/6.1.2
+  // ARM1176JZF-S has VFP-v2
+  uint64_t d[8];
   uint32_t r4;
   uint32_t r5;
   uint32_t r6;
@@ -39,6 +41,8 @@ struct coroutine {
     CO_STATE_YIELD,
     CO_STATE_DONE
   } state;
+  #define CO_FLAG_FPU (1 << 0)
+  uint8_t flags;
   uint8_t stack[CO_STACK] __attribute__((aligned(8)));
 } __attribute__((aligned(8)));
 

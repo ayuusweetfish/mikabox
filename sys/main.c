@@ -423,6 +423,7 @@ void sys_main()
 
   co_create(&c1, f3);
   co_create(&c2, f2);
+  c1.flags = c2.flags = CO_FLAG_FPU;
   while (c1.state != CO_STATE_DONE) {
     co_next(&c1);
     co_next(&c2);
