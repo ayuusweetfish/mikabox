@@ -41,7 +41,8 @@ struct coroutine {
     CO_STATE_YIELD,
     CO_STATE_DONE
   } state;
-  #define CO_FLAG_FPU (1 << 0)
+  #define CO_FLAG_FPU   (1 << 0)
+  #define CO_FLAG_USER  (1 << 1)
   uint8_t flags;
   uint8_t stack[CO_STACK] __attribute__((aligned(8)));
 } __attribute__((aligned(8)));

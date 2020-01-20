@@ -19,3 +19,11 @@ co_jump:
   fldmiadne r1!, {d8-d15}
   addeq     r1, #64
   ldmia     r1!, {r4-r11, sp, pc}
+
+// Saves all registers, including VFP ones and lr
+// ip: Address to struct reg_set
+.global regs_save
+regs_save:
+  fstmiad   ip!, {d8-d15}
+  stmia     ip!, {r4-r11, sp, lr}
+  b         _swi_stub_cont

@@ -23,3 +23,16 @@ set_user_sp:
   bic   r2, r2, #0xc
   msr   cpsr_c, r2
   bx    lr
+
+.global get_user_sp
+get_user_sp:
+  // Change to System mode
+  mrs   r2, cpsr
+  orr   r2, r2, #0x1f
+  msr   cpsr_c, r2
+  // Get SP
+  mov   r0, sp
+  // Change back to Supervisor mode
+  bic   r2, r2, #0xc
+  msr   cpsr_c, r2
+  bx    lr

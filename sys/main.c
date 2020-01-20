@@ -284,9 +284,12 @@ static void print_loop(uint32_t _unused)
 }
 
 static uint8_t user_stack[1048576] __attribute__((aligned(16)));
+static struct coroutine userco;
 static void userqwq()
 {
   printf("From user mode!\n");
+  printf("Random = 0x%08llx\n", syscall64(6));
+  syscall(1);
   printf("Random = 0x%08llx\n", syscall64(6));
   while (1) { }
 }
@@ -455,6 +458,16 @@ void sys_main()
 
   set_user_sp(user_stack + sizeof user_stack);
   change_mode_b(MODE_USR, userqwq);
+  while (1) { }
+
+/*
+  co_create(&userco, userqwq);
+  userco.flags = CO_FLAG_FPU | CO_FLAG_USER;
+  while (1) {
+    //co_next(&c1);
+    while (1) { }
+  }
+*/
 
 /*
   co_create(&c1, usb_loop);
