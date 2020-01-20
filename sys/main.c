@@ -1,4 +1,5 @@
 #include "main.h"
+#include "sys.h"
 #include "common.h"
 #include "charbuf.h"
 #include "mmu.h"
@@ -282,6 +283,14 @@ static void print_loop(uint32_t _unused)
   }
 }
 
+static uint8_t user_stack[1048576] __attribute__((aligned(16)));
+static void userqwq()
+{
+  printf("From user mode!\n");
+  printf("Random = 0x%08llx\n", syscall(6));
+  while (1) { }
+}
+
 void sys_main()
 {
   for (uint8_t *p = &_bss_begin; p < &_bss_end; p++) *p = 0;
@@ -444,6 +453,10 @@ void sys_main()
   mem_barrier();
   syscalls_init();
 
+  set_user_sp(user_stack + sizeof user_stack);
+  change_mode_b(MODE_USR, userqwq);
+
+/*
   co_create(&c1, usb_loop);
   co_create(&c2, audio_loop);
   co_create(&c3, print_loop);
@@ -452,6 +465,7 @@ void sys_main()
     co_next(&c2);
     co_next(&c3);
   }
+*/
 
 /*
   mem_barrier();
