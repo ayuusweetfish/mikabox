@@ -34,15 +34,9 @@ void co_start(struct coroutine *co, uint32_t arg)
   }
   co->state = CO_STATE_RUN;
   stack[++stack_top] = co;
-  if (co->flags & CO_FLAG_USER) {
-    co_jump(
-      &stack[stack_top - 1]->regs, &co->regs,
-      catflags(stack[stack_top - 1]->flags, co->flags));
-  } else {
-    co_jump_arg(
-      &stack[stack_top - 1]->regs, &co->regs,
-      catflags(stack[stack_top - 1]->flags, co->flags), arg);
-  }
+  co_jump_arg(
+    &stack[stack_top - 1]->regs, &co->regs,
+    catflags(stack[stack_top - 1]->flags, co->flags), arg);
 }
 
 void co_next(struct coroutine *co)
@@ -55,8 +49,6 @@ void co_next(struct coroutine *co)
   }
   co->state = CO_STATE_RUN;
   stack[++stack_top] = co;
-  printf("sp = 0x%08x pc = 0x%08x\n",
-    co->regs.sp, co->regs.pc);
   co_jump(
     &stack[stack_top - 1]->regs, &co->regs,
     catflags(stack[stack_top - 1]->flags, co->flags));
@@ -83,10 +75,22 @@ void co_syscall_yield(struct reg_set *saved_regs)
 }
 
 // Exported for use in coroutine.S
+/*
+void co_syscall_done()
+{
+  stack_top--;
+  stack[stack_top + 1]->state = CO_STATE_DONE;
+  // Re-enable interrupts and simply load register bank
+  __asm__ __volatile__ ("cpsie i");
+  regs_load(&stack[stack_top]->regs);
+}
+*/
 void co_done()
 {
   stack_top--;
   stack[stack_top + 1]->state = CO_STATE_DONE;
+  // Perform a normal jump
+  // XXX: Can also be a simple load of registers
   co_jump(
     &stack[stack_top + 1]->regs, &stack[stack_top]->regs,
     catflags(stack[stack_top + 1]->flags, stack[stack_top]->flags));

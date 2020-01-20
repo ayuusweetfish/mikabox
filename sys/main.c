@@ -285,13 +285,41 @@ static void print_loop(uint32_t _unused)
 
 static uint8_t user_stack[1048576] __attribute__((aligned(16)));
 static struct coroutine userco;
-static void userqwq()
+__attribute__((noinline)) static void userqwq_real()
 {
   printf("From user mode!\n");
+  for (uint32_t i = 0; i < 2e9; i++) __asm__ __volatile__ ("");
   for (uint32_t i = 0; i < 20; i++) {
     syscall(1);
-    printf("[%u] Random = 0x%08llx\n", i, syscall64(6));
+    register uint32_t lr __asm__ ("lr");
+    printf("[%u] Random = 0x%08llx lr = 0x%08x\n", i, syscall64(6), lr);
   }
+}
+
+__attribute__((naked, noinline)) static void userqwq()
+{
+  __asm__ __volatile__ ("push {r4}");
+  __asm__ __volatile__ ("push {r5-r11, lr}");
+  static const char *fmt = "lr = 0x%08x\n";
+  __asm__ __volatile__ (
+    "mov r4, %0\n"
+    "mov r1, lr\n"
+    "mov r0, r4\n"
+    "bl printf_\n"
+    :: "r" (fmt)
+  );
+  //userqwq_real();
+  //vsync_callback(0);
+  __asm__ __volatile__ ("pop {r5-r11, lr}");
+  /*
+  __asm__ __volatile__ (
+    "mov r1, lr\n"
+    "mov r0, r4\n"
+    "bl printf_\n"
+  );
+  */
+  __asm__ __volatile__ ("pop {r4}");
+  __asm__ __volatile__ ("bx lr");
 }
 
 void sys_main()
@@ -462,12 +490,24 @@ void sys_main()
   while (1) { }
 */
 
-  co_create(&userco, userqwq);
+/*
+userqwq();
+printf("1!\n");
+userqwq();
+printf("2!\n");
+userqwq();
+printf("3!\n");
+userqwq();
+printf("4!\n");
+while (1) { }
+*/
+
+  co_create(&userco, userqwq_real);
   userco.flags = CO_FLAG_FPU | CO_FLAG_USER;
   while (userco.state != CO_STATE_DONE) {
     printf("====\n");
     co_next(&userco);
-    MsDelay(500);
+    MsDelay(300);
   }
   while (1) { }
 

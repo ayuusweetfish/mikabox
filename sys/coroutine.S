@@ -6,10 +6,14 @@ co_jump_arg:
   addeq     r0, #64
   stmia     r0!, {r4-r11, sp, lr}
   mov       r0, r3
-  ldr       lr, =co_done
   fldmiadne r1!, {d8-d15}
   addeq     r1, #64
-  ldmia     r1!, {r4-r11, sp, pc}
+  tst       r2, #2      // to CO_FLAG_USER
+  ldreq     lr, =co_done
+  ldmeqia   r1!, {r4-r11, sp, pc}
+  cps       #0x10
+  ldmia     r1!, {r4-r11, sp, lr}
+  bx        lr
 
 .global co_jump
 co_jump:
@@ -22,7 +26,6 @@ co_jump:
   addeq     r1, #64
   tst       r2, #2      // to CO_FLAG_USER
   ldmeqia   r1!, {r4-r11, sp, pc}
-  // Enter user mode
   cps       #0x10
   ldmia     r1!, {r4-r11, sp, pc}
 
