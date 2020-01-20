@@ -1,6 +1,7 @@
 .global co_jump_arg
 co_jump_arg:
-  tst       r2, #1  // Test for CO_FLAG_FPU
+  ldr       ip, =#0x101 // CO_FLAG_FPU for both
+  tst       r2, ip
   fstmiadne r0!, {d8-d15}
   addeq     r0, #64
   stmia     r0!, {r4-r11, sp, lr}
@@ -12,7 +13,8 @@ co_jump_arg:
 
 .global co_jump
 co_jump:
-  tst       r2, #1  // Test for CO_FLAG_FPU
+  ldr       ip, =#0x101 // CO_FLAG_FPU for both
+  tst       r2, ip
   fstmiadne r0!, {d8-d15}
   addeq     r0, #64
   stmia     r0!, {r4-r11, sp, lr}

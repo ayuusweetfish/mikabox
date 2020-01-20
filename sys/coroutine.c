@@ -8,9 +8,11 @@ static struct coroutine co_toplevel = {
 struct coroutine *stack[MAX_RECURSION] = { &co_toplevel };
 uint16_t stack_top = 0;  // Points directly to the topmost level
 
-void co_jump_arg(struct reg_set *save_regs, struct reg_set *load_regs, uint8_t flags, uint32_t arg);
+void co_jump_arg(struct reg_set *save_regs, struct reg_set *load_regs, uint16_t flags, uint32_t arg);
 
-void co_jump(struct reg_set *save_regs, struct reg_set *load_regs, uint8_t flags);
+void co_jump(struct reg_set *save_regs, struct reg_set *load_regs, uint16_t flags);
+
+#define catflags(_from, _to) (((uint16_t)(_from) << 8) | (_to))
 
 void co_create(struct coroutine *co, void (*fn)(uint32_t))
 {
@@ -29,9 +31,15 @@ void co_start(struct coroutine *co, uint32_t arg)
   }
   co->state = CO_STATE_RUN;
   stack[++stack_top] = co;
-  co_jump_arg(
-    &stack[stack_top - 1]->regs, &co->regs,
-    stack[stack_top - 1]->flags | co->flags, arg);
+  if (co->flags & CO_FLAG_USER) {
+    co_jump(
+      &stack[stack_top - 1]->regs, &co->regs,
+      catflags(stack[stack_top - 1]->flags, co->flags));
+  } else {
+    co_jump_arg(
+      &stack[stack_top - 1]->regs, &co->regs,
+      catflags(stack[stack_top - 1]->flags, co->flags), arg);
+  }
 }
 
 void co_next(struct coroutine *co)
@@ -46,7 +54,7 @@ void co_next(struct coroutine *co)
   stack[++stack_top] = co;
   co_jump(
     &stack[stack_top - 1]->regs, &co->regs,
-    stack[stack_top - 1]->flags | co->flags);
+    catflags(stack[stack_top - 1]->flags, co->flags));
 }
 
 void co_yield()
@@ -56,7 +64,7 @@ void co_yield()
   stack[stack_top + 1]->state = CO_STATE_YIELD;
   co_jump(
     &stack[stack_top + 1]->regs, &stack[stack_top]->regs,
-    stack[stack_top + 1]->flags | stack[stack_top]->flags);
+    catflags(stack[stack_top + 1]->flags, stack[stack_top]->flags));
 }
 
 void co_syscall_yield()
@@ -70,5 +78,5 @@ void co_done()
   stack[stack_top + 1]->state = CO_STATE_DONE;
   co_jump(
     &stack[stack_top + 1]->regs, &stack[stack_top]->regs,
-    stack[stack_top + 1]->flags | stack[stack_top]->flags);
+    catflags(stack[stack_top + 1]->flags, stack[stack_top]->flags));
 }

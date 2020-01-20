@@ -456,20 +456,30 @@ void sys_main()
   mem_barrier();
   syscalls_init();
 
+/*
   set_user_sp(user_stack + sizeof user_stack);
   change_mode_b(MODE_USR, userqwq);
   while (1) { }
+*/
 
 /*
   co_create(&userco, userqwq);
   userco.flags = CO_FLAG_FPU | CO_FLAG_USER;
   while (1) {
-    //co_next(&c1);
+    co_next(&userco);
     while (1) { }
   }
 */
 
-/*
+  co_create(&c1, f2);
+  co_create(&c2, f3);
+  c1.flags = CO_FLAG_FPU;
+  c2.flags = CO_FLAG_FPU;
+  while (1) {
+    co_next(&c1);
+    co_next(&c2);
+  }
+
   co_create(&c1, usb_loop);
   co_create(&c2, audio_loop);
   co_create(&c3, print_loop);
@@ -478,7 +488,6 @@ void sys_main()
     co_next(&c2);
     co_next(&c3);
   }
-*/
 
 /*
   mem_barrier();
