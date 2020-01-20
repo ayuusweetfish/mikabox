@@ -37,8 +37,10 @@ uint64_t swi_handler(uint32_t r0, uint32_t r1, uint32_t r2, uint32_t r3)
 
   if (num == 1) {
     user_yield_regs.sp = (uint32_t)get_user_sp();
-    printf("saved stack pointer: 0x%08x\n", user_yield_regs.sp);
-    printf("return address: 0x%08x\n", user_yield_regs.pc);
+    //printf("saved stack pointer: 0x%08x\n", user_yield_regs.sp);
+    //printf("return address: 0x%08x\n", user_yield_regs.pc);
+    register uint32_t sp __asm__ ("sp");
+    printf("current sp = 0x%08x\n", sp);
     co_syscall_yield(&user_yield_regs);
   }
 

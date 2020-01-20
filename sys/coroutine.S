@@ -33,3 +33,9 @@ regs_save:
   fstmiad   ip!, {d8-d15}
   stmia     ip!, {r4-r11, sp, lr}
   b         _swi_stub_cont
+
+// Does not change mode
+.global regs_load
+regs_load:
+  fldmiad   r0!, {d8-d15}
+  ldmia     r0!, {r4-r11, sp, pc}

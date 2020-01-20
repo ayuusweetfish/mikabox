@@ -288,10 +288,10 @@ static struct coroutine userco;
 static void userqwq()
 {
   printf("From user mode!\n");
-  printf("Random = 0x%08llx\n", syscall64(6));
-  syscall(1);
-  printf("Random = 0x%08llx\n", syscall64(6));
-  while (1) { }
+  for (uint32_t i = 0; i < 20; i++) {
+    syscall(1);
+    printf("[%u] Random = 0x%08llx\n", i, syscall64(6));
+  }
 }
 
 void sys_main()
@@ -464,11 +464,12 @@ void sys_main()
 
   co_create(&userco, userqwq);
   userco.flags = CO_FLAG_FPU | CO_FLAG_USER;
-  while (1) {
+  while (userco.state != CO_STATE_DONE) {
+    printf("====\n");
     co_next(&userco);
-    printf("Done!\n");
-    while (1) { }
+    MsDelay(500);
   }
+  while (1) { }
 
   co_create(&c1, f2);
   co_create(&c2, f3);
