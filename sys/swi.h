@@ -3,13 +3,13 @@
 
 #include <stdint.h>
 
-uint32_t swi_handler(uint32_t r0, uint32_t r1, uint32_t r2, uint32_t r3);
+uint64_t swi_handler(uint32_t r0, uint32_t r1, uint32_t r2, uint32_t r3);
 
-uint32_t syscall0(uint32_t);
-uint32_t syscall1(uint32_t, uint32_t);
-uint32_t syscall2(uint32_t, uint32_t, uint32_t);
-uint32_t syscall3(uint32_t, uint32_t, uint32_t, uint32_t);
-uint32_t syscall4(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t);
+uint64_t syscall0(uint32_t);
+uint64_t syscall1(uint32_t, uint32_t);
+uint64_t syscall2(uint32_t, uint32_t, uint32_t);
+uint64_t syscall3(uint32_t, uint32_t, uint32_t, uint32_t);
+uint64_t syscall4(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t);
 
 #define VA_GET(_0, _1, _2, _3, _4, _N, ...) (_N)
 #define VA_ARGC(...) VA_GET(__VA_ARGS__, 5, 4, 3, 2, 1, 0)

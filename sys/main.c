@@ -427,6 +427,7 @@ void sys_main()
   while (c1.state != CO_STATE_DONE) {
     co_next(&c1);
     co_next(&c2);
+    printf("random = 0x%08llx\n", syscall(6));
   }
   printf("Done!\n");
 

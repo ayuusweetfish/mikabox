@@ -3,7 +3,7 @@ num #in #ou desc
 +0: General
 0   3   0   Register update/synth/draw coroutines
 1   0   0   Yield from update/synth/draw routine
-2   0   0   Return from update/synth/draw routine
+2   0   1   Get current tick in-game
 3   0   0   Get number of players connected
 4   1   1   Get buttons for a player
 5   1   1   Get axes for a player

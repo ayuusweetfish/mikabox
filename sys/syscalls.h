@@ -7,10 +7,10 @@
 
 #if SYSCALLS_DECL
   #define def(__grp, __id, __fn)  \
-    uint32_t FN(__grp, __id)(uint32_t r0, uint32_t r1, uint32_t r2, uint32_t r3);
+    uint64_t FN(__grp, __id)(uint32_t r0, uint32_t r1, uint32_t r2, uint32_t r3);
 #elif SYSCALLS_IMPL
   #define def(__grp, __id, __fn)  \
-    uint32_t FN(__grp, __id)(uint32_t r0, uint32_t r1, uint32_t r2, uint32_t r3) \
+    uint64_t FN(__grp, __id)(uint32_t r0, uint32_t r1, uint32_t r2, uint32_t r3) \
     { __fn return 0; }
 #elif SYSCALLS_TABLE
   #define def(__grp, __id, __fn)  \
@@ -142,7 +142,7 @@ def(GEN, 6, {
   mem_barrier();
   uint32_t data = *RNG_DATA;
   mem_barrier();
-  return data;
+  return (uint64_t)data | 0x100000000LL;
 })
 
 def(GEN, 43, {
