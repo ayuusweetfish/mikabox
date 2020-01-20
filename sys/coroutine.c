@@ -59,6 +59,10 @@ void co_yield()
     stack[stack_top + 1]->flags | stack[stack_top]->flags);
 }
 
+void co_syscall_yield()
+{
+}
+
 // Exported for use in coroutine.S
 void co_done()
 {

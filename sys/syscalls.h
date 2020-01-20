@@ -33,6 +33,7 @@ void syscalls_init();
 #elif SYSCALLS_IMPL
 #include "printf/printf.h"
 #include "common.h"
+#include "coroutine.h"
 #include "v3d.h"
 #include "fatfs/ff.h"
 #include <string.h>
@@ -137,6 +138,10 @@ static inline const char *f_strerr(FRESULT fr)
   return strs[fr];
 }
 #endif
+
+def(GEN, 1, {
+  co_syscall_yield();
+})
 
 def(GEN, 6, {
   mem_barrier();

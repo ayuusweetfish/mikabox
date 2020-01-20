@@ -246,7 +246,7 @@ static void audio_loop(uint32_t _unused)
   while (1) {
     //printf(AMPiIsActive() ? "\rActive  " : "\rInactive");
     AMPiPoke();
-    for (uint32_t i = 0; i < 100000; i++) __asm__ __volatile__ ("");
+    //for (uint32_t i = 0; i < 100000; i++) __asm__ __volatile__ ("");
     z++;
 
 #if DRAW
@@ -421,18 +421,6 @@ void sys_main()
   syscall(512 + 33, (uint32_t)"/zzz");
   printf("/zzz       %u**\n", syscall(512 + 32, (uint32_t)"/zzz"));
 
-  co_create(&c1, f3);
-  co_create(&c2, f2);
-  c1.flags = c2.flags = CO_FLAG_FPU;
-  while (c1.state != CO_STATE_DONE) {
-    co_next(&c1);
-    co_next(&c2);
-    printf("random = 0x%08llx\n", syscall(6));
-  }
-  printf("Done!\n");
-
-  while (1) { }
-
   // Continue RNG initialization
   mem_barrier();
   printf("Initializing HRNG\n");
@@ -456,14 +444,14 @@ void sys_main()
   mem_barrier();
   syscalls_init();
 
-/*
-  co_create(usb_loop, 0);
-  co_create(audio_loop, 0);
-  co_create(print_loop, 0);
-  while (1) for (uint8_t i = 1; i <= 3; i++) {
-    co_next(i);
+  co_create(&c1, usb_loop);
+  co_create(&c2, audio_loop);
+  co_create(&c3, print_loop);
+  while (1) {
+    co_next(&c1);
+    co_next(&c2);
+    co_next(&c3);
   }
-*/
 
 /*
   mem_barrier();
