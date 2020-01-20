@@ -24,6 +24,15 @@ _addr_int_fiq:      .word _reset
 
 _swi_stub:
   stmfd sp!, {ip, lr}
+  cmp   r7, #1      // GEN + 1, yield
+  beq   _swi_stub_cont
+
+  // Save registers
+  ldr   r0, =user_yield_regs  // External
+  ldr   r1, =_swi_stub_cont
+  b     regs_save             // External
+
+_swi_stub_cont:
   bl    swi_handler // External symbol
   ldmfd sp!, {ip, pc}^
 

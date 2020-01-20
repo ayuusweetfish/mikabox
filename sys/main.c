@@ -288,6 +288,8 @@ static void userqwq()
 {
   printf("From user mode!\n");
   printf("Random = 0x%08llx\n", syscall64(6));
+  syscall(1);
+  printf("Random = 0x%08llx\n", syscall64(6));
   while (1) { }
 }
 
