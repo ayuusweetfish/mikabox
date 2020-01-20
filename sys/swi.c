@@ -39,6 +39,7 @@ uint64_t swi_handler(uint32_t r0, uint32_t r1, uint32_t r2, uint32_t r3)
     user_yield_regs.sp = (uint32_t)get_user_sp();
     printf("saved stack pointer: 0x%08x\n", user_yield_regs.sp);
     printf("return address: 0x%08x\n", user_yield_regs.pc);
+    co_syscall_yield(&user_yield_regs);
   }
 
   if (fn != NULL)

@@ -462,14 +462,13 @@ void sys_main()
   while (1) { }
 */
 
-/*
   co_create(&userco, userqwq);
   userco.flags = CO_FLAG_FPU | CO_FLAG_USER;
   while (1) {
     co_next(&userco);
+    printf("Done!\n");
     while (1) { }
   }
-*/
 
   co_create(&c1, f2);
   co_create(&c2, f3);

@@ -67,8 +67,11 @@ void co_yield()
     catflags(stack[stack_top + 1]->flags, stack[stack_top]->flags));
 }
 
-void co_syscall_yield()
+void co_syscall_yield(struct reg_set *saved_regs)
 {
+  stack[stack_top]->regs = *saved_regs;
+  __asm__ __volatile__ ("cpsie i");
+  co_yield();
 }
 
 // Exported for use in coroutine.S

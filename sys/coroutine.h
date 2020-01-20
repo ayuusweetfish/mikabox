@@ -51,7 +51,7 @@ void co_create(struct coroutine *co, void (*fn)(uint32_t));
 void co_start(struct coroutine *co, uint32_t arg);
 void co_next(struct coroutine *co);
 void co_yield();
-void co_syscall_yield();
+void co_syscall_yield(struct reg_set *saved_regs);
 
 #ifdef __cplusplus
 }

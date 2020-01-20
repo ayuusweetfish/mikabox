@@ -20,6 +20,13 @@ co_jump:
   stmia     r0!, {r4-r11, sp, lr}
   fldmiadne r1!, {d8-d15}
   addeq     r1, #64
+  tst       r2, #2      // to CO_FLAG_USER
+  ldmeqia   r1!, {r4-r11, sp, pc}
+  // Enter user mode
+  mrs       r2, cpsr
+  bic       r2, r2, #0x1f
+  orr       r2, r2, #0x10
+  msr       cpsr_c, r2
   ldmia     r1!, {r4-r11, sp, pc}
 
 // Saves all registers, including VFP ones and lr
