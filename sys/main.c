@@ -418,13 +418,11 @@ void sys_main()
   printf("/zzz       %u**\n", syscall(512 + 32, (uint32_t)"/zzz"));
 
   co_create(&c1, f1);
-  printf("aha\n");
-  co_start(&c1, 0);
-  printf("aho\n");
-  while (1) {
+  while (c1.state != CO_STATE_DONE) {
     co_next(&c1);
     for (uint32_t i = 0; i < 1e8; i++) __asm__ __volatile__ ("");
   }
+  printf("Done!\n");
 
   while (1) { }
 
