@@ -18,6 +18,7 @@ extern "C" {
 #define CO_STACK  65536
 
 struct reg_set {
+  uint64_t d[16];
   uint32_t r4;
   uint32_t r5;
   uint32_t r6;
@@ -28,7 +29,6 @@ struct reg_set {
   uint32_t r11;
   uint32_t sp;
   uint32_t pc;
-  uint64_t d[16];
 } __attribute__((packed, aligned(8)));
 
 struct coroutine {
