@@ -41,7 +41,8 @@ struct coroutine {
     CO_STATE_YIELD,
     CO_STATE_DONE
   } state;
-  #define CO_FLAG_FPU (1 << 0)
+  #define CO_FLAG_FPU   (1 << 0)
+  #define CO_FLAG_USER  (1 << 1)
   uint8_t flags;
   uint8_t stack[CO_STACK] __attribute__((aligned(8)));
 } __attribute__((aligned(8)));
@@ -50,7 +51,7 @@ void co_create(struct coroutine *co, void (*fn)(uint32_t));
 void co_start(struct coroutine *co, uint32_t arg);
 void co_next(struct coroutine *co);
 void co_yield();
-void co_syscall_yield();
+void co_syscall_yield(struct reg_set *saved_regs);
 
 #ifdef __cplusplus
 }

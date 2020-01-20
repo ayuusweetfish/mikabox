@@ -140,7 +140,6 @@ static inline const char *f_strerr(FRESULT fr)
 #endif
 
 def(GEN, 1, {
-  co_syscall_yield();
 })
 
 def(GEN, 6, {

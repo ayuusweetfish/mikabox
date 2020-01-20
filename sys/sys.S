@@ -13,13 +13,14 @@ change_mode_b:
 
 .global set_user_sp
 set_user_sp:
-  // Change to System mode
-  mrs   r2, cpsr
-  orr   r2, r2, #0x1f
-  msr   cpsr_c, r2
-  // Set SP
+  cps   #0x1f
   mov   sp, r0
-  // Change back to Supervisor mode
-  bic   r2, r2, #0xc
-  msr   cpsr_c, r2
+  cps   #0x13
+  bx    lr
+
+.global get_user_sp
+get_user_sp:
+  cps   #0x1f
+  mov   r0, sp
+  cps   #0x13
   bx    lr

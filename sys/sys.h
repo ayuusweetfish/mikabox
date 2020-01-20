@@ -12,5 +12,10 @@
 void change_mode(uint32_t mode);
 void change_mode_b(uint32_t mode, void *addr);
 void set_user_sp(void *sp);
+void *get_user_sp();
+
+#include "coroutine.h"
+
+extern struct reg_set user_yield_regs;
 
 #endif

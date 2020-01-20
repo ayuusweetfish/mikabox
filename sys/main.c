@@ -284,13 +284,14 @@ static void print_loop(uint32_t _unused)
 }
 
 static uint8_t user_stack[1048576] __attribute__((aligned(16)));
+static struct coroutine userco;
 static void userqwq()
 {
   printf("From user mode!\n");
-  printf("Random = 0x%08llx\n", syscall64(6));
-  syscall(1);
-  printf("Random = 0x%08llx\n", syscall64(6));
-  while (1) { }
+  for (uint32_t i = 0; i < 20; i++) {
+    syscall(1);
+    printf("[%u] Random = 0x%08llx\n", i, syscall64(6));
+  }
 }
 
 void sys_main()
@@ -455,10 +456,30 @@ void sys_main()
   mem_barrier();
   syscalls_init();
 
+/*
   set_user_sp(user_stack + sizeof user_stack);
   change_mode_b(MODE_USR, userqwq);
+  while (1) { }
+*/
 
-/*
+  co_create(&userco, userqwq);
+  userco.flags = CO_FLAG_FPU | CO_FLAG_USER;
+  while (userco.state != CO_STATE_DONE) {
+    printf("====\n");
+    co_next(&userco);
+    MsDelay(500);
+  }
+  while (1) { }
+
+  co_create(&c1, f2);
+  co_create(&c2, f3);
+  c1.flags = CO_FLAG_FPU;
+  c2.flags = CO_FLAG_FPU;
+  while (1) {
+    co_next(&c1);
+    co_next(&c2);
+  }
+
   co_create(&c1, usb_loop);
   co_create(&c2, audio_loop);
   co_create(&c3, print_loop);
@@ -467,7 +488,6 @@ void sys_main()
     co_next(&c2);
     co_next(&c3);
   }
-*/
 
 /*
   mem_barrier();

@@ -1,6 +1,7 @@
 .global co_jump_arg
 co_jump_arg:
-  tst       r2, #1  // Test for CO_FLAG_FPU
+  ldr       ip, =#0x101 // CO_FLAG_FPU for both
+  tst       r2, ip
   fstmiadne r0!, {d8-d15}
   addeq     r0, #64
   stmia     r0!, {r4-r11, sp, lr}
@@ -12,19 +13,29 @@ co_jump_arg:
 
 .global co_jump
 co_jump:
-  tst       r2, #1  // Test for CO_FLAG_FPU
+  ldr       ip, =#0x101 // CO_FLAG_FPU for both
+  tst       r2, ip
   fstmiadne r0!, {d8-d15}
   addeq     r0, #64
   stmia     r0!, {r4-r11, sp, lr}
   fldmiadne r1!, {d8-d15}
   addeq     r1, #64
+  tst       r2, #2      // to CO_FLAG_USER
+  ldmeqia   r1!, {r4-r11, sp, pc}
+  // Enter user mode
+  cps       #0x10
   ldmia     r1!, {r4-r11, sp, pc}
 
 // Saves all registers, including VFP ones and lr
-// r0: Address to struct reg_set
-// r1: Return address
+// ip: Address to struct reg_set
 .global regs_save
 regs_save:
-  fstmiad   r0!, {d8-d15}
-  stmia     r0!, {r4-r11, sp, lr}
-  bx        r1
+  fstmiad   ip!, {d8-d15}
+  stmia     ip!, {r4-r11, sp, lr}
+  b         _swi_stub_cont
+
+// Does not change mode
+.global regs_load
+regs_load:
+  fldmiad   r0!, {d8-d15}
+  ldmia     r0!, {r4-r11, sp, pc}
