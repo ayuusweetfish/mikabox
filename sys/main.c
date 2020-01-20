@@ -162,15 +162,19 @@ void dodo(uint32_t fb);
 void donk();
 #define DRAW 0
 
-static void f1(void *_unused)
+static struct coroutine c1, c2;
+
+static void f1(uint32_t _unused)
 {
+  vsync_callback(0);
   for (uint32_t i = 0; i < 20; i++) {
-    printf("f1: Hi\n");
+    printf("f1: Hi %u\n", i);
+    vsync_callback(0);
     co_yield();
   }
 }
 
-static void f2(void *arg)
+static void f2(uint32_t arg)
 {
   uint32_t max = (uint32_t)arg;
   for (uint32_t i = 0, s = 0; max == 0 || i < max; s += (++i)) {
@@ -179,16 +183,16 @@ static void f2(void *arg)
   }
 }
 
-static void f3(void *_unused)
+static void f3(uint32_t _unused)
 {
   for (uint32_t i = 0; i < 10; i++) {
     printf("f3: Start over\n");
     co_yield();
-    f2((void *)4);
+    f2(4);
   }
 }
 
-static void f4(void *_unused)
+static void f4(uint32_t _unused)
 {
   while (1) {
     printf("==== f4: Tik ====\n");
@@ -198,7 +202,7 @@ static void f4(void *_unused)
   }
 }
 
-static void usb_loop(void *_unused)
+static void usb_loop(uint32_t _unused)
 {
   bool first = true;
   while (1) {
@@ -222,7 +226,7 @@ static void usb_loop(void *_unused)
   }
 }
 
-static void audio_loop(void *_unused)
+static void audio_loop(uint32_t _unused)
 {
   mem_barrier();
   AMPiInitialize(44100, 1764);  // 20 ms latency/block size
@@ -265,7 +269,7 @@ static void audio_loop(void *_unused)
   vsync_callback(0);
 }
 
-static void print_loop(void *_unused)
+static void print_loop(uint32_t _unused)
 {
   while (1) {
     MsDelay(1000);
@@ -413,6 +417,15 @@ void sys_main()
   syscall(512 + 33, (uint32_t)"/zzz");
   printf("/zzz       %u**\n", syscall(512 + 32, (uint32_t)"/zzz"));
 
+  co_create(&c1, f1);
+  printf("aha\n");
+  co_start(&c1, 0);
+  printf("aho\n");
+  while (1) {
+    co_next(&c1);
+    for (uint32_t i = 0; i < 1e8; i++) __asm__ __volatile__ ("");
+  }
+
   while (1) { }
 
   // Continue RNG initialization
@@ -438,12 +451,14 @@ void sys_main()
   mem_barrier();
   syscalls_init();
 
+/*
   co_create(usb_loop, 0);
   co_create(audio_loop, 0);
   co_create(print_loop, 0);
   while (1) for (uint8_t i = 1; i <= 3; i++) {
     co_next(i);
   }
+*/
 
 /*
   mem_barrier();

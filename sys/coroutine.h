@@ -15,11 +15,37 @@ extern "C" {
 
 #include <stdint.h>
 
-#define MAX_CO  8
+#define CO_STACK  65536
 
-int8_t co_create(void (*fn)(void *), void *arg);
+struct reg_set {
+  uint32_t r4;
+  uint32_t r5;
+  uint32_t r6;
+  uint32_t r7;
+  uint32_t r8;
+  uint32_t r9;
+  uint32_t r10;
+  uint32_t r11;
+  uint32_t sp;
+  uint32_t pc;
+  uint64_t d[16];
+} __attribute__((packed, aligned(8)));
+
+struct coroutine {
+  enum co_state {
+    CO_STATE_NEW = 0,
+    CO_STATE_RUN,
+    CO_STATE_YIELD,
+    CO_STATE_DONE
+  } state;
+  struct reg_set regs;
+  uint8_t stack[CO_STACK];
+};
+
+void co_create(struct coroutine *co, void (*fn)(uint32_t));
+void co_start(struct coroutine *co, uint32_t arg);
+void co_next(struct coroutine *co);
 void co_yield();
-void co_next(int8_t id);
 
 #ifdef __cplusplus
 }
