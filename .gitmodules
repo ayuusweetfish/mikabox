@@ -10,3 +10,6 @@
 [submodule "sys/uspi"]
 	path = sys/uspi
 	url = https://github.com/kawa-yoiko/uspi.git
+[submodule "emu/unicorn"]
+	path = emu/unicorn
+	url = https://github.com/unicorn-engine/unicorn.git

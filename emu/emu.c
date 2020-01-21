@@ -2,9 +2,6 @@
 #include <unicorn/unicorn.h>
 #include <stdio.h>
 
-#define NUM_REGIONS 16
-static int num_regions = 0;
-
 static inline uint32_t align(uint32_t addr, uint32_t align)
 {
   return (addr + align - 1) & ~(align - 1);
@@ -118,6 +115,10 @@ void emu()
   elf_addr entry;
   uint8_t elfret = elf_load(fp_get, fp, &entry);
   fclose(fp);
+  if (elfret != 0) {
+    printf("elf_load() returned error %u\n", elfret);
+    return;
+  }
 
   // Add hooks
   uc_hook hook_mem, hook_syscall;
