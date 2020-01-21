@@ -1,9 +1,17 @@
 #include <stdio.h>  // Ahhhhhhh~~~!!!
 #include <stdlib.h>
+#include <string.h>
 
 #include "elf.h"
 
-void load_program(const elf_ehdr *ehdr, const elf_phdr *program) { }
+void elf_load_program(const elf_ehdr *ehdr, const elf_phdr *program)
+{
+}
+
+void buf_get(void *from, void *to, uint32_t offs, uint32_t len)
+{
+  memcpy(to, (uint8_t *)from + offs, len);
+}
 
 int main(int argc, char *argv[])
 {
@@ -34,7 +42,7 @@ int main(int argc, char *argv[])
   fclose(f);
 
   printf("File size %lu B\n", len);
-  uint8_t ret = load_elf(buf);
+  uint8_t ret = elf_load(len, buf_get, buf);
   printf("load_elf returns %d\n", ret);
 
   return 0;

@@ -1,5 +1,6 @@
 #include "elf.h"
 #include <stddef.h>
+#include <stdlib.h>
 
 // Reference document
 // http://infocenter.arm.com/help/topic/com.arm.doc.ihi0044f/IHI0044F_aaelf.pdf
@@ -16,10 +17,10 @@ static uint8_t check_ehdr(const elf_ehdr *ehdr)
     return ELF_E_INVALID;
   }
   if (ehdr->ident[4] != 1 ||    // class 32-bit ELFCLASS32
-    ehdr->ident[5] != 1 ||      // data LSB   ELFDATA2LSB
+    ehdr->ident[5] != 1 ||      // data LSB     ELFDATA2LSB
     ehdr->ident[6] != 1 ||      // ELF version  EV_CURRENT
-    ehdr->type != 2 ||          // type     ET_EXEC
-    ehdr->machine != 40 ||      // machine    EM_ARM
+    ehdr->type != 2 ||          // type         ET_EXEC
+    ehdr->machine != 40 ||      // machine      EM_ARM
     (ehdr->flags >> 24) != 5 || // ABI version  EF_ARM_ABIMASK
     !(ehdr->flags & 0x400))     // hard float   EF_ARM_ABI_FLOAT_HARD
   {
@@ -31,63 +32,51 @@ static uint8_t check_ehdr(const elf_ehdr *ehdr)
   return ELF_E_NONE;
 }
 
-static inline const elf_shdr *get_shdr(const elf_ehdr *ehdr)
+uint8_t elf_load(uint32_t fsz, elf_fread *reader, void *user)
 {
-  return (const elf_shdr *)((const char *)ehdr + ehdr->shoffs);
-}
+  elf_ehdr ehdr;
+  reader(user, &ehdr, 0, sizeof(elf_ehdr));
 
-static inline const elf_phdr *get_phdr(const elf_ehdr *ehdr)
-{
-  return (const elf_phdr *)((const char *)ehdr + ehdr->phoffs);
-}
-
-static inline const char *get_strtab(const elf_ehdr *ehdr)
-{
-  return (ehdr->shstrndx == 0) ? NULL :
-    (const char *)ehdr + get_shdr(ehdr)[ehdr->shstrndx].offs;
-}
-
-static inline const char *get_strtab_ent(const elf_ehdr *ehdr, uint32_t offs)
-{
-  const char *table = get_strtab(ehdr);
-  return table ? table + offs : NULL;
-}
-
-uint8_t load_elf(const char *buf)
-{
-  const elf_ehdr *ehdr = (elf_ehdr *)buf;
-
-  uint8_t ehdr_result = check_ehdr(ehdr);
+  uint8_t ehdr_result = check_ehdr(&ehdr);
   if (ehdr_result != ELF_E_NONE) return ehdr_result;
+
+  elf_shdr strtabhdr;
+  reader(user, &strtabhdr,
+    ehdr.shoffs + ehdr.shstrndx * sizeof(elf_shdr), sizeof(elf_shdr));
+
+  char *strtab = (char *)malloc(strtabhdr.size);
+  reader(user, strtab, strtabhdr.offs, strtabhdr.size);
+
+  elf_shdr shdr;
 
   printf("%-16s %8s %3s %8s %6s %6s %6s\n",
     "section", "type", "flg", "addr", "aln", "offset", "size");
-  const elf_shdr *shdr = get_shdr(ehdr);
-  for (uint32_t i = 0; i < ehdr->shnum; i++) {
-    const elf_shdr *section = shdr + i;
+  for (uint32_t i = 0; i < ehdr.shnum; i++) {
+    reader(user, &shdr, ehdr.shoffs + i * sizeof(elf_shdr), sizeof(elf_shdr));
     ELF_LOG("%-16s %8x %c%c%c %8x %6x %6x %6x\n",
-      get_strtab_ent(ehdr, section->name), section->type,
-      (section->flags & 1) ? 'W' : '.',
-      (section->flags & 2) ? 'A' : '.',
-      (section->flags & 4) ? 'X' : '.',
-      section->addr, section->addralign, section->offs, section->size);
+      strtab + shdr.name, shdr.type,
+      (shdr.flags & 1) ? 'W' : '.',
+      (shdr.flags & 2) ? 'A' : '.',
+      (shdr.flags & 4) ? 'X' : '.',
+      shdr.addr, shdr.addralign, shdr.offs, shdr.size);
   }
+
+  elf_phdr phdr;
 
   printf("\n");
   printf("%8s %6s %8s %8s %6s %6s %3s %6s\n",
     "progtype", "offset", "vaddr", "paddr", "filesz", "memsz", "flg", "aln");
-  const elf_phdr *phdr = get_phdr(ehdr);
-  for (uint32_t i = 0; i < ehdr->phnum; i++) {
-    const elf_phdr *program = phdr + i;
+  for (uint32_t i = 0; i < ehdr.phnum; i++) {
+    reader(user, &phdr, ehdr.phoffs + i * sizeof(elf_phdr), sizeof(elf_phdr));
     ELF_LOG("%8x %6x %8x %8x %6x %6x %c%c%c %6x\n",
-      program->type, program->offs,
-      program->vaddr, program->paddr,
-      program->filesz, program->memsz,
-      (program->flags & 4) ? 'R' : ' ',
-      (program->flags & 2) ? 'W' : ' ',
-      (program->flags & 1) ? 'X' : ' ',
-      program->align);
-    load_program(ehdr, program);
+      phdr.type, phdr.offs,
+      phdr.vaddr, phdr.paddr,
+      phdr.filesz, phdr.memsz,
+      (phdr.flags & 4) ? 'R' : '.',
+      (phdr.flags & 2) ? 'W' : '.',
+      (phdr.flags & 1) ? 'X' : '.',
+      phdr.align);
+    elf_load_program(&ehdr, &phdr);
   }
 
   return ELF_E_NONE;

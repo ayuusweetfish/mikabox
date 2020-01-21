@@ -54,9 +54,10 @@ typedef struct {
 #define ELF_E_INVALID   1
 #define ELF_E_UNSUPPORT 2
 
-uint8_t load_elf(const char *buf);
+typedef void elf_fread(void *user, void *buf, uint32_t offs, uint32_t len);
+uint8_t elf_load(uint32_t fsz, elf_fread *reader, void *user);
 
-void load_program(const elf_ehdr *ehdr, const elf_phdr *program);
+void elf_load_program(const elf_ehdr *ehdr, const elf_phdr *program);
 
 #ifdef ELF_TEST
 #include <stdio.h>
