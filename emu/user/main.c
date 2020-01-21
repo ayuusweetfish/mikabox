@@ -16,8 +16,15 @@ __attribute__ ((noinline)) void crt_init()
 uint32_t main()
 {
   crt_init();
-  register uint32_t r0 __asm__ ("r0") = (uint32_t)qvq;
-  register uint32_t r1 __asm__ ("r1") = 99;
-  __asm__ __volatile__ ("swi #0" :: "r" (r0), "r" (r1));
+  register uint32_t r1 __asm__ ("r1") = 0;
+  uint32_t j = 0;
+  while (1) {
+    for (uint32_t i = 0; i < 5e7; i++) {
+      r1 += i + (++j);
+      qwq[r1 % 1024] += r1;
+    }
+    register uint32_t r0 __asm__ ("r0") = (uint32_t)qvq;
+    __asm__ __volatile__ ("swi #0\n" :: "r" (r0), "r" (r1));
+  }
   return 251;
 }

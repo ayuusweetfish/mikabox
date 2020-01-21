@@ -132,7 +132,7 @@ void emu()
 
   // Execute
   printf("Entry 0x%08x\n", entry);
-  if ((err = uc_emu_start(uc, entry, 0, 0, 0)) != UC_ERR_OK) {
+  if ((err = uc_emu_start(uc, entry, 0, 1000000, 0)) != UC_ERR_OK) {
     printf("uc_emu_start() returned error %u (%s)\n", err, uc_strerror(err));
     return;
   }
