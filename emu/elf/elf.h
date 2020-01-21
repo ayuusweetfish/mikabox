@@ -56,15 +56,16 @@ typedef struct {
 #define ELF_E_MEM       3
 
 typedef void elf_fread(void *user, void *buf, uint32_t offs, uint32_t len);
-uint8_t elf_load(uint32_t fsz, elf_fread *reader, void *user);
+uint8_t elf_load(elf_fread *reader, void *user, elf_addr *entry);
 
 void *elf_alloc(elf_word vaddr, elf_word memsz, elf_word flags);
+void elf_alloc_post(elf_word vaddr, elf_word memsz, elf_word flags, void *buf);
 
 #ifdef ELF_TEST
 #include <stdio.h>
 #define ELF_LOG printf
 #else
-#define ELF_LOG
+#define ELF_LOG(...)
 #endif
 
 #endif

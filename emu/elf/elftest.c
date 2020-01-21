@@ -13,6 +13,10 @@ void *elf_alloc(elf_word vaddr, elf_word memsz, elf_word flags)
   return p;
 }
 
+void elf_alloc_post(elf_word vaddr, elf_word memsz, elf_word flags, void *buf)
+{
+}
+
 void buf_get(void *from, void *to, uint32_t offs, uint32_t len)
 {
   memcpy(to, (uint8_t *)from + offs, len);
@@ -47,10 +51,12 @@ int main(int argc, char *argv[])
   fclose(f);
 
   printf("File size %lu B\n", len);
-  uint8_t ret = elf_load(len, buf_get, buf);
+  elf_addr entry;
+  uint8_t ret = elf_load(buf_get, buf, &entry);
   printf("load_elf returns %d\n", ret);
   if (ret != ELF_E_NONE) return 4;
 
+  printf("Entry 0x%08x\n", entry);
   if (p80000000 == NULL) return 5;
 
   uint32_t *p = p80000000;

@@ -7,7 +7,7 @@
 
 // ELF headers start from p. 17
 
-static uint8_t check_ehdr(const elf_ehdr *ehdr)
+static uint8_t check_ehdr(const elf_ehdr *ehdr, elf_addr *entry)
 {
   if (ehdr->ident[0] != 0x7f ||
     ehdr->ident[1] != 'E' ||
@@ -27,17 +27,17 @@ static uint8_t check_ehdr(const elf_ehdr *ehdr)
     return ELF_E_UNSUPPORT;
   }
 
-  ELF_LOG("entry 0x%x\n", ehdr->entry);
+  *entry = ehdr->entry;
 
   return ELF_E_NONE;
 }
 
-uint8_t elf_load(uint32_t fsz, elf_fread *reader, void *user)
+uint8_t elf_load(elf_fread *reader, void *user, elf_addr *entry)
 {
   elf_ehdr ehdr;
   reader(user, &ehdr, 0, sizeof(elf_ehdr));
 
-  uint8_t ehdr_result = check_ehdr(&ehdr);
+  uint8_t ehdr_result = check_ehdr(&ehdr, entry);
   if (ehdr_result != ELF_E_NONE) return ehdr_result;
 
 #ifdef ELF_STRTAB
@@ -86,6 +86,7 @@ uint8_t elf_load(uint32_t fsz, elf_fread *reader, void *user)
       phdr.align);
     void *p = elf_alloc(phdr.vaddr, phdr.memsz, phdr.flags);
     reader(user, p, phdr.offs, phdr.filesz);
+    elf_alloc_post(phdr.vaddr, phdr.memsz, phdr.flags, p);
   }
 
   return ELF_E_NONE;
