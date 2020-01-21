@@ -53,6 +53,7 @@ typedef struct {
 #define ELF_E_NONE      0
 #define ELF_E_INVALID   1
 #define ELF_E_UNSUPPORT 2
+#define ELF_E_MEM       3
 
 typedef void elf_fread(void *user, void *buf, uint32_t offs, uint32_t len);
 uint8_t elf_load(uint32_t fsz, elf_fread *reader, void *user);

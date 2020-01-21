@@ -40,21 +40,29 @@ uint8_t elf_load(uint32_t fsz, elf_fread *reader, void *user)
   uint8_t ehdr_result = check_ehdr(&ehdr);
   if (ehdr_result != ELF_E_NONE) return ehdr_result;
 
+#ifdef ELF_STRTAB
   elf_shdr strtabhdr;
   reader(user, &strtabhdr,
     ehdr.shoffs + ehdr.shstrndx * sizeof(elf_shdr), sizeof(elf_shdr));
 
   char *strtab = (char *)malloc(strtabhdr.size);
+  if (strtab == NULL) return ELF_E_MEM;
   reader(user, strtab, strtabhdr.offs, strtabhdr.size);
+#endif
 
   elf_shdr shdr;
 
-  printf("%-16s %8s %3s %8s %6s %6s %6s\n",
+  ELF_LOG("%-16s %8s %3s %8s %6s %6s %6s\n",
     "section", "type", "flg", "addr", "aln", "offset", "size");
   for (uint32_t i = 0; i < ehdr.shnum; i++) {
     reader(user, &shdr, ehdr.shoffs + i * sizeof(elf_shdr), sizeof(elf_shdr));
     ELF_LOG("%-16s %8x %c%c%c %8x %6x %6x %6x\n",
-      strtab + shdr.name, shdr.type,
+#ifdef ELF_STRTAB
+      strtab + shdr.name,
+#else
+      "<unknown>",
+#endif
+      shdr.type,
       (shdr.flags & 1) ? 'W' : '.',
       (shdr.flags & 2) ? 'A' : '.',
       (shdr.flags & 4) ? 'X' : '.',
@@ -63,8 +71,8 @@ uint8_t elf_load(uint32_t fsz, elf_fread *reader, void *user)
 
   elf_phdr phdr;
 
-  printf("\n");
-  printf("%8s %6s %8s %8s %6s %6s %3s %6s\n",
+  ELF_LOG("\n");
+  ELF_LOG("%8s %6s %8s %8s %6s %6s %3s %6s\n",
     "progtype", "offset", "vaddr", "paddr", "filesz", "memsz", "flg", "aln");
   for (uint32_t i = 0; i < ehdr.phnum; i++) {
     reader(user, &phdr, ehdr.phoffs + i * sizeof(elf_phdr), sizeof(elf_phdr));
