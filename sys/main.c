@@ -294,6 +294,14 @@ static void userqwq()
   }
 }
 
+static void usertwt()
+{
+  printf("From usertwt()!\n");
+  uint32_t z = *RNG_DATA;
+  printf("Random = 0x%08x\n", z);
+  while (1) { }
+}
+
 void sys_main()
 {
   for (uint8_t *p = &_bss_begin; p < &_bss_end; p++) *p = 0;
@@ -306,6 +314,10 @@ void sys_main()
     mmu_table_section(mmu_table, i << 20, i << 20, (i < 64 ? (8 | 4) : 0));
   for (uint32_t i = bss_ord_page_begin; i <= bss_ord_page_end; i++)
     mmu_table_section(mmu_table, i << 20, i << 20, 0);
+  for (uint32_t i = 0x20000000; i <= 0x24000000; i += 0x100000)
+    // 1 << 5: domain 1
+    // 1 << 10: AP = 0b01 privileged access only
+    mmu_table_section(mmu_table, i, i, (1 << 5) | (1 << 10));
   mmu_enable(mmu_table);
 
   // Initialize RNG
@@ -461,6 +473,18 @@ void sys_main()
   change_mode_b(MODE_USR, userqwq);
   while (1) { }
 */
+
+  // Client for domain 1, manager for domain 0
+  mmu_domain_access_control((1 << 2) | 3);
+  change_mode(MODE_USR);
+  usertwt();
+  mmu_domain_access_control((3 << 2) | 3);
+  printf("Done!\n");
+
+  while (1) {
+    MsDelay(2000);
+    printf("Random = 0x%08x\n", *RNG_DATA);
+  }
 
   co_create(&userco, userqwq);
   userco.flags = CO_FLAG_FPU | CO_FLAG_USER;

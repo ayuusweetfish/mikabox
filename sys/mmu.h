@@ -10,6 +10,8 @@ void mmu_table_section(uint32_t *table, uint32_t vaddr, uint32_t paddr, uint32_t
 void mmu_enable(uint32_t *table_base);
 void mmu_flush();
 
+void mmu_domain_access_control(uint32_t access_vector);
+
 void *mmu_ord_alloc(size_t size, size_t align);
 void mmu_ord_pop();
 

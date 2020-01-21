@@ -27,3 +27,8 @@ mmu_flush:
   mcr   p15, 0, r0, c8, c7, 0
   mcr   p15, 0, r0, c7, c10, 0  // Clean data cache
   bx    lr
+
+.global mmu_domain_access_control
+mmu_domain_access_control:
+  mcr   p15, 0, r0, c3, c0, 0
+  bx    lr
