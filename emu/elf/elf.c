@@ -84,7 +84,8 @@ uint8_t elf_load(uint32_t fsz, elf_fread *reader, void *user)
       (phdr.flags & 2) ? 'W' : '.',
       (phdr.flags & 1) ? 'X' : '.',
       phdr.align);
-    elf_load_program(&ehdr, &phdr);
+    void *p = elf_alloc(phdr.vaddr, phdr.memsz, phdr.flags);
+    reader(user, p, phdr.offs, phdr.filesz);
   }
 
   return ELF_E_NONE;

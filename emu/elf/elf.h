@@ -58,7 +58,7 @@ typedef struct {
 typedef void elf_fread(void *user, void *buf, uint32_t offs, uint32_t len);
 uint8_t elf_load(uint32_t fsz, elf_fread *reader, void *user);
 
-void elf_load_program(const elf_ehdr *ehdr, const elf_phdr *program);
+void *elf_alloc(elf_word vaddr, elf_word memsz, elf_word flags);
 
 #ifdef ELF_TEST
 #include <stdio.h>
