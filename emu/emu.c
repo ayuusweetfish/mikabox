@@ -1,7 +1,12 @@
 #include "elf.h"
 #include "swi.h"
 #include "syscalls.h"
+
+#define GLEW_STATIC
+#include "GL/glew.h"
+#include "GLFW/glfw3.h"
 #include "unicorn/unicorn.h"
+
 #include <stdio.h>
 
 #define MEM_START   0x80000000
@@ -12,12 +17,60 @@
 #undef MEM_SIZE
 #define MEM_SIZE    0x1000000   // 16 MiB
 
+#define WIN_W 800
+#define WIN_H 480
+
+// GLFW
+
+static GLFWwindow *window; 
+
+static void glfw_err_callback(int error, const char *desc)
+{
+  printf("GLFW errors with code %d (%s)\n", error, desc);
+}
+
+static void glfw_fbsz_callback(GLFWwindow *window, int w, int h)
+{
+  glViewport(0, 0, w, h);
+}
+
+void setup_glfw()
+{
+  if (!glfwInit()) {
+    printf("Cannot initialize GLFW\n");
+    exit(1);
+  }
+
+  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
+  glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+  glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+  glfwWindowHint(GLFW_RESIZABLE, GL_TRUE);
+
+  window = glfwCreateWindow(WIN_W, WIN_H, "Mikabox Emulator", NULL, NULL);
+  if (window == NULL) {
+    printf("Cannot create GLFW window\n");
+    exit(1);
+  }
+
+  glfwMakeContextCurrent(window);
+  glfwSwapInterval(1);
+
+  glewExperimental = GL_TRUE;
+  if (glewInit() != GLEW_OK) {
+    printf("Cannot initialize GLEW\n");
+    exit(1);
+  }
+}
+
+// Unicorn Engine
+
+static uc_engine *uc;
+
 static inline uint32_t align(uint32_t addr, uint32_t align)
 {
   return (addr + align - 1) & ~(align - 1);
 }
-
-static uc_engine *uc;
 
 static void *alloc(elf_word vaddr, elf_word memsz, elf_word flags)
 {
@@ -132,6 +185,7 @@ void emu()
 
 int main()
 {
+  setup_glfw();
   emu();
   return 0;
 }

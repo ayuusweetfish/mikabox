@@ -13,3 +13,9 @@
 [submodule "emu/unicorn"]
 	path = emu/unicorn
 	url = https://github.com/unicorn-engine/unicorn.git
+[submodule "emu/glfw"]
+	path = emu/glfw
+	url = https://github.com/glfw/glfw.git
+[submodule "emu/glew"]
+	path = emu/glew
+	url = https://github.com/Perlmint/glew-cmake.git
