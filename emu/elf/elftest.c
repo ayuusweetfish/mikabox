@@ -13,10 +13,6 @@ void *elf_alloc(elf_word vaddr, elf_word memsz, elf_word flags)
   return p;
 }
 
-void elf_alloc_post(elf_word vaddr, elf_word memsz, elf_word flags, void *buf)
-{
-}
-
 void buf_get(void *from, void *to, uint32_t offs, uint32_t len)
 {
   memcpy(to, (uint8_t *)from + offs, len);

@@ -86,7 +86,6 @@ uint8_t elf_load(elf_fread *reader, void *user, elf_addr *entry)
       phdr.align);
     void *p = elf_alloc(phdr.vaddr, phdr.memsz, phdr.flags);
     reader(user, p, phdr.offs, phdr.filesz);
-    elf_alloc_post(phdr.vaddr, phdr.memsz, phdr.flags, p);
   }
 
   return ELF_E_NONE;

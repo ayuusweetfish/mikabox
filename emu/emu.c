@@ -2,6 +2,14 @@
 #include <unicorn/unicorn.h>
 #include <stdio.h>
 
+#define MEM_START   0x80000000
+#define MEM_SIZE    0x18000000  // 384 MiB
+#define MEM_END     (MEM_START + MEM_SIZE)
+#define PAGE_SIZE   0x100000
+
+#undef MEM_SIZE
+#define MEM_SIZE    0x1000000   // 16 MiB
+
 static inline uint32_t align(uint32_t addr, uint32_t align)
 {
   return (addr + align - 1) & ~(align - 1);
@@ -11,32 +19,25 @@ static uc_engine *uc;
 
 void *elf_alloc(elf_word vaddr, elf_word memsz, elf_word flags)
 {
-  return malloc(memsz);
-}
+  void *p = malloc(memsz);
 
-void elf_alloc_post(elf_word vaddr, elf_word memsz, elf_word flags, void *buf)
-{
   uint32_t perms = 0;
   if (flags & 4) perms |= UC_PROT_READ;
   if (flags & 2) perms |= UC_PROT_WRITE;
   if (flags & 1) perms |= UC_PROT_EXEC;
 
   uc_err err;
-  if ((err = uc_mem_map(uc, vaddr, align(memsz, 0x100000), perms)) != UC_ERR_OK) {
-    printf("uc_mem_map() returned error %u (%s)\n", err, uc_strerror(err));
-    exit(1);
+  if ((err = uc_mem_unmap(uc, vaddr, align(memsz, PAGE_SIZE))) != UC_ERR_OK) {
+    printf("uc_mem_unmap() returned error %u (%s)\n", err, uc_strerror(err));
+    return NULL;
   }
-  if ((err = uc_mem_write(uc, vaddr, buf, memsz)) != UC_ERR_OK) {
-    printf("uc_mem_write() returned error %u (%s)\n", err, uc_strerror(err));
-    exit(1);
+  if ((err = uc_mem_map_ptr(
+      uc, vaddr, align(memsz, PAGE_SIZE), perms, p)) != UC_ERR_OK) {
+    printf("uc_mem_map_ptr() returned error %u (%s)\n", err, uc_strerror(err));
+    return NULL;
   }
 
-  free(buf);
-  printf("Mapped memory region 0x%08x, size %6d, perms %c%c%c\n",
-    (uint32_t)vaddr, (uint32_t)memsz,
-    (perms & UC_PROT_READ) ? 'R' : '.',
-    (perms & UC_PROT_WRITE) ? 'W' : '.',
-    (perms & UC_PROT_EXEC) ? 'X' : '.');
+  return p;
 }
 
 static void fp_get(void *user, void *dest, uint32_t offs, uint32_t len)
@@ -106,6 +107,13 @@ void emu()
     return;
   }
 
+  // Map memory
+  if ((err = uc_mem_map(
+      uc, MEM_START, MEM_SIZE, UC_PROT_READ | UC_PROT_WRITE)) != UC_ERR_OK) {
+    printf("uc_mem_map() returned error %u (%s)\n", err, uc_strerror(err));
+    return;
+  }
+
   // Parse and load ELF
   FILE *fp = fopen("user/a.out", "r");
   if (fp == NULL) {
@@ -126,7 +134,7 @@ void emu()
   uc_hook_add(uc, &hook_syscall, UC_HOOK_INTR, handler_syscall, NULL, 1, 0);
 
   // Initialize stack pointer
-  uint32_t initial_sp = 0x80120000;
+  uint32_t initial_sp = MEM_END;
   uint32_t initial_lr = 0x0;
   uc_reg_write(uc, UC_ARM_REG_SP, &initial_sp);
   uc_reg_write(uc, UC_ARM_REG_LR, &initial_lr);
