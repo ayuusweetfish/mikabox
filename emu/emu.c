@@ -1,5 +1,6 @@
 #include "elf/elf.h"
 #include "swi.h"
+#include "syscalls.h"
 #include "unicorn/unicorn.h"
 #include <stdio.h>
 
@@ -111,6 +112,9 @@ void emu()
   uc_hook hook_mem, hook_syscall;
   uc_hook_add(uc, &hook_mem, UC_HOOK_MEM_INVALID, handler_unmapped, NULL, 1, 0);
   uc_hook_add(uc, &hook_syscall, UC_HOOK_INTR, handler_syscall, NULL, 1, 0);
+
+  // Initialize syscalls
+  syscalls_init();
 
   // Initialize stack pointer
   uint32_t initial_sp = MEM_END;

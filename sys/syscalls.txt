@@ -8,6 +8,7 @@ num #in #ou desc
 4   1   1   Get buttons for a player
 5   1   1   Get axes for a player
 6   0   1   Get a 32-bit random number
+7   2   0   Log
 
 +256: Graphics
 0   0   1   Create context

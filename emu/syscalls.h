@@ -43,26 +43,37 @@ void syscalls_init();
   printf("%s: " _fmt, __func__, ##__VA_ARGS__)
 
 void syscall_read_mem(uint32_t addr, uint32_t size, void *buf);
+void syscall_reinit_rng();
+uint64_t syscalls_lcg;
+static uint32_t rng_count = 0;
 #endif
 
 def(GEN, 1, {
 })
 
 def(GEN, 6, {
-  printf("(r1, r0) = 0x%08x%08x\n", r1, r0);
-  uint32_t data = 0xbaa;
-  return (uint64_t)data | 0x100000000LL;
+  if (++rng_count >= 1e7) {
+    rng_count = 0;
+    syscall_reinit_rng();
+  }
+  // Newlib/Musl LCG implementation
+  uint64_t ret;
+  syscalls_lcg = (syscalls_lcg * 6364136223846793005LL + 1);
+  ret = (syscalls_lcg & 0xffffffff00000000LL);
+  syscalls_lcg = (syscalls_lcg * 6364136223846793005LL + 1);
+  ret = ret | (syscalls_lcg >> 32);
+  return ret;
 })
 
-def(GEN, 43, {
-  printf("from syscall! 0x%08x\n", r0);
+def(GEN, 7, {
+  char last;
   char ch;
   while (1) {
     syscall_read_mem(r0++, 1, &ch);
     if (ch == '\0') break;
-    putchar(ch);
+    putchar(last = ch);
   }
-  putchar('\n');
+  if (last != '\n') putchar('\n');
 })
 
 #undef def
