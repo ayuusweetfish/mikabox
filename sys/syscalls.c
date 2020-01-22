@@ -1,10 +1,7 @@
+#include "printf/printf.h"
+
 #define SYSCALLS_IMPL 1
 #include "syscalls.h"
-
-#undef SYSCALLS_IMPL
-#define SYSCALLS_INIT 1
-
-#include "printf/printf.h"
 
 static inline void assert_log(
   const char *file, uint32_t line,
@@ -22,5 +19,6 @@ static inline void assert_log(
 
 void syscalls_init()
 {
+  #define SYSCALLS_INIT 1
   #include "syscalls.h"
 }

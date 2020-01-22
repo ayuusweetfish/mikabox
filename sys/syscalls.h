@@ -5,6 +5,10 @@
 
 #define init(__fn)
 
+#if !SYSCALLS_DECL && !SYSCALLS_IMPL && !SYSCALLS_TABLE && !SYSCALLS_INIT
+#define SYSCALLS_DECL 1
+#endif
+
 #if SYSCALLS_DECL
   #define def(__grp, __id, __fn)  \
     uint64_t FN(__grp, __id)(uint32_t r0, uint32_t r1, uint32_t r2, uint32_t r3);
@@ -36,65 +40,8 @@ void syscalls_init();
 #include "coroutine.h"
 #include "v3d.h"
 #include "fatfs/ff.h"
+#include "pool.h"
 #include <string.h>
-
-#define pool_type(__type, __count) struct { \
-  const size_t sz, cnt; \
-  const size_t elm_offs, used_offs; \
-  __type elm[__count]; \
-  uint32_t used[(__count + 31) / 32]; \
-}
-
-#define pool_decl(__type, __count, __name) \
-  pool_type(__type, __count) __name = { \
-    .sz = sizeof(__type), \
-    .cnt = (__count), \
-    .elm_offs = (uint8_t *)&__name.elm - (uint8_t *)&__name, \
-    .used_offs = (uint8_t *)&__name.used - (uint8_t *)&__name, \
-    .used = { 0 }, \
-  }
-
-#define pool_sz(__p)  (*((size_t *)(__p) + 0))
-#define pool_cnt(__p) (*((size_t *)(__p) + 1))
-#define pool_elm_offs(__p)  (*((size_t *)(__p) + 2))
-#define pool_used_offs(__p) (*((size_t *)(__p) + 3))
-
-#define pool_elm_direct(__p, __i) \
-  ((void *)((uint8_t *)(__p) + pool_elm_offs(__p) + (__i) * pool_sz(__p)))
-#define pool_used(__p) \
-  ((uint32_t *)((uint8_t *)(__p) + pool_used_offs(__p)))
-
-static inline void *pool_alloc(void *p, size_t *idx)
-{
-  size_t cnt = pool_cnt(p);
-  uint32_t *used = pool_used(p);
-  for (size_t i = 0, j = 0; i < cnt; i += 32, j += 1) {
-    if (used[j] != 0xffffffff) {
-      size_t bit = __builtin_ctz(~used[j]);
-      if (i + bit < cnt) {
-        used[j] |= (1 << bit);
-        *idx = i + bit;
-        return pool_elm_direct(p, i + bit);
-      }
-    }
-  }
-  return NULL;
-}
-
-static inline void pool_release(void *p, size_t idx)
-{
-  size_t cnt = pool_cnt(p);
-  uint32_t *used = pool_used(p);
-  if (idx < cnt)
-    used[idx / 32] &= ~(1 << (idx % 32));
-}
-
-static inline void *pool_elm(void *p, size_t idx)
-{
-  uint32_t *used = pool_used(p);
-  return (idx < pool_cnt(p) && (used[idx / 32] & (1 << (idx % 32)))) ?
-    pool_elm_direct(p, idx) : NULL;
-}
 
 static pool_decl(v3d_ctx, 16, ctxs);
 static pool_decl(v3d_tex, 4096, texs);
@@ -531,3 +478,8 @@ def(FIL, 35, {
 #undef def
 #undef init
 #undef FN
+
+#undef SYSCALLS_DECL
+#undef SYSCALLS_IMPL
+#undef SYSCALLS_TABLE
+#undef SYSCALLS_INIT

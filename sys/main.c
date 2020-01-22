@@ -16,7 +16,6 @@
 #include "fatfs/ff.h"
 #include "coroutine.h"
 #include "swi.h"
-#define SYSCALLS_DECL 1
 #include "syscalls.h"
 
 #include <math.h>

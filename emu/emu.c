@@ -1,5 +1,6 @@
 #include "elf/elf.h"
-#include <unicorn/unicorn.h>
+#include "swi.h"
+#include "unicorn/unicorn.h"
 #include <stdio.h>
 
 #define MEM_START   0x80000000
@@ -73,28 +74,6 @@ static void handler_unmapped(
   }
   printf("Invalid memory access 0x%08x (type = %s, value = 0x%08x)\n",
     (uint32_t)address, mem_type_str(type), (uint32_t)value);
-}
-
-static void handler_syscall(
-  uc_engine *uc, uint32_t intno, void *user_data)
-{
-  uint32_t r0, r1;
-  uc_reg_read(uc, UC_ARM_REG_R0, &r0);
-  uc_reg_read(uc, UC_ARM_REG_R1, &r1);
-  printf("Syscall #%u (r0 = 0x%08x, r1 = 0x%08x)\n", intno, r0, r1);
-
-  char ch;
-  uc_err err;
-  while (1) {
-    if ((err = uc_mem_read(uc, r0++, &ch, 1)) != UC_ERR_OK) {
-      printf("uc_mem_read() returned error %u (%s)\n", err, uc_strerror(err));
-      uc_emu_stop(uc);
-      return;
-    }
-    if (ch == '\0') break;
-    else putchar(ch);
-  }
-  putchar('\n');
 }
 
 void emu()

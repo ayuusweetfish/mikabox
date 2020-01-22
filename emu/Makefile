@@ -28,6 +28,9 @@ unicorn/libunicorn.a:
 	@ printf "  %-7s %s\n" MAKE $@
 	$(V) $(MAKE) -C $(dir $@) UNICORN_DEBUG=no UNICORN_ARCHS=arm UNICORN_STATIC=yes UNICORN_SHARED=no
 
+$(BUILD_DIR)/swi.o: syscalls.h
+$(BUILD_DIR)/syscalls.o: syscalls.h
+
 $(BUILD_DIR)/%.o: %.c
 	@ printf "  %-7s %-16s %s\n" CC $(notdir $<) "$(C_OPTIONS)"
 	$(V) mkdir -p $(BUILD_DIR)/$(dir $<)

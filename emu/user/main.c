@@ -24,7 +24,14 @@ uint32_t main()
       qwq[r1 % 1024] += r1;
     }
     register uint32_t r0 __asm__ ("r0") = (uint32_t)qvq;
-    __asm__ __volatile__ ("swi #0\n" :: "r" (r0), "r" (r1));
+    __asm__ __volatile__ (
+      "mov r7, #43\n"
+      "swi #0\n"
+      "mov r7, #6\n"
+      "swi #0\n"
+      "swi #0\n"
+      : "+r" (r0), "+r" (r1) :: "r7"
+    );
   }
   return 251;
 }
