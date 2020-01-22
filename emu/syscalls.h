@@ -30,6 +30,7 @@
 #define SYSCALL_GRP_OFFS_GEN  0
 #define SYSCALL_GRP_OFFS_GFX  256
 #define SYSCALL_GRP_OFFS_FIL  512
+#define SYSCALL_GRP_OFFS_AUD  768
 
 #if SYSCALLS_DECL
 void syscalls_init();

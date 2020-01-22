@@ -1,4 +1,4 @@
-#include "elf/elf.h"
+#include "elf.h"
 #include "swi.h"
 #include "syscalls.h"
 #include "unicorn/unicorn.h"
@@ -19,7 +19,7 @@ static inline uint32_t align(uint32_t addr, uint32_t align)
 
 static uc_engine *uc;
 
-void *elf_alloc(elf_word vaddr, elf_word memsz, elf_word flags)
+static void *alloc(elf_word vaddr, elf_word memsz, elf_word flags)
 {
   void *p = malloc(memsz);
 
@@ -101,7 +101,7 @@ void emu()
     return;
   }
   elf_addr entry;
-  uint8_t elfret = elf_load(fp_get, fp, &entry);
+  uint8_t elfret = elf_load(fp_get, alloc, fp, &entry);
   fclose(fp);
   if (elfret != 0) {
     printf("elf_load() returned error %u\n", elfret);

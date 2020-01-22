@@ -57,4 +57,8 @@ num #in #ou desc
 34  2   0   Move
 35  1   0   Make directory
 
-+65536: Privileged
++768: Audio
+0   0   2   Get playback position and available buffer size
+1   2   0   Write block
+
++3840: Overworld

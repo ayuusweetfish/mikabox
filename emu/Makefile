@@ -11,7 +11,6 @@ STATIC_LIBS := unicorn/libunicorn.a
 LIBS := -lm $(STATIC_LIBS)
 
 SRCS := $(wildcard *.c)
-SRCS += elf/elf.c
 
 OBJS := $(patsubst %.c, %.o, $(SRCS))
 OBJS := $(sort $(OBJS))
