@@ -80,10 +80,11 @@ v3d_vertarr v3d_vertarr_create(uint16_t num, uint8_t num_varyings)
   v3d_vertarr a;
   a.num = num;
   a.num_varyings = num_varyings;
-  a.mem = v3d_mem_create(num * vert_sz(num_varyings), 0, 0);
 
-  glGenVertexArrays(1, &a.vao_id);
   glGenBuffers(1, &a.vbo_id);
+  glBindBuffer(GL_ARRAY_BUFFER, a.vbo_id);
+  glBufferData(GL_ARRAY_BUFFER, num * vert_sz(num_varyings),
+    NULL, GL_STREAM_DRAW);
 
   return a;
 }
@@ -93,8 +94,12 @@ void v3d_vertarr_put(
   uint32_t verts, uint32_t num
 ) {
   uint32_t sz = vert_sz(a->num_varyings);
-  uint8_t *p = a->mem.ptr;
-  syscall_read_mem(verts, num * sz, p + start_index * sz);
+  uint8_t *p = malloc(num * sz);
+  syscall_read_mem(verts, num * sz, p);
+
+  glBindBuffer(GL_ARRAY_BUFFER, a->vbo_id);
+  glBufferSubData(GL_ARRAY_BUFFER, start_index * sz, num * sz, p);
+  free(p);
 }
 
 void v3d_vertarr_close(v3d_vertarr *a)
@@ -177,7 +182,6 @@ v3d_batch v3d_batch_create(
   const v3d_shader shader
 ) {
   v3d_batch b;
-  b.vertarr = vertarr;
   b.unifarr = unifarr;
 
   // Program setup
@@ -188,12 +192,10 @@ v3d_batch v3d_batch_create(
   glBindFragDataLocation(b.prog_id, 0, "ooo");
 
   // VAO setup
-  glBindVertexArray(vertarr.vao_id);
+  glGenVertexArrays(1, &b.vao_id);
+  glBindVertexArray(b.vao_id);
 
   glBindBuffer(GL_ARRAY_BUFFER, vertarr.vbo_id);
-  glBufferData(GL_ARRAY_BUFFER,
-    vertarr.num * vert_sz(vertarr.num_varyings),
-    vertarr.mem.ptr, GL_STREAM_DRAW);
 
   GLuint index = glGetAttribLocation(b.prog_id, "screen_pos");
   glEnableVertexAttribArray(index);
@@ -228,7 +230,7 @@ void v3d_ctx_anew(v3d_ctx *c, v3d_tex target, uint32_t clear)
 
 void v3d_ctx_use_batch(v3d_ctx *c, const v3d_batch *batch)
 {
-  glBindVertexArray(batch->vertarr.vao_id);
+  glBindVertexArray(batch->vao_id);
   glUseProgram(batch->prog_id);
 }
 

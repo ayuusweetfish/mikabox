@@ -227,6 +227,24 @@ void emu()
     return;
   }
 
+  // Enable VFP
+  // ref. ../sys/startup.S
+  uint32_t val;
+  if ((err = uc_reg_read(uc, UC_ARM_REG_C1_C0_2, &val)) != UC_ERR_OK) {
+    printf("uc_reg_read() returned error %u (%s)\n", err, uc_strerror(err));
+    return;
+  }
+  val |= 0xf00000;  // Single & double precision
+  if ((err = uc_reg_write(uc, UC_ARM_REG_C1_C0_2, &val)) != UC_ERR_OK) {
+    printf("uc_reg_write() returned error %u (%s)\n", err, uc_strerror(err));
+    return;
+  }
+  val = 0x40000000; // Set EN bit
+  if ((err = uc_reg_write(uc, UC_ARM_REG_FPEXC, &val)) != UC_ERR_OK) {
+    printf("uc_reg_write() returned error %u (%s)\n", err, uc_strerror(err));
+    return;
+  }
+
   // Parse and load ELF
   FILE *fp = fopen("user/a.out", "r");
   if (fp == NULL) {
@@ -300,6 +318,8 @@ void emu()
       // XXX: uc_emu_continue()?
       if ((err = uc_emu_start(uc, pc, 0, 100000, 0)) != UC_ERR_OK) {
         printf("uc_emu_start() returned error %u (%s)\n", err, uc_strerror(err));
+        uc_reg_read(uc, UC_ARM_REG_PC, &pc);
+        printf("PC = 0x%08x\n", pc);
         exit(1);
       }
 

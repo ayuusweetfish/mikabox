@@ -57,8 +57,6 @@ typedef struct v3d_vert {
 typedef struct v3d_vertarr {
   uint16_t num;
   uint8_t num_varyings;
-  v3d_mem mem;
-  GLuint vao_id;
   GLuint vbo_id;
 } v3d_vertarr;
 
@@ -110,8 +108,8 @@ void v3d_shader_close(v3d_shader *s);
 // Batch (vertex array + uniform array + shader)
 
 typedef struct v3d_batch {
-  v3d_vertarr vertarr;
   v3d_unifarr unifarr;
+  GLuint vao_id;
   GLuint prog_id;
 } v3d_batch;
 
