@@ -13,21 +13,45 @@ __attribute__ ((noinline)) void crt_init()
   while (begin < end) *begin++ = 0;
 }
 
-uint32_t main()
+void draw()
 {
-  crt_init();
+  while (1) {
+    for (int i = 0; i < 1e5; i++) __asm__ __volatile__ ("");
+    syscall(7, "Hi > <");
+    syscall(1);
+  }
+}
 
-  syscall(7, "Hello world!\n");
+void synth()
+{
+  while (1) {
+    syscall(1);
+  }
+}
 
+void update()
+{
   char s[17] = { 0 };
-  for (int i = 0; i < 5; i++) {
-    uint64_t rnd = syscall64(6);
+  while (1) {
+    uint64_t rnd;
+    for (int i = 0; i < 1e5; i++) {
+      __asm__ __volatile__ ("");
+      rnd = syscall64(6);
+    }
+    syscall(1);
     for (int j = 15; j >= 0; j--) {
       s[j] = "0123456789abcdef"[rnd & 0xf];
       rnd >>= 1;
     }
     syscall(7, s);
   }
+}
 
-  return 0;
+void main()
+{
+  crt_init();
+
+  syscall(7, "Hello world!\n");
+  syscall(0, draw, synth, update);
+  syscall(1);
 }

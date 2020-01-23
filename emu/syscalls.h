@@ -47,13 +47,22 @@ void syscall_read_mem(uint32_t addr, uint32_t size, void *buf);
 void syscall_reinit_rng();
 uint64_t syscalls_lcg;
 static uint32_t rng_count = 0;
+
+extern int8_t routine_id;
+extern uint32_t routine_pc[3];
 #endif
+
+def(GEN, 0, {
+  routine_pc[0] = r0;
+  routine_pc[1] = r1;
+  routine_pc[2] = r2;
+})
 
 def(GEN, 1, {
 })
 
 def(GEN, 6, {
-  if (++rng_count >= 1e7) {
+  if (++rng_count >= 1e6) {
     rng_count = 0;
     syscall_reinit_rng();
   }

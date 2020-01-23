@@ -29,6 +29,13 @@ void handler_syscall(uc_engine *uc, uint32_t intno, void *user_data)
   uint32_t num = r7;
   syscall_fn_t fn = fn_table[num & 4095];
 
+  if (num == 1) {
+    if ((err = uc_emu_stop(uc)) != UC_ERR_OK) {
+      printf("uc_emu_stop() returned error %u (%s)\n", err, uc_strerror(err));
+      exit(1);
+    }
+  }
+
   uint64_t retval = 0;
   if (fn != NULL) retval = (*fn)(r0, r1, r2, r3);
 

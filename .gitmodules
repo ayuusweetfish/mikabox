@@ -19,3 +19,6 @@
 [submodule "emu/glew"]
 	path = emu/glew
 	url = https://github.com/Perlmint/glew-cmake.git
+[submodule "emu/timer_lib"]
+	path = emu/timer_lib
+	url = https://github.com/mjansson/timer_lib.git

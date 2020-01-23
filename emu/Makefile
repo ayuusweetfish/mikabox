@@ -12,6 +12,7 @@ STATIC_LIBS := unicorn/libunicorn.a glew/lib/libGLEW.a glfw/build/src/libglfw3.a
 LIBS := -lm $(STATIC_LIBS)
 
 SRCS := $(wildcard *.c)
+SRCS += timer_lib/timer.c
 
 OBJS := $(patsubst %.c, %.o, $(SRCS))
 OBJS := $(sort $(OBJS))
@@ -26,6 +27,7 @@ libs: $(STATIC_LIBS)
 
 unicorn/libunicorn.a:
 	@ printf "  %-7s %s\n" MAKE $@
+	$(V) cd unicorn && git apply --check ../unicorn.diff && git apply ../unicorn.diff || true
 	$(V) $(MAKE) -C $(dir $@) UNICORN_DEBUG=no UNICORN_ARCHS=arm UNICORN_STATIC=yes UNICORN_SHARED=no
 
 glew/lib/libGLEW.a:

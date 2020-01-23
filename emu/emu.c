@@ -5,20 +5,27 @@
 #define GLEW_STATIC
 #include "GL/glew.h"
 #include "GLFW/glfw3.h"
+#include "timer_lib/timer.h"
 #include "unicorn/unicorn.h"
 
 #include <stdio.h>
+#include <string.h>
 
 #define MEM_START   0x80000000
 #define MEM_SIZE    0x18000000  // 384 MiB
 #define MEM_END     (MEM_START + MEM_SIZE)
 #define PAGE_SIZE   0x100000
+#define STACK_SIZE  0x100000    // 1 MiB
 
 #undef MEM_SIZE
 #define MEM_SIZE    0x1000000   // 16 MiB
 
 #define WIN_W 800
 #define WIN_H 480
+
+int8_t routine_id;
+uint32_t routine_pc[3];
+uc_context *routine_ctx[3];
 
 // GLFW
 
@@ -168,6 +175,8 @@ void emu()
 
   // Initialize syscalls
   syscalls_init();
+  routine_id = -1;
+  memset(routine_pc, 0, sizeof routine_pc);
 
   // Initialize stack pointer
   uint32_t initial_sp = MEM_END;
@@ -175,11 +184,53 @@ void emu()
   uc_reg_write(uc, UC_ARM_REG_SP, &initial_sp);
   uc_reg_write(uc, UC_ARM_REG_LR, &initial_lr);
 
-  // Execute
+  // Execute initialization routine
+  timer_lib_initialize();
+  tick_t start_time = timer_system();
   printf("Entry 0x%08x\n", entry);
   if ((err = uc_emu_start(uc, entry, 0, 1000000, 0)) != UC_ERR_OK) {
     printf("uc_emu_start() returned error %u (%s)\n", err, uc_strerror(err));
     return;
+  }
+
+  printf("Routine addresses: 0x%08x 0x%08x 0x%08x\n",
+    routine_pc[0], routine_pc[1], routine_pc[2]);
+
+  for (int i = 0; i < 3; i++) {
+    uc_context_alloc(uc, &routine_ctx[i]);
+    uint32_t sp = MEM_END - i * STACK_SIZE;
+    uint32_t lr = 0;
+    uint32_t pc = routine_pc[i];
+    uc_reg_write(uc, UC_ARM_REG_SP, &sp);
+    uc_reg_write(uc, UC_ARM_REG_LR, &lr);
+    uc_reg_write(uc, UC_ARM_REG_PC, &pc);
+    uc_context_save(uc, routine_ctx[i]);
+  }
+
+  // Execute loop
+  while (1) {
+    for (int i = 0; i < 3; i++) {
+      uc_context_restore(uc, routine_ctx[i]);
+      uint32_t pc;
+      uc_reg_read(uc, UC_ARM_REG_PC, &pc);
+      printf("Restoring routine %d at 0x%08x\n", i, pc);
+
+      // XXX: uc_emu_continue()?
+      if ((err = uc_emu_start(uc, pc, 0, 100000, 0)) != UC_ERR_OK) {
+        printf("uc_emu_start() returned error %u (%s)\n", err, uc_strerror(err));
+        exit(1);
+      }
+
+      uc_context_save(uc, routine_ctx[i]);
+    }
+
+    tick_t cur_time = timer_system();
+    if (cur_time - start_time >= 12) {
+      start_time = cur_time;
+      glfwPollEvents();
+      if (glfwWindowShouldClose(window)) break;
+      glfwSwapBuffers(window);
+    }
   }
 }
 
