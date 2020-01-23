@@ -99,11 +99,12 @@ void v3d_unifarr_puttex(v3d_unifarr *a, uint32_t index, v3d_tex tex, uint8_t cfg
 // Shader
 
 typedef struct v3d_shader {
-  GLuint id;
+  GLuint vsid;
+  GLuint fsid;
 } v3d_shader;
 
 v3d_shader v3d_shader_create(const char *code);
-void v3d_shader_close(v3d_shader *shader);
+void v3d_shader_close(v3d_shader *s);
 
 // Batch (vertex array + uniform array + shader)
 
@@ -116,7 +117,7 @@ v3d_batch v3d_batch_create(
   const v3d_unifarr unifarr,
   const v3d_shader shader
 );
-void v3d_batch_close(v3d_batch *batch);
+void v3d_batch_close(v3d_batch *b);
 
 // Draw call (batch + vertex indices)
 

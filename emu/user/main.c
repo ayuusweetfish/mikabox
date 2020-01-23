@@ -15,13 +15,29 @@ __attribute__ ((noinline)) void crt_init()
 
 void draw()
 {
+  // Create context
   int ctx = syscall(256 + 0);
+
+  // Create vertex arrays, uniform arrays and shader
+  int va, ua, sh;
+  va = syscall(256 + 32, 3, 3);
+  ua = syscall(256 + 48, 0);
+  sh = syscall(256 + 64, "#C");
+
+  // Create batch
+  int bat = syscall(256 + 80, va, ua, sh);
+
   while (1) {
+    // Wait
     syscall(256 + 5, ctx);
+
+    // Use batch
+    syscall(256 + 2, ctx, bat);
+
+    // Issue and wait
     uint64_t t = syscall64(4, 0);
     syscall(256 + 1, ctx, syscall(256 + 18),
       t == 0 ? 0xffffffff : 0xffffddcc);
-
     syscall(256 + 4, ctx);
     syscall(1);
   }

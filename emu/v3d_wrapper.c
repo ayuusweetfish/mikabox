@@ -73,6 +73,10 @@ void v3d_tex_close(v3d_tex *tex)
 
 v3d_vertarr v3d_vertarr_create(uint16_t num, uint8_t num_varyings)
 {
+  v3d_vertarr a;
+  a.num = num;
+  a.num_varyings = num_varyings;
+  return a;
 }
 
 void v3d_vertarr_put(
@@ -101,12 +105,57 @@ void v3d_unifarr_puttex(v3d_unifarr *a, uint32_t index, v3d_tex tex, uint8_t cfg
 {
 }
 
-v3d_shader v3d_shader_create(const char *code)
+#define GLSL(__source) "#version 120\n" #__source
+
+static const char *vs = GLSL(
+  attribute vec2 screen_pos;
+  void main() {
+    gl_Position = vec4(screen_pos, 0.0, 1.0);
+  }
+);
+
+static const char *fs = GLSL(
+  void main() {
+    gl_FragColor = vec4(0.5, 0.6, 1.0, 1.0);
+  }
+);
+
+static inline GLuint load_shader(GLenum type, const char *source)
 {
+  GLuint shader_id = glCreateShader(type);
+  glShaderSource(shader_id, 1, &source, NULL);
+  glCompileShader(shader_id);
+
+  GLint status;
+  glGetShaderiv(shader_id, GL_COMPILE_STATUS, &status);
+  char msg_buf[1024];
+  glGetShaderInfoLog(shader_id, sizeof(msg_buf) - 1, NULL, msg_buf);
+  fprintf(stderr, "OvO  Compilation log for %s shader\n",
+    (type == GL_VERTEX_SHADER ? "vertex" :
+     type == GL_FRAGMENT_SHADER ? "fragment" : "unknown (!)"));
+  fputs(msg_buf, stderr);
+  fprintf(stderr, "=v=  End\n");
+  if (status != GL_TRUE) {
+    fprintf(stderr, "> <  Shader compilation failed\n");
+    return 0;
+  }
+
+  return shader_id;
 }
 
-void v3d_shader_close(v3d_shader *shader)
+
+v3d_shader v3d_shader_create(const char *code)
 {
+  v3d_shader s;
+  s.vsid = load_shader(GL_VERTEX_SHADER, vs);
+  s.fsid = load_shader(GL_FRAGMENT_SHADER, fs);
+  return s;
+}
+
+void v3d_shader_close(v3d_shader *s)
+{
+  glDeleteShader(s->vsid);
+  glDeleteShader(s->fsid);
 }
 
 v3d_batch v3d_batch_create(
@@ -114,10 +163,21 @@ v3d_batch v3d_batch_create(
   const v3d_unifarr unifarr,
   const v3d_shader shader
 ) {
+  v3d_batch b;
+  b.id = glCreateProgram();
+  glAttachShader(b.id, shader.vsid);
+  glAttachShader(b.id, shader.fsid);
+  glLinkProgram(b.id);
+/*
+  GLint result;
+  glGetProgramiv(b.id, GL_LINK_STATUS, &result);
+  printf("!! %d\n", result);
+*/
 }
 
-void v3d_batch_close(v3d_batch *batch)
+void v3d_batch_close(v3d_batch *b)
 {
+  glDeleteProgram(b->id);
 }
 
 v3d_ctx v3d_ctx_create()
@@ -132,6 +192,7 @@ void v3d_ctx_anew(v3d_ctx *c, v3d_tex target, uint32_t clear)
 
 void v3d_ctx_use_batch(v3d_ctx *c, const v3d_batch *batch)
 {
+  glUseProgram(batch->id);
 }
 
 void v3d_ctx_add_call(v3d_ctx *c, const v3d_call *call)
