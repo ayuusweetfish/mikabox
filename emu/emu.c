@@ -80,8 +80,6 @@ void setup_glfw()
 
 static void render()
 {
-  glClearColor((player_btns[0] != 0 ? 1.0f : 0.7f), 0.7f, 0.7f, 1.0f);
-  glClear(GL_COLOR_BUFFER_BIT);
   glfwSwapBuffers(window);
 }
 

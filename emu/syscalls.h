@@ -230,7 +230,7 @@ def(GFX, 33, {
 def(GFX, 47, {
   v3d_vertarr *a = pool_elm(&vas, r0);
   if (a == NULL) return (uint32_t)-2;
-  v3d_close(a);
+  v3d_vertarr_close(a);
   pool_release(&vas, r0);
 })
 

@@ -81,6 +81,10 @@ void v3d_vertarr_put(
 ) {
 }
 
+void v3d_vertarr_close(v3d_vertarr *a)
+{
+}
+
 v3d_unifarr v3d_unifarr_create(uint8_t num)
 {
 }
@@ -122,6 +126,8 @@ v3d_ctx v3d_ctx_create()
 
 void v3d_ctx_anew(v3d_ctx *c, v3d_tex target, uint32_t clear)
 {
+  c->target = target;
+  c->clear = clear;
 }
 
 void v3d_ctx_use_batch(v3d_ctx *c, const v3d_batch *batch)
@@ -134,10 +140,17 @@ void v3d_ctx_add_call(v3d_ctx *c, const v3d_call *call)
 
 void v3d_ctx_issue(v3d_ctx *c)
 {
+  glClearColor(
+    ((c->clear >> 16) & 0xff) / 255.0f,
+    ((c->clear >>  8) & 0xff) / 255.0f,
+    ((c->clear >>  0) & 0xff) / 255.0f,
+    ((c->clear >> 24) & 0xff) / 255.0f);
+  glClear(GL_COLOR_BUFFER_BIT);
 }
 
 void v3d_ctx_wait(v3d_ctx *c)
 {
+  glFlush();
 }
 
 void v3d_ctx_close(v3d_ctx *c)

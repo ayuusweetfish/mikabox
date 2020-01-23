@@ -15,10 +15,14 @@ __attribute__ ((noinline)) void crt_init()
 
 void draw()
 {
+  int ctx = syscall(256 + 0);
   while (1) {
+    syscall(256 + 5, ctx);
     uint64_t t = syscall64(4, 0);
-      syscall(256 + 1, 0, 0xffffffff);
+    syscall(256 + 1, ctx, syscall(256 + 18),
+      t == 0 ? 0xffffffff : 0xffffddcc);
 
+    syscall(256 + 4, ctx);
     syscall(1);
   }
 }
