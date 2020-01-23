@@ -16,8 +16,9 @@ __attribute__ ((noinline)) void crt_init()
 void draw()
 {
   while (1) {
-    for (int i = 0; i < 1e5; i++) __asm__ __volatile__ ("");
-    syscall(7, "Hi > <");
+    uint64_t t = syscall64(4, 0);
+      syscall(256 + 1, 0, 0xffffffff);
+
     syscall(1);
   }
 }

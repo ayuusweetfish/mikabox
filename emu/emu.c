@@ -2,6 +2,7 @@
 #include "elf.h"
 #include "swi.h"
 #include "syscalls.h"
+#include "v3d_wrapper.h"
 
 #define GLEW_STATIC
 #include "GL/glew.h"
@@ -46,6 +47,8 @@ static void glfw_fbsz_callback(GLFWwindow *window, int w, int h)
 
 void setup_glfw()
 {
+  glfwSetErrorCallback(glfw_err_callback);
+
   if (!glfwInit()) {
     printf("Cannot initialize GLFW\n");
     exit(1);
@@ -71,6 +74,15 @@ void setup_glfw()
     printf("Cannot initialize GLEW\n");
     exit(1);
   }
+
+  glfwSetFramebufferSizeCallback(window, glfw_fbsz_callback);
+}
+
+static void render()
+{
+  glClearColor((player_btns[0] != 0 ? 1.0f : 0.7f), 0.7f, 0.7f, 1.0f);
+  glClear(GL_COLOR_BUFFER_BIT);
+  glfwSwapBuffers(window);
 }
 
 // Time and events
@@ -236,6 +248,9 @@ void emu()
   uc_hook_add(uc, &hook_mem, UC_HOOK_MEM_INVALID, handler_unmapped, NULL, 1, 0);
   uc_hook_add(uc, &hook_syscall, UC_HOOK_INTR, handler_syscall, NULL, 1, 0);
 
+  // Initialize graphics
+  v3d_init();
+
   // Initialize syscalls
   syscalls_init();
   routine_id = -1;
@@ -302,7 +317,7 @@ void emu()
     if (app_tick - last_frame >= 12000) {
       last_frame = app_tick;
       if (glfwWindowShouldClose(window)) break;
-      glfwSwapBuffers(window);
+      render();
     }
   }
 }
