@@ -1,3 +1,4 @@
+#include "emu.h"
 #include "elf.h"
 #include "swi.h"
 #include "syscalls.h"
@@ -26,6 +27,8 @@
 int8_t routine_id;
 uint32_t routine_pc[3];
 uc_context *routine_ctx[3];
+
+uint64_t app_tick;
 
 // GLFW
 
@@ -67,6 +70,66 @@ void setup_glfw()
   if (glewInit() != GLEW_OK) {
     printf("Cannot initialize GLEW\n");
     exit(1);
+  }
+}
+
+// Time and events
+static tick_t start_time;
+static double usec_rate;
+
+int num_players;
+uint64_t player_btns[MAX_PLAYERS];
+uint64_t player_axes[MAX_PLAYERS];
+
+void initialize_tick()
+{
+  timer_lib_initialize();
+  start_time = timer_current();
+  app_tick = 0;
+
+  tick_t tps = timer_ticks_per_second();
+  usec_rate = 1e6 / tps;
+}
+
+void update_tick()
+{
+  tick_t diff = timer_current() - start_time;
+  app_tick = (tick_t)(diff * usec_rate);
+}
+
+static void update_input()
+{
+  // TODO: Multiple gamepads
+  num_players = 1;
+  player_btns[0] =
+    (glfwGetKey(window, GLFW_KEY_UP) << 0) |
+    (glfwGetKey(window, GLFW_KEY_DOWN) << 1) |
+    (glfwGetKey(window, GLFW_KEY_LEFT) << 2) |
+    (glfwGetKey(window, GLFW_KEY_RIGHT) << 3) |
+    (glfwGetKey(window, GLFW_KEY_C) << 4) |
+    (glfwGetKey(window, GLFW_KEY_X) << 5) |
+    (glfwGetKey(window, GLFW_KEY_Z) << 6) |
+    (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) << 7) |
+    (glfwGetKey(window, GLFW_KEY_W) << 0) |     // Alternative set of keys
+    (glfwGetKey(window, GLFW_KEY_S) << 1) |
+    (glfwGetKey(window, GLFW_KEY_A) << 2) |
+    (glfwGetKey(window, GLFW_KEY_D) << 3) |
+    (glfwGetKey(window, GLFW_KEY_K) << 4) |
+    (glfwGetKey(window, GLFW_KEY_L) << 5) |
+    (glfwGetKey(window, GLFW_KEY_J) << 6) |
+    (glfwGetKey(window, GLFW_KEY_I) << 7);
+  if (glfwJoystickIsGamepad(GLFW_JOYSTICK_1)) {
+    GLFWgamepadstate state;
+    if (glfwGetGamepadState(GLFW_JOYSTICK_1, &state))
+      player_btns[0] |=
+        (state.buttons[GLFW_GAMEPAD_BUTTON_DPAD_UP] << 0) |
+        (state.buttons[GLFW_GAMEPAD_BUTTON_DPAD_DOWN] << 1) |
+        (state.buttons[GLFW_GAMEPAD_BUTTON_DPAD_LEFT] << 2) |
+        (state.buttons[GLFW_GAMEPAD_BUTTON_DPAD_RIGHT] << 3) |
+        (state.buttons[GLFW_GAMEPAD_BUTTON_A] << 4) |
+        (state.buttons[GLFW_GAMEPAD_BUTTON_B] << 5) |
+        (state.buttons[GLFW_GAMEPAD_BUTTON_X] << 6) |
+        (state.buttons[GLFW_GAMEPAD_BUTTON_Y] << 7);
   }
 }
 
@@ -185,8 +248,10 @@ void emu()
   uc_reg_write(uc, UC_ARM_REG_LR, &initial_lr);
 
   // Execute initialization routine
-  timer_lib_initialize();
-  tick_t start_time = timer_system();
+  initialize_tick();
+  update_tick();
+  update_input();
+
   printf("Entry 0x%08x\n", entry);
   if ((err = uc_emu_start(uc, entry, 0, 1000000, 0)) != UC_ERR_OK) {
     printf("uc_emu_start() returned error %u (%s)\n", err, uc_strerror(err));
@@ -208,12 +273,16 @@ void emu()
   }
 
   // Execute loop
+  uint64_t last_frame = 0, last_upd = 0;
+
   while (1) {
     for (int i = 0; i < 3; i++) {
       uc_context_restore(uc, routine_ctx[i]);
       uint32_t pc;
       uc_reg_read(uc, UC_ARM_REG_PC, &pc);
-      printf("Restoring routine %d at 0x%08x\n", i, pc);
+      //printf("Restoring routine %d at 0x%08x\n", i, pc);
+
+      update_tick();
 
       // XXX: uc_emu_continue()?
       if ((err = uc_emu_start(uc, pc, 0, 100000, 0)) != UC_ERR_OK) {
@@ -224,10 +293,14 @@ void emu()
       uc_context_save(uc, routine_ctx[i]);
     }
 
-    tick_t cur_time = timer_system();
-    if (cur_time - start_time >= 12) {
-      start_time = cur_time;
+    update_tick();
+    if (app_tick - last_upd >= 3000) {
+      last_upd = app_tick;
       glfwPollEvents();
+      update_input();
+    }
+    if (app_tick - last_frame >= 12000) {
+      last_frame = app_tick;
       if (glfwWindowShouldClose(window)) break;
       glfwSwapBuffers(window);
     }

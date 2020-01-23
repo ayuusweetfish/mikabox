@@ -33,15 +33,11 @@ void update()
 {
   char s[17] = { 0 };
   while (1) {
-    uint64_t rnd;
-    for (int i = 0; i < 1e5; i++) {
-      __asm__ __volatile__ ("");
-      rnd = syscall64(6);
-    }
     syscall(1);
+    uint64_t t = syscall64(4, 0);
     for (int j = 15; j >= 0; j--) {
-      s[j] = "0123456789abcdef"[rnd & 0xf];
-      rnd >>= 1;
+      s[j] = "0123456789abcdef"[t & 0xf];
+      t >>= 4;
     }
     syscall(7, s);
   }
@@ -52,6 +48,6 @@ void main()
   crt_init();
 
   syscall(7, "Hello world!\n");
-  syscall(0, draw, synth, update);
+  syscall(0, update, synth, draw);
   syscall(1);
 }

@@ -36,6 +36,7 @@
 void syscalls_init();
 
 #elif SYSCALLS_IMPL
+#include "emu.h"
 #include "../sys/pool.h"
 #include <stdio.h>
 #include <string.h>
@@ -48,17 +49,38 @@ void syscall_reinit_rng();
 uint64_t syscalls_lcg;
 static uint32_t rng_count = 0;
 
-extern int8_t routine_id;
-extern uint32_t routine_pc[3];
 #endif
 
 def(GEN, 0, {
+  if (routine_id != -1) {
+    syscall_log("Routines can only be chaned in initialization routine\n");
+    return 0;
+  }
   routine_pc[0] = r0;
   routine_pc[1] = r1;
   routine_pc[2] = r2;
 })
 
 def(GEN, 1, {
+})
+
+def(GEN, 2, {
+  update_tick();
+  return app_tick;
+})
+
+def(GEN, 3, {
+  return num_players;
+})
+
+def(GEN, 4, {
+  if (r0 < num_players)
+    return player_btns[r0];
+})
+
+def(GEN, 5, {
+  if (r0 < num_players)
+    return player_axes[r0];
 })
 
 def(GEN, 6, {
@@ -69,7 +91,7 @@ def(GEN, 6, {
   // Newlib/Musl LCG implementation
   uint64_t ret;
   syscalls_lcg = (syscalls_lcg * 6364136223846793005LL + 1);
-  ret = (syscalls_lcg & 0xffffffff00000000LL);
+  ret = (syscalls_lcg >> 32) << 32;
   syscalls_lcg = (syscalls_lcg * 6364136223846793005LL + 1);
   ret = ret | (syscalls_lcg >> 32);
   return ret;
