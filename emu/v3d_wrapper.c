@@ -1,5 +1,7 @@
 #include "v3d_wrapper.h"
 
+void syscall_read_mem(uint32_t addr, uint32_t size, void *buf);
+
 #define GLEW_STATIC
 #include "GL/glew.h"
 
@@ -12,6 +14,8 @@
 
 // Make sure `float` is 32-bit
 typedef char _ensure_float_32[sizeof(float) == 4 ? 1 : -1];
+
+#define vert_sz(__nvar) (8 + 4 * (uint32_t)(__nvar))
 
 void v3d_init()
 {
@@ -76,13 +80,21 @@ v3d_vertarr v3d_vertarr_create(uint16_t num, uint8_t num_varyings)
   v3d_vertarr a;
   a.num = num;
   a.num_varyings = num_varyings;
+  a.mem = v3d_mem_create(num * vert_sz(num_varyings), 0, 0);
+
+  glGenVertexArrays(1, &a.vao_id);
+  glGenBuffers(1, &a.vbo_id);
+
   return a;
 }
 
 void v3d_vertarr_put(
   v3d_vertarr *a, uint32_t start_index,
-  const v3d_vert *verts, uint32_t num
+  uint32_t verts, uint32_t num
 ) {
+  uint32_t sz = vert_sz(a->num_varyings);
+  uint8_t *p = a->mem.ptr;
+  syscall_read_mem(verts, num * sz, p + start_index * sz);
 }
 
 void v3d_vertarr_close(v3d_vertarr *a)
@@ -105,18 +117,19 @@ void v3d_unifarr_puttex(v3d_unifarr *a, uint32_t index, v3d_tex tex, uint8_t cfg
 {
 }
 
-#define GLSL(__source) "#version 120\n" #__source
+#define GLSL(__source) "#version 330 core\n" #__source
 
 static const char *vs = GLSL(
-  attribute vec2 screen_pos;
+  in vec2 screen_pos;
   void main() {
     gl_Position = vec4(screen_pos, 0.0, 1.0);
   }
 );
 
 static const char *fs = GLSL(
+  out vec4 ooo;
   void main() {
-    gl_FragColor = vec4(0.5, 0.6, 1.0, 1.0);
+    ooo = vec4(0.5, 0.6, 1.0, 1.0);
   }
 );
 
@@ -164,20 +177,37 @@ v3d_batch v3d_batch_create(
   const v3d_shader shader
 ) {
   v3d_batch b;
-  b.id = glCreateProgram();
-  glAttachShader(b.id, shader.vsid);
-  glAttachShader(b.id, shader.fsid);
-  glLinkProgram(b.id);
-/*
-  GLint result;
-  glGetProgramiv(b.id, GL_LINK_STATUS, &result);
-  printf("!! %d\n", result);
-*/
+  b.vertarr = vertarr;
+  b.unifarr = unifarr;
+
+  // Program setup
+  b.prog_id = glCreateProgram();
+  glAttachShader(b.prog_id, shader.vsid);
+  glAttachShader(b.prog_id, shader.fsid);
+  glLinkProgram(b.prog_id);
+  glBindFragDataLocation(b.prog_id, 0, "ooo");
+
+  // VAO setup
+  glBindVertexArray(vertarr.vao_id);
+
+  glBindBuffer(GL_ARRAY_BUFFER, vertarr.vbo_id);
+  glBufferData(GL_ARRAY_BUFFER,
+    vertarr.num * vert_sz(vertarr.num_varyings),
+    vertarr.mem.ptr, GL_STREAM_DRAW);
+
+  GLuint index = glGetAttribLocation(b.prog_id, "screen_pos");
+  glEnableVertexAttribArray(index);
+  glVertexAttribPointer(index, 2, GL_FLOAT, GL_FALSE,
+    vert_sz(vertarr.num_varyings), 0);
+
+  glBindVertexArray(0);
+
+  return b;
 }
 
 void v3d_batch_close(v3d_batch *b)
 {
-  glDeleteProgram(b->id);
+  glDeleteProgram(b->prog_id);
 }
 
 v3d_ctx v3d_ctx_create()
@@ -187,26 +217,28 @@ v3d_ctx v3d_ctx_create()
 void v3d_ctx_anew(v3d_ctx *c, v3d_tex target, uint32_t clear)
 {
   c->target = target;
-  c->clear = clear;
+
+  glClearColor(
+    ((clear >> 16) & 0xff) / 255.0f,
+    ((clear >>  8) & 0xff) / 255.0f,
+    ((clear >>  0) & 0xff) / 255.0f,
+    ((clear >> 24) & 0xff) / 255.0f);
+  glClear(GL_COLOR_BUFFER_BIT);
 }
 
 void v3d_ctx_use_batch(v3d_ctx *c, const v3d_batch *batch)
 {
-  glUseProgram(batch->id);
+  glBindVertexArray(batch->vertarr.vao_id);
+  glUseProgram(batch->prog_id);
 }
 
 void v3d_ctx_add_call(v3d_ctx *c, const v3d_call *call)
 {
+  glDrawArrays(GL_TRIANGLES, 0, 6);
 }
 
 void v3d_ctx_issue(v3d_ctx *c)
 {
-  glClearColor(
-    ((c->clear >> 16) & 0xff) / 255.0f,
-    ((c->clear >>  8) & 0xff) / 255.0f,
-    ((c->clear >>  0) & 0xff) / 255.0f,
-    ((c->clear >> 24) & 0xff) / 255.0f);
-  glClear(GL_COLOR_BUFFER_BIT);
 }
 
 void v3d_ctx_wait(v3d_ctx *c)

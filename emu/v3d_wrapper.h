@@ -58,13 +58,14 @@ typedef struct v3d_vertarr {
   uint16_t num;
   uint8_t num_varyings;
   v3d_mem mem;
-  GLuint id;
+  GLuint vao_id;
+  GLuint vbo_id;
 } v3d_vertarr;
 
 v3d_vertarr v3d_vertarr_create(uint16_t num, uint8_t num_varyings);
 void v3d_vertarr_put(
   v3d_vertarr *a, uint32_t start_index,
-  const v3d_vert *verts, uint32_t num
+  uint32_t verts, uint32_t num
 );
 void v3d_vertarr_close(v3d_vertarr *a);
 
@@ -109,7 +110,9 @@ void v3d_shader_close(v3d_shader *s);
 // Batch (vertex array + uniform array + shader)
 
 typedef struct v3d_batch {
-  GLuint id;
+  v3d_vertarr vertarr;
+  v3d_unifarr unifarr;
+  GLuint prog_id;
 } v3d_batch;
 
 v3d_batch v3d_batch_create(
@@ -134,7 +137,6 @@ typedef struct v3d_call {
 
 typedef struct v3d_ctx {
   v3d_tex target;
-  uint32_t clear;
 } v3d_ctx;
 
 v3d_ctx v3d_ctx_create();

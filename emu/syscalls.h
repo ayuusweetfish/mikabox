@@ -224,7 +224,7 @@ def(GFX, 32, {
 def(GFX, 33, {
   v3d_vertarr *a = pool_elm(&vas, r0);
   if (a == NULL) return (uint32_t)-2;
-  v3d_vertarr_put(a, r1, (const v3d_vert *)r2, r3); // !
+  v3d_vertarr_put(a, r1, r2, r3);
 })
 
 def(GFX, 47, {

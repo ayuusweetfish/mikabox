@@ -20,9 +20,19 @@ void draw()
 
   // Create vertex arrays, uniform arrays and shader
   int va, ua, sh;
-  va = syscall(256 + 32, 3, 3);
+  va = syscall(256 + 32, 6, 3);
   ua = syscall(256 + 48, 0);
   sh = syscall(256 + 64, "#C");
+
+  float attr[6];
+  for (int i = 0; i <= 1; i++) {
+    attr[0] = attr[1] = (i == 0 ? -0.5 : +0.5);
+    syscall(256 + 33, va, i * 3 + 0, &attr[0], 1);
+    attr[0] = 0.5; attr[1] = -0.5;
+    syscall(256 + 33, va, i * 3 + 1, &attr[0], 1);
+    attr[0] = -0.5; attr[1] = 0.5;
+    syscall(256 + 33, va, i * 3 + 2, &attr[0], 1);
+  }
 
   // Create batch
   int bat = syscall(256 + 80, va, ua, sh);
@@ -31,13 +41,18 @@ void draw()
     // Wait
     syscall(256 + 5, ctx);
 
-    // Use batch
-    syscall(256 + 2, ctx, bat);
-
-    // Issue and wait
+    // Reset
     uint64_t t = syscall64(4, 0);
     syscall(256 + 1, ctx, syscall(256 + 18),
       t == 0 ? 0xffffffff : 0xffffddcc);
+
+    // Use batch
+    syscall(256 + 2, ctx, bat);
+
+    // Add call
+    syscall(256 + 3, ctx, 0, 0, 0);
+
+    // Issue and wait
     syscall(256 + 4, ctx);
     syscall(1);
   }
