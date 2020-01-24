@@ -29,6 +29,29 @@ void draw()
   sh2 = syscall(256 + 64, "#C");
 
   int ia = syscall(256 + 96, 3);
+
+  // Create batch
+  int bat1, bat2;
+  bat1 = syscall(256 + 80, va1, ua1, sh1);
+  bat2 = syscall(256 + 80, va2, ua2, sh2);
+
+  // Close and reopen
+  for (int i = 0; i < 20; i++) {
+    syscall(256 + 47, va2);
+    syscall(256 + 63, ua2);
+    syscall(256 + 79, sh2);
+    syscall(256 + 111, ia);
+    syscall(256 + 95, bat1);
+    syscall(256 + 95, bat2);
+    va2 = syscall(256 + 32, 6, 3);
+    ua2 = syscall(256 + 48, 0);
+    sh2 = syscall(256 + 64, "#C");
+    ia = syscall(256 + 96, 3);
+    bat1 = syscall(256 + 80, va1, ua1, sh1);
+    bat2 = syscall(256 + 80, va2, ua2, sh2);
+  }
+
+  // Populate index buffer
   uint16_t idxs[3] = {0, 1, 2};
   syscall(256 + 97, ia, 0, idxs, 3);
 
@@ -49,10 +72,6 @@ void draw()
     attr[0] = -0.2; attr[1] = 0.8;
     syscall(256 + 33, va2, i * 3 + 2, &attr[0], 1);
   }
-
-  // Create batch
-  int bat1 = syscall(256 + 80, va1, ua1, sh1);
-  int bat2 = syscall(256 + 80, va2, ua2, sh2);
 
   while (1) {
     // Wait

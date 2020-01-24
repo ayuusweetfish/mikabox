@@ -52,6 +52,7 @@ v3d_vertarr v3d_vertarr_create(uint16_t num, uint8_t num_varyings)
   glBindBuffer(GL_ARRAY_BUFFER, a.vbo_id);
   glBufferData(GL_ARRAY_BUFFER, num * vert_sz(num_varyings),
     NULL, GL_STREAM_DRAW);
+  printf("gen buffer %d\n", (int)a.vbo_id);
 
   return a;
 }
@@ -71,6 +72,8 @@ void v3d_vertarr_put(
 
 void v3d_vertarr_close(v3d_vertarr *a)
 {
+  glDeleteBuffers(1, &a->vbo_id);
+  printf("del buffer %d\n", (int)a->vbo_id);
 }
 
 v3d_unifarr v3d_unifarr_create(uint8_t num)
@@ -148,6 +151,7 @@ v3d_buf v3d_idxbuf_create(uint32_t count)
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m.id);
   glBufferData(GL_ELEMENT_ARRAY_BUFFER, count * 2,
     NULL, GL_STREAM_DRAW);
+  printf("gen buffer %d\n", (int)m.id);
   return m;
 }
 
@@ -163,6 +167,8 @@ void v3d_idxbuf_copy(v3d_buf *m, uint32_t pos, uint32_t ptr, uint32_t count)
 
 void v3d_idxbuf_close(v3d_buf *m)
 {
+  glDeleteBuffers(1, &m->id);
+  printf("del buffer %d\n", (int)m->id);
 }
 
 void v3d_shader_close(v3d_shader *s)
@@ -189,6 +195,7 @@ v3d_batch v3d_batch_create(
   // VAO setup
   glGenVertexArrays(1, &b.vao_id);
   glBindVertexArray(b.vao_id);
+  printf("gen vao %d\n", (int)b.vao_id);
 
   glBindBuffer(GL_ARRAY_BUFFER, vertarr.vbo_id);
 
@@ -204,7 +211,9 @@ v3d_batch v3d_batch_create(
 
 void v3d_batch_close(v3d_batch *b)
 {
+  glDeleteVertexArrays(1, &b->vao_id);
   glDeleteProgram(b->prog_id);
+  printf("del vao %d\n", (int)b->vao_id);
 }
 
 v3d_ctx v3d_ctx_create()
