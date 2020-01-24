@@ -100,15 +100,19 @@ void v3d_unifarr_close(v3d_unifarr *a)
 
 static const char *vs = GLSL(
   in vec2 screen_pos;
+  in vec3 chroma;
+  out vec3 chroma_f;
   void main() {
     gl_Position = vec4(screen_pos, 0.0, 1.0);
+    chroma_f = chroma;
   }
 );
 
 static const char *fs = GLSL(
+  in vec3 chroma_f;
   out vec4 ooo;
   void main() {
-    ooo = vec4(0.5, 0.6, 1.0, 1.0);
+    ooo = vec4(chroma_f, 1.0);
   }
 );
 
@@ -199,10 +203,16 @@ v3d_batch v3d_batch_create(
 
   glBindBuffer(GL_ARRAY_BUFFER, vertarr.vbo_id);
 
-  GLuint index = glGetAttribLocation(b.prog_id, "screen_pos");
+  GLuint index;
+  index = glGetAttribLocation(b.prog_id, "screen_pos");
   glEnableVertexAttribArray(index);
   glVertexAttribPointer(index, 2, GL_FLOAT, GL_FALSE,
-    vert_sz(vertarr.num_varyings), 0);
+    vert_sz(vertarr.num_varyings), (GLvoid *)0);
+
+  index = glGetAttribLocation(b.prog_id, "chroma");
+  glEnableVertexAttribArray(index);
+  glVertexAttribPointer(index, 3, GL_FLOAT, GL_FALSE,
+    vert_sz(vertarr.num_varyings), (GLvoid *)(2 * 4));
 
   glBindVertexArray(0);
 

@@ -56,12 +56,17 @@ void draw()
   syscall(256 + 97, ia, 0, idxs, 3);
 
   float attr[6];
+  attr[3] = 1.0;
+  attr[4] = 0.8;
   for (int i = 0; i <= 1; i++) {
     attr[0] = attr[1] = (i == 0 ? -0.5 : +0.5);
+    attr[2] = 0.9;
     syscall(256 + 33, va1, i * 3 + 0, &attr[0], 1);
     attr[0] = 0.5; attr[1] = -0.5;
+    attr[2] = 0.7;
     syscall(256 + 33, va1, i * 3 + 1, &attr[0], 1);
     attr[0] = -0.5; attr[1] = 0.5;
+    attr[2] = 0.5;
     syscall(256 + 33, va1, i * 3 + 2, &attr[0], 1);
   }
   for (int i = 0; i <= 1; i++) {
