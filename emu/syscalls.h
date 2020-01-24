@@ -189,7 +189,7 @@ def(GFX, 16, {
 def(GFX, 17, {
   v3d_tex *t = pool_elm(&texs, r0);
   if (t == NULL) return (uint32_t)-2;
-  v3d_tex_update(t, (uint8_t *)r1, (v3d_tex_fmt_t)r2);  // !
+  v3d_tex_update(t, r1, (v3d_tex_fmt_t)r2);
 })
 
 init({

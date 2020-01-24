@@ -27,8 +27,8 @@ typedef enum v3d_tex_fmt_t {
 
 v3d_tex v3d_tex_screen(uint32_t buf);
 v3d_tex v3d_tex_create(uint16_t w, uint16_t h);
-void v3d_tex_update(v3d_tex *tex, uint8_t *buf, v3d_tex_fmt_t fmt);
-void v3d_tex_close(v3d_tex *tex);
+void v3d_tex_update(v3d_tex *t, uint32_t buf, v3d_tex_fmt_t fmt);
+void v3d_tex_close(v3d_tex *t);
 
 // Vertex and vertex array
 
@@ -54,6 +54,15 @@ void v3d_vertarr_close(v3d_vertarr *a);
 
 typedef struct v3d_unifarr {
   uint8_t num;
+  struct v3d_unif {
+    bool is_tex;
+    union {
+      uint32_t u32;
+      float f32;
+      GLuint tex_id;
+      uint8_t tex_cfg;
+    };
+  } *data;
 } v3d_unifarr;
 
 v3d_unifarr v3d_unifarr_create(uint8_t num);

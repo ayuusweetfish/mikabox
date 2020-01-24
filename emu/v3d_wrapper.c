@@ -33,14 +33,28 @@ v3d_tex v3d_tex_screen(uint32_t buf)
 
 v3d_tex v3d_tex_create(uint16_t w, uint16_t h)
 {
+  v3d_tex t;
+  t.w = w;
+  t.h = h;
+  glGenTextures(1, &t.id);
+  glBindTexture(GL_TEXTURE_2D, t.id);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, w, h,
+    0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+  return t;
 }
 
-void v3d_tex_update(v3d_tex *t, uint8_t *buf, v3d_tex_fmt_t fmt)
+void v3d_tex_update(v3d_tex *t, uint32_t buf, v3d_tex_fmt_t fmt)
 {
+  uint8_t *p = syscall_dup_mem(buf, t->w * t->h * 4);
+  glBindTexture(GL_TEXTURE_2D, t->id);
+  glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, t->w, t->h,
+    GL_RGBA, GL_UNSIGNED_BYTE, p);
+  free(p);
 }
 
-void v3d_tex_close(v3d_tex *tex)
+void v3d_tex_close(v3d_tex *t)
 {
+  glDeleteTextures(1, &t->id);
 }
 
 v3d_vertarr v3d_vertarr_create(uint16_t num, uint8_t num_varyings)
@@ -78,22 +92,43 @@ void v3d_vertarr_close(v3d_vertarr *a)
 
 v3d_unifarr v3d_unifarr_create(uint8_t num)
 {
+  return (v3d_unifarr){
+    .num = num,
+    .data = malloc(num * sizeof(struct v3d_unif))
+  };
 }
 
 void v3d_unifarr_putu32(v3d_unifarr *a, uint32_t index, uint32_t value)
 {
+  a->data[index] = (struct v3d_unif){
+    .is_tex = false,
+    .u32 = value
+  };
 }
 
 void v3d_unifarr_putf32(v3d_unifarr *a, uint32_t index, float value)
 {
+  a->data[index] = (struct v3d_unif){
+    .is_tex = false,
+    .f32 = value
+  };
 }
 
 void v3d_unifarr_puttex(v3d_unifarr *a, uint32_t index, v3d_tex tex, uint8_t cfg)
 {
+  a->data[index] = (struct v3d_unif){
+    .is_tex = true,
+    .tex_id = tex.id
+  };
+  a->data[index + 1] = (struct v3d_unif){
+    .is_tex = true,
+    .tex_cfg = cfg
+  };
 }
 
 void v3d_unifarr_close(v3d_unifarr *a)
 {
+  free(a->data);
 }
 
 #define GLSL(__source) "#version 330 core\n" #__source
@@ -131,6 +166,24 @@ static const char *shader_source[][2] = {
       ooo = chroma_f;
     }
   ) },
+  // #T
+  { GLSL(
+    in vec2 screen_pos;
+    in vec2 tex_pos;
+    out vec2 tex_pos_f;
+    void main() {
+      gl_Position = vec4(screen_pos, 0.0, 1.0);
+      tex_pos_f = tex_pos;
+    }
+  ), GLSL(
+    in vec2 tex_pos_f;
+    out vec4 ooo;
+    uniform sampler2D tex;
+    void main() {
+      ooo = texture(tex, tex_pos_f);
+      //ooo = vec4(tex_pos_f, 0.8f, 1.0f);
+    }
+  ) },
 };
 
 static inline GLuint load_shader(GLenum type, const char *source)
@@ -165,6 +218,7 @@ v3d_shader v3d_shader_create(uint32_t code)
   int idx = -1;
   if (strcmp(c, "#C") == 0) idx = 0;
   else if (strcmp(c, "#CA") == 0) idx = 1;
+  else if (strcmp(c, "#T") == 0) idx = 2;
 
   if (idx != -1) {
     s.type = idx;
@@ -248,6 +302,8 @@ v3d_batch v3d_batch_create(
   add_attr("screen_pos", GL_FLOAT, 2);
 
   // TODO: Make this extensible
+  if (shader.type >= 2)
+    add_attr("tex_pos", GL_FLOAT, 2);
   if (shader.type <= 1 || shader.type == 3)
     add_attr("chroma", GL_FLOAT, (shader.type == 0 ? 3 : 4));
 
@@ -281,8 +337,29 @@ void v3d_ctx_anew(v3d_ctx *c, v3d_tex target, uint32_t clear)
 
 void v3d_ctx_use_batch(v3d_ctx *c, const v3d_batch *batch)
 {
+  // Use vertex and shader states
   glBindVertexArray(batch->vao_id);
   glUseProgram(batch->prog_id);
+
+  // Activate textures
+  for (int i = 0; i < batch->unifarr.num; i++) {
+    printf("%d %s %u\n", i,
+      batch->unifarr.data[i].is_tex ? "tex" : "norm",
+      batch->unifarr.data[i].u32);
+    if (batch->unifarr.data[i].is_tex) {
+      // TODO: Support multiple textures
+      glActiveTexture(GL_TEXTURE0);
+      glBindTexture(GL_TEXTURE_2D, batch->unifarr.data[i].tex_id);
+      glUniform1i(glGetUniformLocation(batch->prog_id, "tex"), 0);
+      i++;
+      // TODO: Texture configuration
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    } else {
+    }
+  }
 }
 
 void v3d_ctx_add_call(v3d_ctx *c, const v3d_call *call)

@@ -27,11 +27,18 @@ void draw()
   va2 = syscall(256 + 32, 6, 4);
   ua2 = syscall(256 + 48, 0);
   sh2 = syscall(256 + 64, "#CA");
+  int va3, ua3, sh3, tex3;
+  va3 = syscall(256 + 32, 6, 2);
+  ua3 = syscall(256 + 48, 2);
+  sh3 = syscall(256 + 64, "#T");
+#define tw 96
+#define th 64
+  tex3 = syscall(256 + 16, tw, th);
 
   int ia = syscall(256 + 96, 3);
 
   // Create batch
-  int bat1, bat2;
+  int bat1, bat2, bat3;
   bat1 = syscall(256 + 80, va1, ua1, sh1);
   bat2 = syscall(256 + 80, va2, ua2, sh2);
 
@@ -50,6 +57,19 @@ void draw()
     bat1 = syscall(256 + 80, va1, ua1, sh1);
     bat2 = syscall(256 + 80, va2, ua2, sh2);
   }
+
+  // Set up texture and batch 3
+  static uint8_t z[th][tw][4];
+  for (int i = 0; i < th; i++)
+    for (int j = 0; j < tw; j++) {
+      z[i][j][0] = 0xff;
+      z[i][j][1] = 0xff - i;
+      z[i][j][2] = 0xff - j;
+      z[i][j][3] = 0xdd;
+    }
+  syscall(256 + 17, tex3, z, 0);
+  syscall(256 + 50, ua3, 0, tex3, 0);
+  bat3 = syscall(256 + 80, va3, ua3, sh3);
 
   // Populate index buffer
   uint16_t idxs[3] = {0, 1, 2};
@@ -83,6 +103,18 @@ void draw()
     syscall(256 + 33, va2, i * 3 + 2, &attr[0], 1);
   }
 
+  for (int i = 0; i <= 1; i++) {
+    attr[0] = attr[1] = (i == 0 ? 0.6 : 0.9);
+    attr[2] = attr[3] = i;
+    syscall(256 + 33, va3, i * 3 + 0, &attr[0], 1);
+    attr[0] = 0.6; attr[1] = 0.9;
+    attr[2] = 0; attr[3] = 1;
+    syscall(256 + 33, va3, i * 3 + 1, &attr[0], 1);
+    attr[0] = 0.9; attr[1] = 0.6;
+    attr[2] = 1; attr[3] = 0;
+    syscall(256 + 33, va3, i * 3 + 2, &attr[0], 1);
+  }
+
   while (1) {
     // Wait
     syscall(256 + 5, ctx);
@@ -101,6 +133,10 @@ void draw()
     idxs[0] = (t == 0 ? 1 : 3);
     syscall(256 + 97, ia, 1, idxs, 1);
     syscall(256 + 3, ctx, 1, 3, ia);
+
+    // Use batch 3 and add call
+    syscall(256 + 2, ctx, bat3);
+    syscall(256 + 3, ctx, 0, 6, 0);
 
     // Issue and wait
     syscall(256 + 4, ctx);
