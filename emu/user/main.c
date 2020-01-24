@@ -28,6 +28,10 @@ void draw()
   ua2 = syscall(256 + 48, 0);
   sh2 = syscall(256 + 64, "#C");
 
+  int ia = syscall(256 + 96, 3);
+  uint16_t idxs[3] = {0, 1, 2};
+  syscall(256 + 97, ia, 0, idxs, 3);
+
   float attr[6];
   for (int i = 0; i <= 1; i++) {
     attr[0] = attr[1] = (i == 0 ? -0.5 : +0.5);
@@ -59,11 +63,15 @@ void draw()
     syscall(256 + 1, ctx, syscall(256 + 18),
       t == 0 ? 0xffffffff : 0xffffddcc);
 
-    // Use batch and add call
+    // Use batch 1 and add call
     syscall(256 + 2, ctx, bat1);
-    syscall(256 + 3, ctx, 0, 0, 0);
+    syscall(256 + 3, ctx, 0, 3, t == 0 ? 0 : 3);
+
+    // Use batch 2 and add call
     syscall(256 + 2, ctx, bat2);
-    syscall(256 + 3, ctx, 0, 0, 0);
+    idxs[0] = (t == 0 ? 1 : 3);
+    syscall(256 + 97, ia, 1, idxs, 1);
+    syscall(256 + 3, ctx, 1, 3, ia);
 
     // Issue and wait
     syscall(256 + 4, ctx);

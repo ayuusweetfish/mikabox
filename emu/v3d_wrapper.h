@@ -9,23 +9,6 @@
 
 void v3d_init();
 
-// GPU memory region
-
-typedef struct v3d_mem {
-  void *ptr;
-} v3d_mem;
-
-v3d_mem v3d_mem_create(uint32_t size, uint32_t align, uint32_t flags);
-void v3d_mem_lock(v3d_mem *m);
-void v3d_mem_unlock(v3d_mem *m);
-void v3d_mem_close(v3d_mem *m);
-void v3d_mem_copy(v3d_mem *m, uint32_t offs, void *ptr, uint32_t size);
-
-v3d_mem v3d_mem_indexbuf(uint32_t count);
-void v3d_mem_indexcopy(v3d_mem *m, uint32_t pos, void *ptr, uint32_t count);
-
-#define v3d_close(__objptr) v3d_mem_close(&(__objptr)->mem)
-
 // Texture
 
 typedef struct v3d_tex {
@@ -71,13 +54,13 @@ void v3d_vertarr_close(v3d_vertarr *a);
 
 typedef struct v3d_unifarr {
   uint8_t num;
-  v3d_mem mem;
 } v3d_unifarr;
 
 v3d_unifarr v3d_unifarr_create(uint8_t num);
 void v3d_unifarr_putu32(v3d_unifarr *a, uint32_t index, uint32_t value);
 void v3d_unifarr_putf32(v3d_unifarr *a, uint32_t index, float value);
 void v3d_unifarr_puttex(v3d_unifarr *a, uint32_t index, v3d_tex tex, uint8_t cfg);
+void v3d_unifarr_close(v3d_unifarr *a);
 #define v3d_wrap_s_repeat   (0 << 0)
 #define v3d_wrap_s_clamp    (1 << 0)
 #define v3d_wrap_s_mirror   (2 << 0)
@@ -120,6 +103,16 @@ v3d_batch v3d_batch_create(
 );
 void v3d_batch_close(v3d_batch *b);
 
+// Element (index) buffer
+
+typedef struct v3d_buf {
+  GLuint id;
+} v3d_buf;
+
+v3d_buf v3d_idxbuf_create(uint32_t count);
+void v3d_idxbuf_copy(v3d_buf *m, uint32_t pos, uint32_t ptr, uint32_t count);
+void v3d_idxbuf_close(v3d_buf *m);
+
 // Draw call (batch + vertex indices)
 
 typedef struct v3d_call {
@@ -127,7 +120,7 @@ typedef struct v3d_call {
   uint32_t num_verts;
   union {
     uint16_t start_index; // For plain arrays
-    v3d_mem indices;      // For indexed arrays
+    v3d_buf indices;      // For indexed arrays
   };
 } v3d_call;
 

@@ -48,7 +48,7 @@ static pool_decl(v3d_vertarr, 4096, vas);
 static pool_decl(v3d_unifarr, 4096, uas);
 static pool_decl(v3d_shader, 256, shaders);
 static pool_decl(v3d_batch, 4096, batches);
-static pool_decl(v3d_mem, 4096, ias);
+static pool_decl(v3d_buf, 4096, ias);
 
 #define syscall_log(_fmt, ...) \
   printf("%s: " _fmt, __func__, ##__VA_ARGS__)
@@ -149,7 +149,7 @@ def(GFX, 3, {
   call.is_indexed = !!r1;
   call.num_verts = r2;
   if (r1) { // Indexed
-    v3d_mem *m = pool_elm(&ias, r3);
+    v3d_buf *m = pool_elm(&ias, r3);
     if (m == NULL) return (uint32_t)-2;
     call.indices = *m;
   } else {
@@ -258,7 +258,7 @@ def(GFX, 50, {
 def(GFX, 63, {
   v3d_unifarr *a = pool_elm(&uas, r0);
   if (a == NULL) return (uint32_t)-2;
-  v3d_close(a);
+  v3d_unifarr_close(a);
   pool_release(&uas, r0);
 })
 
@@ -300,22 +300,22 @@ def(GFX, 95, {
 
 def(GFX, 96, {
   size_t idx;
-  v3d_mem *m = pool_alloc(&ias, &idx);
+  v3d_buf *m = pool_alloc(&ias, &idx);
   if (m == NULL) return (uint32_t)-1;
-  *m = v3d_mem_indexbuf(r0);
+  *m = v3d_idxbuf_create(r0);
   return idx;
 })
 
 def(GFX, 97, {
-  v3d_mem *m = pool_elm(&ias, r0);
+  v3d_buf *m = pool_elm(&ias, r0);
   if (m == NULL) return (uint32_t)-2;
-  v3d_mem_indexcopy(m, r1, (void *)r2, r3); // !
+  v3d_idxbuf_copy(m, r1, r2, r3);
 })
 
 def(GFX, 111, {
-  v3d_mem *m = pool_elm(&ias, r0);
+  v3d_buf *m = pool_elm(&ias, r0);
   if (m == NULL) return (uint32_t)-2;
-  v3d_mem_close(m);
+  v3d_idxbuf_close(m);
   pool_release(&ias, r0);
 })
 

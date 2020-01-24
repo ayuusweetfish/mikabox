@@ -21,39 +21,6 @@ void v3d_init()
 {
 }
 
-v3d_mem v3d_mem_create(uint32_t size, uint32_t align, uint32_t flags)
-{
-  return (v3d_mem){ .ptr = malloc(size) };
-}
-
-void v3d_mem_lock(v3d_mem *m)
-{
-}
-
-void v3d_mem_unlock(v3d_mem *m)
-{
-}
-
-void v3d_mem_close(v3d_mem *m)
-{
-  free(m->ptr);
-}
-
-void v3d_mem_copy(v3d_mem *m, uint32_t offs, void *ptr, uint32_t size)
-{
-  memcpy((uint8_t *)m->ptr + offs, ptr, size);
-}
-
-v3d_mem v3d_mem_indexbuf(uint32_t count)
-{
-  return v3d_mem_create(count * 2, 0, 0);
-}
-
-void v3d_mem_indexcopy(v3d_mem *m, uint32_t pos, void *ptr, uint32_t count)
-{
-  v3d_mem_copy(m, pos * 2, ptr, count * 2);
-}
-
 v3d_tex v3d_tex_screen(uint32_t buf)
 {
   v3d_tex t = { .w = 800, .h = 480 };
@@ -122,6 +89,10 @@ void v3d_unifarr_puttex(v3d_unifarr *a, uint32_t index, v3d_tex tex, uint8_t cfg
 {
 }
 
+void v3d_unifarr_close(v3d_unifarr *a)
+{
+}
+
 #define GLSL(__source) "#version 330 core\n" #__source
 
 static const char *vs = GLSL(
@@ -168,6 +139,30 @@ v3d_shader v3d_shader_create(const char *code)
   s.vsid = load_shader(GL_VERTEX_SHADER, vs);
   s.fsid = load_shader(GL_FRAGMENT_SHADER, fs);
   return s;
+}
+
+v3d_buf v3d_idxbuf_create(uint32_t count)
+{
+  v3d_buf m;
+  glGenBuffers(1, &m.id);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m.id);
+  glBufferData(GL_ELEMENT_ARRAY_BUFFER, count * 2,
+    NULL, GL_STREAM_DRAW);
+  return m;
+}
+
+void v3d_idxbuf_copy(v3d_buf *m, uint32_t pos, uint32_t ptr, uint32_t count)
+{
+  uint8_t *p = malloc(count * 2);
+  syscall_read_mem(ptr, count * 2, p);
+
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m->id);
+  glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, pos * 2, count * 2, p);
+  free(p);
+}
+
+void v3d_idxbuf_close(v3d_buf *m)
+{
 }
 
 void v3d_shader_close(v3d_shader *s)
@@ -236,7 +231,12 @@ void v3d_ctx_use_batch(v3d_ctx *c, const v3d_batch *batch)
 
 void v3d_ctx_add_call(v3d_ctx *c, const v3d_call *call)
 {
-  glDrawArrays(GL_TRIANGLES, 0, 6);
+  if (call->is_indexed) {
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, call->indices.id);
+    glDrawElements(GL_TRIANGLES, call->num_verts, GL_UNSIGNED_SHORT, NULL);
+  } else {
+    glDrawArrays(GL_TRIANGLES, call->start_index, call->num_verts);
+  }
 }
 
 void v3d_ctx_issue(v3d_ctx *c)
