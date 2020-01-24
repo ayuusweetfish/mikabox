@@ -1,6 +1,7 @@
 #include "v3d_wrapper.h"
 
-void syscall_read_mem(uint32_t addr, uint32_t size, void *buf);
+void *syscall_dup_mem(uint32_t addr, uint32_t size);
+void *syscall_dup_str(uint32_t addr);
 
 #define GLEW_STATIC
 #include "GL/glew.h"
@@ -62,8 +63,7 @@ void v3d_vertarr_put(
   uint32_t verts, uint32_t num
 ) {
   uint32_t sz = vert_sz(a->num_varyings);
-  uint8_t *p = malloc(num * sz);
-  syscall_read_mem(verts, num * sz, p);
+  uint8_t *p = syscall_dup_mem(verts, num * sz);
 
   glBindBuffer(GL_ARRAY_BUFFER, a->vbo_id);
   glBufferSubData(GL_ARRAY_BUFFER, start_index * sz, num * sz, p);
@@ -98,23 +98,40 @@ void v3d_unifarr_close(v3d_unifarr *a)
 
 #define GLSL(__source) "#version 330 core\n" #__source
 
-static const char *vs = GLSL(
-  in vec2 screen_pos;
-  in vec3 chroma;
-  out vec3 chroma_f;
-  void main() {
-    gl_Position = vec4(screen_pos, 0.0, 1.0);
-    chroma_f = chroma;
-  }
-);
-
-static const char *fs = GLSL(
-  in vec3 chroma_f;
-  out vec4 ooo;
-  void main() {
-    ooo = vec4(chroma_f, 1.0);
-  }
-);
+static const char *shader_source[][2] = {
+  // #C
+  { GLSL(
+    in vec2 screen_pos;
+    in vec3 chroma;
+    out vec3 chroma_f;
+    void main() {
+      gl_Position = vec4(screen_pos, 0.0, 1.0);
+      chroma_f = chroma;
+    }
+  ), GLSL(
+    in vec3 chroma_f;
+    out vec4 ooo;
+    void main() {
+      ooo = vec4(chroma_f, 1.0);
+    }
+  ) },
+  // #CA
+  { GLSL(
+    in vec2 screen_pos;
+    in vec4 chroma;
+    out vec4 chroma_f;
+    void main() {
+      gl_Position = vec4(screen_pos, 0.0, 1.0);
+      chroma_f = chroma;
+    }
+  ), GLSL(
+    in vec4 chroma_f;
+    out vec4 ooo;
+    void main() {
+      ooo = chroma_f;
+    }
+  ) },
+};
 
 static inline GLuint load_shader(GLenum type, const char *source)
 {
@@ -140,11 +157,25 @@ static inline GLuint load_shader(GLenum type, const char *source)
 }
 
 
-v3d_shader v3d_shader_create(const char *code)
+v3d_shader v3d_shader_create(uint32_t code)
 {
   v3d_shader s;
-  s.vsid = load_shader(GL_VERTEX_SHADER, vs);
-  s.fsid = load_shader(GL_FRAGMENT_SHADER, fs);
+  char *c = syscall_dup_str(code);
+
+  int idx = -1;
+  if (strcmp(c, "#C") == 0) idx = 0;
+  else if (strcmp(c, "#CA") == 0) idx = 1;
+
+  if (idx != -1) {
+    s.type = idx;
+    s.vsid = load_shader(GL_VERTEX_SHADER, shader_source[idx][0]);
+    s.fsid = load_shader(GL_FRAGMENT_SHADER, shader_source[idx][1]);
+  } else {
+    printf("> <\n");
+    s.type = 0xff;
+  }
+
+  free(c);
   return s;
 }
 
@@ -161,8 +192,7 @@ v3d_buf v3d_idxbuf_create(uint32_t count)
 
 void v3d_idxbuf_copy(v3d_buf *m, uint32_t pos, uint32_t ptr, uint32_t count)
 {
-  uint8_t *p = malloc(count * 2);
-  syscall_read_mem(ptr, count * 2, p);
+  uint8_t *p = syscall_dup_mem(ptr, count * 2);
 
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m->id);
   glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, pos * 2, count * 2, p);
@@ -204,15 +234,22 @@ v3d_batch v3d_batch_create(
   glBindBuffer(GL_ARRAY_BUFFER, vertarr.vbo_id);
 
   GLuint index;
-  index = glGetAttribLocation(b.prog_id, "screen_pos");
-  glEnableVertexAttribArray(index);
-  glVertexAttribPointer(index, 2, GL_FLOAT, GL_FALSE,
-    vert_sz(vertarr.num_varyings), (GLvoid *)0);
+  uintptr_t count = 0;
 
-  index = glGetAttribLocation(b.prog_id, "chroma");
-  glEnableVertexAttribArray(index);
-  glVertexAttribPointer(index, 3, GL_FLOAT, GL_FALSE,
-    vert_sz(vertarr.num_varyings), (GLvoid *)(2 * 4));
+#define add_attr(__name, __type, __size) do { \
+  index = glGetAttribLocation(b.prog_id, (__name)); \
+  glEnableVertexAttribArray(index); \
+  glVertexAttribPointer(index, (__size), (__type), \
+    GL_FALSE, vert_sz(vertarr.num_varyings), \
+    (GLvoid *)(count * 4)); \
+  count += (__size); \
+} while (0)
+
+  add_attr("screen_pos", GL_FLOAT, 2);
+
+  // TODO: Make this extensible
+  if (shader.type <= 1 || shader.type == 3)
+    add_attr("chroma", GL_FLOAT, (shader.type == 0 ? 3 : 4));
 
   glBindVertexArray(0);
 

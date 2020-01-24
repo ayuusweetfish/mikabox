@@ -81,11 +81,12 @@ void v3d_unifarr_close(v3d_unifarr *a);
 // Shader
 
 typedef struct v3d_shader {
+  uint8_t type;
   GLuint vsid;
   GLuint fsid;
 } v3d_shader;
 
-v3d_shader v3d_shader_create(const char *code);
+v3d_shader v3d_shader_create(uint32_t code);
 void v3d_shader_close(v3d_shader *s);
 
 // Batch (vertex array + uniform array + shader)

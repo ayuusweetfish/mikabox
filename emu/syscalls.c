@@ -4,6 +4,7 @@
 #include "unicorn/unicorn.h"
 #include <errno.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <time.h>
 
@@ -54,4 +55,23 @@ void syscall_read_mem(uint32_t addr, uint32_t size, void *buf)
     printf("uc_mem_read() returned error %u (%s)\n", err, uc_strerror(err));
     exit(1);
   }
+}
+
+void *syscall_dup_mem(uint32_t addr, uint32_t size)
+{
+  void *p = malloc(size);
+  syscall_read_mem(addr, size, p);
+  return p;
+}
+
+void *syscall_dup_str(uint32_t addr)
+{
+  uint32_t size = 0;
+  uc_err err;
+  for (char ch = 1; ch != 0; size++)
+    if ((err = uc_mem_read(syscalls_uc, addr + size, &ch, 1)) != UC_ERR_OK) {
+      printf("uc_mem_read() returned error %u (%s)\n", err, uc_strerror(err));
+      exit(1);
+    }
+  return syscall_dup_mem(addr, size + 1);
 }

@@ -266,7 +266,7 @@ def(GFX, 64, {
   size_t idx;
   v3d_shader *s = pool_alloc(&shaders, &idx);
   if (s == NULL) return (uint32_t)-1;
-  *s = v3d_shader_create((const char *)r0); // !
+  *s = v3d_shader_create(r0);
   return idx;
 })
 

@@ -24,9 +24,9 @@ void draw()
   ua1 = syscall(256 + 48, 0);
   sh1 = syscall(256 + 64, "#C");
   int va2, ua2, sh2;
-  va2 = syscall(256 + 32, 6, 3);
+  va2 = syscall(256 + 32, 6, 4);
   ua2 = syscall(256 + 48, 0);
-  sh2 = syscall(256 + 64, "#C");
+  sh2 = syscall(256 + 64, "#CA");
 
   int ia = syscall(256 + 96, 3);
 
@@ -43,9 +43,9 @@ void draw()
     syscall(256 + 111, ia);
     syscall(256 + 95, bat1);
     syscall(256 + 95, bat2);
-    va2 = syscall(256 + 32, 6, 3);
+    va2 = syscall(256 + 32, 6, 4);
     ua2 = syscall(256 + 48, 0);
-    sh2 = syscall(256 + 64, "#C");
+    sh2 = syscall(256 + 64, "#CA");
     ia = syscall(256 + 96, 3);
     bat1 = syscall(256 + 80, va1, ua1, sh1);
     bat2 = syscall(256 + 80, va2, ua2, sh2);
@@ -69,12 +69,17 @@ void draw()
     attr[2] = 0.5;
     syscall(256 + 33, va1, i * 3 + 2, &attr[0], 1);
   }
+  attr[2] = 1.0;
+  attr[3] = 0.5;
   for (int i = 0; i <= 1; i++) {
     attr[0] = attr[1] = (i == 0 ? -0.5 : +0.5);
+    attr[4] = 0.9; attr[5] = 1.0;
     syscall(256 + 33, va2, i * 3 + 0, &attr[0], 1);
     attr[0] = 0.8; attr[1] = -0.2;
+    attr[4] = 0.7; attr[5] = 0.3;
     syscall(256 + 33, va2, i * 3 + 1, &attr[0], 1);
     attr[0] = -0.2; attr[1] = 0.8;
+    attr[4] = 0.5; attr[5] = 0.3;
     syscall(256 + 33, va2, i * 3 + 2, &attr[0], 1);
   }
 
