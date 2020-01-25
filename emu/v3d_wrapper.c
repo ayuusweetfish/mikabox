@@ -352,11 +352,37 @@ void v3d_ctx_use_batch(v3d_ctx *c, const v3d_batch *batch)
       glBindTexture(GL_TEXTURE_2D, batch->unifarr.data[i].tex_id);
       glUniform1i(glGetUniformLocation(batch->prog_id, "tex"), 0);
       i++;
-      // TODO: Texture configuration
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+      // TODO: Border colour for clamp-to-border warp mode
+      uint8_t cfg = batch->unifarr.data[i].tex_cfg;
+      GLint arg;
+      switch (cfg & 3) {
+        case 0: arg = GL_REPEAT; break;
+        case 1: arg = GL_CLAMP_TO_EDGE; break;
+        case 2: arg = GL_MIRRORED_REPEAT; break;
+        case 3: arg = GL_CLAMP_TO_BORDER; break;
+      }
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, arg);
+      switch ((cfg >> 2) & 3) {
+        case 0: arg = GL_REPEAT; break;
+        case 1: arg = GL_CLAMP_TO_EDGE; break;
+        case 2: arg = GL_MIRRORED_REPEAT; break;
+        case 3: arg = GL_CLAMP_TO_BORDER; break;
+      }
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, arg);
+      switch ((cfg >> 4) & 7) {
+        case 0: default: arg = GL_LINEAR; break;
+        case 1: arg = GL_NEAREST; break;
+        case 2: arg = GL_NEAREST_MIPMAP_NEAREST; break;
+        case 3: arg = GL_NEAREST_MIPMAP_LINEAR; break;
+        case 4: arg = GL_LINEAR_MIPMAP_NEAREST; break;
+        case 5: arg = GL_LINEAR_MIPMAP_LINEAR; break;
+      }
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, arg);
+      switch ((cfg >> 7) & 7) {
+        case 0: default: arg = GL_LINEAR; break;
+        case 1: arg = GL_NEAREST; break;
+      }
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, arg);
     } else {
     }
   }

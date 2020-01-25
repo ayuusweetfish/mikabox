@@ -68,7 +68,7 @@ void draw()
       z[i][j][3] = 0xdd;
     }
   syscall(256 + 17, tex3, z, 0);
-  syscall(256 + 50, ua3, 0, tex3, 0);
+  syscall(256 + 50, ua3, 0, tex3, (2 << 0) | (2 << 2));
   bat3 = syscall(256 + 80, va3, ua3, sh3);
 
   // Populate index buffer
@@ -105,13 +105,13 @@ void draw()
 
   for (int i = 0; i <= 1; i++) {
     attr[0] = attr[1] = (i == 0 ? 0.6 : 0.9);
-    attr[2] = attr[3] = i;
+    attr[2] = attr[3] = (i == 0 ? -1 : +2);
     syscall(256 + 33, va3, i * 3 + 0, &attr[0], 1);
     attr[0] = 0.6; attr[1] = 0.9;
-    attr[2] = 0; attr[3] = 1;
+    attr[2] = -1; attr[3] = 2;
     syscall(256 + 33, va3, i * 3 + 1, &attr[0], 1);
     attr[0] = 0.9; attr[1] = 0.6;
-    attr[2] = 1; attr[3] = 0;
+    attr[2] = 2; attr[3] = -1;
     syscall(256 + 33, va3, i * 3 + 2, &attr[0], 1);
   }
 
