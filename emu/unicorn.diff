@@ -13,3 +13,16 @@ index c5f652e..ee5859c 100644
          cur = cur->next)
  
  // if statement to check hook bounds
+diff --git a/uc.c b/uc.c
+index adf6edd..9a0be32 100644
+--- a/uc.c
++++ b/uc.c
+@@ -491,7 +491,7 @@ uc_err uc_mem_write(uc_engine *uc, uint64_t address, const void *_bytes, size_t
+         return UC_ERR_WRITE_UNMAPPED;
+ }
+ 
+-#define TIMEOUT_STEP 2    // microseconds
++#define TIMEOUT_STEP 10000  // microseconds
+ static void *_timeout_fn(void *arg)
+ {
+     struct uc_struct *uc = arg;
