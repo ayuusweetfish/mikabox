@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 #include <unistd.h>
 
 void *syscall_dup_mem(uint32_t addr, uint32_t size);
@@ -99,18 +100,48 @@ FRESULT f_readdir (DIR_* dp, FILINFO* fno)
 
 FRESULT f_mkdir (guestptr_t path)
 {
+  char *p = gen_path(path);
+  if (mkdir(p, 0777) == -1 && errno != EEXIST) {
+    free(p);
+    return errno;
+  }
+  free(p);
+  return 0;
 }
 
 FRESULT f_unlink (guestptr_t path)
 {
+  char *p = gen_path(path);
+  if (unlink(p) == -1 && rmdir(p) == -1 && errno != ENOENT) {
+    free(p);
+    return errno;
+  }
+  free(p);
+  return 0;
 }
 
 FRESULT f_rename (guestptr_t path_old, guestptr_t path_new)
 {
+  char *p1 = gen_path(path_old);
+  char *p2 = gen_path(path_new);
+  if (rename(p1, p2) == -1) {
+    free(p1); free(p2);
+    return errno;
+  }
+  free(p1); free(p2);
+  return 0;
 }
 
 FRESULT f_stat (guestptr_t path, FILINFO* fno)
 {
+  char *p = gen_path(path);
+  struct stat s;
+  if (stat(p, &s) == -1) {
+    free(p);
+    return errno;
+  }
+  fno->fattrib = (S_ISDIR(s.st_mode) ? AM_DIR : 0);
+  return 0;
 }
 
 int f_eof(FIL* fp)

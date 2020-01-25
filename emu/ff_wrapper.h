@@ -1,6 +1,7 @@
 #ifndef _Mikabox_ff_wrapper_h_
 #define _Mikabox_ff_wrapper_h_
 
+#include <errno.h>
 #include <stdint.h>
 #include <stdio.h>
 
@@ -11,7 +12,13 @@ typedef uint8_t BYTE;
 typedef long FSIZE_t;
 typedef uint32_t guestptr_t;
 
-#define FR_OK 0
+#define FR_OK           0
+#define FR_NO_FILE      ENOENT
+#define FR_NO_PATH      ENOTDIR
+#define FR_INVALID_NAME ENOENT
+
+#define AM_DIR  1
+
 #define	FA_READ				0x01
 #define	FA_WRITE			0x02
 #define	FA_OPEN_EXISTING	0x00

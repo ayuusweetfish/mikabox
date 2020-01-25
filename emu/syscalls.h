@@ -54,6 +54,7 @@ static pool_decl(v3d_buf, 4096, ias);
 #define DIR DIR_
 static pool_decl(FIL, 4096, files);
 static pool_decl(DIR, 256, dirs);
+static FILINFO finfo;
 
 #define syscall_log(_fmt, ...) \
   printf("%s: " _fmt, __func__, ##__VA_ARGS__)
@@ -463,9 +464,10 @@ def(FIL, 18, {
     return (finfo.fattrib & AM_DIR) ? 2 : 1;
   }
 })
+*/
 
 def(FIL, 32, {
-  FRESULT r = f_stat((const char *)r0, &finfo);
+  FRESULT r = f_stat(r0, &finfo);
   if (r != FR_OK) {
     if (r != FR_NO_FILE && r != FR_NO_PATH && r != FR_INVALID_NAME)
       syscall_log("f_stat() returns %d (%s)\n", (int)r, f_strerr(r));
@@ -475,7 +477,7 @@ def(FIL, 32, {
 })
 
 def(FIL, 33, {
-  FRESULT r = f_unlink((const char *)r0);
+  FRESULT r = f_unlink(r0);
   if (r != FR_OK) {
     syscall_log("f_unlink() returns %d (%s)\n", (int)r, f_strerr(r));
     return 0;
@@ -483,7 +485,7 @@ def(FIL, 33, {
 })
 
 def(FIL, 34, {
-  FRESULT r = f_rename((const char *)r0, (const char *)r1);
+  FRESULT r = f_rename(r0, r1);
   if (r != FR_OK) {
     syscall_log("f_rename() returns %d (%s)\n", (int)r, f_strerr(r));
     return 0;
@@ -491,13 +493,12 @@ def(FIL, 34, {
 })
 
 def(FIL, 35, {
-  FRESULT r = f_mkdir((const char *)r0);
+  FRESULT r = f_mkdir(r0);
   if (r != FR_OK) {
     syscall_log("f_mkdir() returns %d (%s)\n", (int)r, f_strerr(r));
     return 0;
   }
 })
-*/
 
 #undef def
 #undef init
