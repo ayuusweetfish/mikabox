@@ -210,6 +210,19 @@ void main()
   // - Different behaviour: trailing slashes should be accepted on hardware
   buf[0] = "-FD"[syscall(512 + 32, "ahahaa/")]; syscall(7, buf);
   buf[0] = "-FD"[syscall(512 + 32, "zzzz")]; syscall(7, buf);
+
+  // Open directory
+  // - Both should succeed
+  syscall(512 + 16, "ahahaa");
+  syscall(7, "----");
+  uint32_t d = syscall(512 + 16, "/");
+  uint32_t ty;
+  while ((ty = syscall(512 + 18, d, buf)) != 0) {
+    if (ty == 2) syscall(7, "> dir");
+    syscall(7, buf);
+  }
+  syscall(7, "----");
+
   // Unlink
   syscall(512 + 33, "ahahaa");
   syscall(512 + 33, "huhu.txt");

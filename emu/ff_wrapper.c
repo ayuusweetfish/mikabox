@@ -1,4 +1,5 @@
 #include "ff_wrapper.h"
+#include <dirent.h>
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -88,14 +89,36 @@ FRESULT f_sync (FIL* fp)
 
 FRESULT f_opendir (DIR_* dp, guestptr_t path)
 {
+  char *p = gen_path(path);
+  dp->d = opendir(p);
+  free(p);
+  if (dp->d == NULL) return errno;
+  return 0;
 }
 
 FRESULT f_closedir (DIR_* dp)
 {
+  if (closedir(dp->d) != 0) return errno;
+  return 0;
 }
 
 FRESULT f_readdir (DIR_* dp, FILINFO* fno)
 {
+  struct dirent *ent;
+  while (1) {
+    errno = 0;
+    if ((ent = readdir(dp->d)) == NULL) {
+      fno->fname[0] = '\0';
+      return errno;
+    }
+    if (strcmp(ent->d_name, ".") == 0 ||
+      strcmp(ent->d_name, "..") == 0) continue;
+    // Set fname and fattrib (AM_DIR)
+    fno->fattrib = ((ent->d_type == DT_DIR) ? AM_DIR : 0);
+    strlcpy(fno->fname, ent->d_name, sizeof fno->fname);
+    break;
+  }
+  return 0;
 }
 
 FRESULT f_mkdir (guestptr_t path)

@@ -1,6 +1,7 @@
 #ifndef _Mikabox_ff_wrapper_h_
 #define _Mikabox_ff_wrapper_h_
 
+#include <dirent.h>
 #include <errno.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -32,6 +33,7 @@ typedef struct {
 } FIL;
 
 typedef struct {
+  DIR *d;
 } DIR_;
 
 typedef struct {

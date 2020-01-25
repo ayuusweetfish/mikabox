@@ -60,6 +60,8 @@ static FILINFO finfo;
   printf("%s: " _fmt, __func__, ##__VA_ARGS__)
 
 void syscall_read_mem(uint32_t addr, uint32_t size, void *buf);
+void syscall_write_mem(uint32_t addr, uint32_t size, void *buf);
+
 void syscall_reinit_rng();
 uint64_t syscalls_lcg;
 static uint32_t rng_count = 0;
@@ -425,12 +427,11 @@ def(FIL, 10, {
   return f_error(f);
 })
 
-/*
 def(FIL, 16, {
   size_t idx;
   DIR *d = pool_alloc(&dirs, &idx);
   if (d == NULL) return (uint32_t)-1;
-  FRESULT r = f_opendir(d, (const char *)r0);
+  FRESULT r = f_opendir(d, r0);
   if (r != FR_OK) {
     syscall_log("f_opendir() returns %d (%s)\n", (int)r, f_strerr(r));
     return (uint32_t)-3;
@@ -459,12 +460,11 @@ def(FIL, 18, {
   if (finfo.fname[0] == 0) {
     return 0;
   } else {
-    char *fname = (char *)r1;
-    strcpy(fname, finfo.fname);
+    //strcpy((char *)r1, finfo.fname);
+    syscall_write_mem(r1, strlen(finfo.fname) + 1, finfo.fname);
     return (finfo.fattrib & AM_DIR) ? 2 : 1;
   }
 })
-*/
 
 def(FIL, 32, {
   FRESULT r = f_stat(r0, &finfo);
