@@ -4,6 +4,8 @@ SECTIONS
 {
   . = 0x80000000;
 
+  /DISCARD/ : { *(.ARM.* .debug_frame) }
+
   .text ALIGN(1048576) : { *(.text .text.*) }
   .rodata ALIGN(1048576) : { *(.rodata .rodata.*) }
   .data ALIGN(1048576) : { *(.data .data.*) }

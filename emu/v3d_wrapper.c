@@ -181,7 +181,28 @@ static const char *shader_source[][2] = {
     uniform sampler2D tex;
     void main() {
       ooo = texture(tex, tex_pos_f);
-      //ooo = vec4(tex_pos_f, 0.8f, 1.0f);
+      ooo.a = 1.0;
+    }
+  ) },
+  // #TCA
+  { GLSL(
+    in vec2 screen_pos;
+    in vec2 tex_pos;
+    in vec4 chroma;
+    out vec2 tex_pos_f;
+    out vec4 chroma_f;
+    void main() {
+      gl_Position = vec4(screen_pos, 0.0, 1.0);
+      tex_pos_f = tex_pos;
+      chroma_f = chroma;
+    }
+  ), GLSL(
+    in vec2 tex_pos_f;
+    in vec4 chroma_f;
+    out vec4 ooo;
+    uniform sampler2D tex;
+    void main() {
+      ooo = texture(tex, tex_pos_f) * chroma_f;
     }
   ) },
 };
@@ -219,6 +240,7 @@ v3d_shader v3d_shader_create(uint32_t code)
   if (strcmp(c, "#C") == 0) idx = 0;
   else if (strcmp(c, "#CA") == 0) idx = 1;
   else if (strcmp(c, "#T") == 0) idx = 2;
+  else if (strcmp(c, "#TCA") == 0) idx = 3;
 
   if (idx != -1) {
     s.type = idx;

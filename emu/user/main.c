@@ -27,10 +27,11 @@ void draw()
   va2 = syscall(256 + 32, 6, 4);
   ua2 = syscall(256 + 48, 0);
   sh2 = syscall(256 + 64, "#CA");
-  int va3, ua3, sh3, tex3;
-  va3 = syscall(256 + 32, 6, 2);
+  int va3, ua3, sh3, sh3t, tex3;
+  va3 = syscall(256 + 32, 6, 6);
   ua3 = syscall(256 + 48, 2);
-  sh3 = syscall(256 + 64, "#T");
+  sh3 = syscall(256 + 64, "#TCA");
+  sh3t = syscall(256 + 64, "#T");
 #define tw 96
 #define th 64
   tex3 = syscall(256 + 16, tw, th);
@@ -38,7 +39,7 @@ void draw()
   int ia = syscall(256 + 96, 3);
 
   // Create batch
-  int bat1, bat2, bat3;
+  int bat1, bat2, bat3, bat3t;
   bat1 = syscall(256 + 80, va1, ua1, sh1);
   bat2 = syscall(256 + 80, va2, ua2, sh2);
 
@@ -70,12 +71,13 @@ void draw()
   syscall(256 + 17, tex3, z, 0);
   syscall(256 + 50, ua3, 0, tex3, (2 << 0) | (2 << 2));
   bat3 = syscall(256 + 80, va3, ua3, sh3);
+  bat3t = syscall(256 + 80, va3, ua3, sh3t);
 
   // Populate index buffer
   uint16_t idxs[3] = {0, 1, 2};
   syscall(256 + 97, ia, 0, idxs, 3);
 
-  float attr[6];
+  float attr[8];
   attr[3] = 1.0;
   attr[4] = 0.8;
   for (int i = 0; i <= 1; i++) {
@@ -103,15 +105,19 @@ void draw()
     syscall(256 + 33, va2, i * 3 + 2, &attr[0], 1);
   }
 
+  attr[5] = 1.0;
+  attr[6] = 1.0;
   for (int i = 0; i <= 1; i++) {
     attr[0] = attr[1] = (i == 0 ? 0.6 : 0.9);
     attr[2] = attr[3] = (i == 0 ? -1 : +2);
+    attr[4] = 1.0; attr[7] = 1.0;
     syscall(256 + 33, va3, i * 3 + 0, &attr[0], 1);
     attr[0] = 0.6; attr[1] = 0.9;
     attr[2] = -1; attr[3] = 2;
     syscall(256 + 33, va3, i * 3 + 1, &attr[0], 1);
     attr[0] = 0.9; attr[1] = 0.6;
     attr[2] = 2; attr[3] = -1;
+    attr[4] = 0.5; attr[7] = 0.1;
     syscall(256 + 33, va3, i * 3 + 2, &attr[0], 1);
   }
 
@@ -135,7 +141,8 @@ void draw()
     syscall(256 + 3, ctx, 1, 3, ia);
 
     // Use batch 3 and add call
-    syscall(256 + 2, ctx, bat3);
+    uint64_t tick = syscall64(2);
+    syscall(256 + 2, ctx, tick % 1000000 < 500000 ? bat3 : bat3t);
     syscall(256 + 3, ctx, 0, 6, 0);
 
     // Issue and wait
