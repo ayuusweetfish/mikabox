@@ -38,6 +38,7 @@ void syscalls_init();
 #elif SYSCALLS_IMPL
 #include "emu.h"
 #include "v3d_wrapper.h"
+#include "ff_wrapper.h"
 #include "../sys/pool.h"
 #include <stdio.h>
 #include <string.h>
@@ -49,6 +50,10 @@ static pool_decl(v3d_unifarr, 4096, uas);
 static pool_decl(v3d_shader, 256, shaders);
 static pool_decl(v3d_batch, 4096, batches);
 static pool_decl(v3d_buf, 4096, ias);
+
+#define DIR DIR_
+static pool_decl(FIL, 4096, files);
+static pool_decl(DIR, 256, dirs);
 
 #define syscall_log(_fmt, ...) \
   printf("%s: " _fmt, __func__, ##__VA_ARGS__)
@@ -318,6 +323,181 @@ def(GFX, 111, {
   v3d_idxbuf_close(m);
   pool_release(&ias, r0);
 })
+
+def(FIL, 0, {
+  size_t idx;
+  FIL *f = pool_alloc(&files, &idx);
+  if (f == NULL) return (uint32_t)-1;
+  FRESULT r = f_open(f, r0, r1 & 0xff);
+  if (r != FR_OK) {
+    syscall_log("f_open() returns %d (%s)\n", (int)r, f_strerr(r));
+    return (uint32_t)-3;
+  }
+  return idx;
+})
+
+def(FIL, 1, {
+  FIL *f = pool_elm(&files, r0);
+  if (f == NULL) return (uint32_t)-2;
+  FRESULT r = f_close(f);
+  if (r != FR_OK) {
+    syscall_log("f_close() returns %d (%s)\n", (int)r, f_strerr(r));
+    return (uint32_t)-3;
+  }
+})
+
+/*
+def(FIL, 2, {
+  FIL *f = pool_elm(&files, r0);
+  if (f == NULL) return (uint32_t)-2;
+  UINT br;
+  FRESULT r = f_read(f, (void *)r1, r2, &br);
+  if (r != FR_OK) {
+    syscall_log("f_read() returns %d (%s)\n", (int)r, f_strerr(r));
+    return (uint32_t)-3;
+  }
+  return br;
+})
+
+def(FIL, 3, {
+  FIL *f = pool_elm(&files, r0);
+  if (f == NULL) return (uint32_t)-2;
+  UINT bw;
+  FRESULT r = f_write(f, (void *)r1, r2, &bw);
+  if (r != FR_OK) {
+    syscall_log("f_write() returns %d (%s)\n", (int)r, f_strerr(r));
+    return (uint32_t)-3;
+  }
+  return bw;
+})
+
+def(FIL, 4, {
+  FIL *f = pool_elm(&files, r0);
+  if (f == NULL) return (uint32_t)-2;
+  FRESULT r = f_lseek(f, (FSIZE_t)r1);
+  if (r != FR_OK) {
+    syscall_log("f_lseek() returns %d (%s)\n", (int)r, f_strerr(r));
+    return (uint32_t)-3;
+  }
+})
+
+def(FIL, 5, {
+  FIL *f = pool_elm(&files, r0);
+  if (f == NULL) return (uint32_t)-2;
+  FRESULT r = f_truncate(f);
+  if (r != FR_OK) {
+    syscall_log("f_truncate() returns %d (%s)\n", (int)r, f_strerr(r));
+    return (uint32_t)-3;
+  }
+})
+
+def(FIL, 6, {
+  FIL *f = pool_elm(&files, r0);
+  if (f == NULL) return (uint32_t)-2;
+  FRESULT r = f_sync(f);
+  if (r != FR_OK) {
+    syscall_log("f_sync() returns %d (%s)\n", (int)r, f_strerr(r));
+    return (uint32_t)-3;
+  }
+})
+
+def(FIL, 7, {
+  FIL *f = pool_elm(&files, r0);
+  if (f == NULL) return (uint32_t)-2;
+  return f_tell(f);
+})
+
+def(FIL, 8, {
+  FIL *f = pool_elm(&files, r0);
+  if (f == NULL) return (uint32_t)-2;
+  return f_eof(f);
+})
+
+def(FIL, 9, {
+  FIL *f = pool_elm(&files, r0);
+  if (f == NULL) return (uint32_t)-2;
+  return f_size(f);
+})
+
+def(FIL, 10, {
+  FIL *f = pool_elm(&files, r0);
+  if (f == NULL) return (uint32_t)-2;
+  return f_error(f);
+})
+
+def(FIL, 16, {
+  size_t idx;
+  DIR *d = pool_alloc(&dirs, &idx);
+  if (d == NULL) return (uint32_t)-1;
+  FRESULT r = f_opendir(d, (const char *)r0);
+  if (r != FR_OK) {
+    syscall_log("f_opendir() returns %d (%s)\n", (int)r, f_strerr(r));
+    return (uint32_t)-3;
+  }
+  return idx;
+})
+
+def(FIL, 17, {
+  DIR *d = pool_elm(&dirs, r0);
+  if (d == NULL) return (uint32_t)-2;
+  FRESULT r = f_closedir(d);
+  if (r != FR_OK) {
+    syscall_log("f_closedir() returns %d (%s)\n", (int)r, f_strerr(r));
+    return (uint32_t)-3;
+  }
+})
+
+def(FIL, 18, {
+  DIR *d = pool_elm(&dirs, r0);
+  if (d == NULL) return 0;
+  FRESULT r = f_readdir(d, &finfo);
+  if (r != FR_OK) {
+    syscall_log("f_readdir() returns %d (%s)\n", (int)r, f_strerr(r));
+    return 0;
+  }
+  if (finfo.fname[0] == 0) {
+    return 0;
+  } else {
+    char *fname = (char *)r1;
+    strcpy(fname, finfo.fname);
+    return (finfo.fattrib & AM_DIR) ? 2 : 1;
+  }
+})
+
+def(FIL, 32, {
+  FRESULT r = f_stat((const char *)r0, &finfo);
+  if (r != FR_OK) {
+    if (r != FR_NO_FILE && r != FR_NO_PATH && r != FR_INVALID_NAME)
+      syscall_log("f_stat() returns %d (%s)\n", (int)r, f_strerr(r));
+    return 0;
+  }
+  return (finfo.fattrib & AM_DIR) ? 2 : 1;
+})
+
+def(FIL, 33, {
+  FRESULT r = f_unlink((const char *)r0);
+  if (r != FR_OK) {
+    syscall_log("f_unlink() returns %d (%s)\n", (int)r, f_strerr(r));
+    return 0;
+  }
+})
+
+def(FIL, 34, {
+  FRESULT r = f_rename((const char *)r0, (const char *)r1);
+  if (r != FR_OK) {
+    syscall_log("f_rename() returns %d (%s)\n", (int)r, f_strerr(r));
+    return 0;
+  }
+})
+
+def(FIL, 35, {
+  FRESULT r = f_mkdir((const char *)r0);
+  if (r != FR_OK) {
+    syscall_log("f_mkdir() returns %d (%s)\n", (int)r, f_strerr(r));
+    return 0;
+  }
+})
+*/
 
 #undef def
 #undef init

@@ -177,6 +177,11 @@ void main()
   crt_init();
 
   syscall(7, "Hello world!\n");
+
+  uint32_t f = syscall(512 + 0, "haha.txt", 0x02 | 0x08);
+  syscall(512 + 1, f);
+  while (1) { }
+
   syscall(0, update, synth, draw);
   syscall(1);
 }
