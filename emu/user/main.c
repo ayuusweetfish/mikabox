@@ -178,8 +178,27 @@ void main()
 
   syscall(7, "Hello world!\n");
 
-  uint32_t f = syscall(512 + 0, "haha.txt", 0x02 | 0x08);
+  uint32_t f;
+  // Write
+  f = syscall(512 + 0, "haha.txt", 0x02 | 0x08);
+  syscall(512 + 3, f, "huhuhu", 6);
+  syscall(512 + 4, f, syscall(512 + 7, f) - 1);
+  syscall(512 + 5, f);
   syscall(512 + 1, f);
+
+  // Read
+  char buf[32] = { 0 };
+  f = syscall(512 + 0, "haha.txt", 0x01);
+  syscall(512 + 2, f, buf, 1);
+  syscall(7, buf);
+  uint32_t sz = syscall(512 + 9, f);
+  syscall(512 + 2, f, buf, 1);
+  syscall(7, buf);
+  syscall(512 + 4, f, sz - 2);
+  syscall(512 + 2, f, buf, sizeof(buf) - 1);
+  syscall(7, buf);
+
+  //f = syscall(512 + 0, "haha.txt", 0x02 | 0x08);
   while (1) { }
 
   syscall(0, update, synth, draw);

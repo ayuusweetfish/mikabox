@@ -75,3 +75,12 @@ void *syscall_dup_str(uint32_t addr)
     }
   return syscall_dup_mem(addr, size + 1);
 }
+
+void syscall_write_mem(uint32_t addr, uint32_t size, void *buf)
+{
+  uc_err err;
+  if ((err = uc_mem_write(syscalls_uc, addr, buf, size)) != UC_ERR_OK) {
+    printf("uc_mem_write() returned error %u (%s)\n", err, uc_strerror(err));
+    exit(1);
+  }
+}

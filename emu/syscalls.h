@@ -346,12 +346,11 @@ def(FIL, 1, {
   }
 })
 
-/*
 def(FIL, 2, {
   FIL *f = pool_elm(&files, r0);
   if (f == NULL) return (uint32_t)-2;
   UINT br;
-  FRESULT r = f_read(f, (void *)r1, r2, &br);
+  FRESULT r = f_read(f, r1, r2, &br);
   if (r != FR_OK) {
     syscall_log("f_read() returns %d (%s)\n", (int)r, f_strerr(r));
     return (uint32_t)-3;
@@ -363,7 +362,7 @@ def(FIL, 3, {
   FIL *f = pool_elm(&files, r0);
   if (f == NULL) return (uint32_t)-2;
   UINT bw;
-  FRESULT r = f_write(f, (void *)r1, r2, &bw);
+  FRESULT r = f_write(f, r1, r2, &bw);
   if (r != FR_OK) {
     syscall_log("f_write() returns %d (%s)\n", (int)r, f_strerr(r));
     return (uint32_t)-3;
@@ -425,6 +424,7 @@ def(FIL, 10, {
   return f_error(f);
 })
 
+/*
 def(FIL, 16, {
   size_t idx;
   DIR *d = pool_alloc(&dirs, &idx);

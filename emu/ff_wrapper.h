@@ -5,12 +5,20 @@
 #include <stdio.h>
 
 typedef int FRESULT;
-#define FR_OK 0
 typedef char TCHAR;
 typedef uint32_t UINT;
 typedef uint8_t BYTE;
 typedef long FSIZE_t;
 typedef uint32_t guestptr_t;
+
+#define FR_OK 0
+#define	FA_READ				0x01
+#define	FA_WRITE			0x02
+#define	FA_OPEN_EXISTING	0x00
+#define	FA_CREATE_NEW		0x04
+#define	FA_CREATE_ALWAYS	0x08
+#define	FA_OPEN_ALWAYS		0x10
+#define	FA_OPEN_APPEND		0x30
 
 typedef struct {
   FILE *f;
