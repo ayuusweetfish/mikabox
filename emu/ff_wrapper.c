@@ -164,6 +164,7 @@ FRESULT f_stat (guestptr_t path, FILINFO* fno)
     return errno;
   }
   fno->fattrib = (S_ISDIR(s.st_mode) ? AM_DIR : 0);
+  free(p);
   return 0;
 }
 

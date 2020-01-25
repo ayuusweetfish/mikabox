@@ -26,8 +26,8 @@
 #define WIN_H 480
 
 int8_t routine_id;
-uint32_t routine_pc[3];
-uc_context *routine_ctx[3];
+uint32_t routine_pc[8];
+uc_context *routine_ctx[8];
 
 uint64_t app_tick;
 
@@ -292,10 +292,10 @@ void emu()
     return;
   }
 
-  printf("Routine addresses: 0x%08x 0x%08x 0x%08x\n",
-    routine_pc[0], routine_pc[1], routine_pc[2]);
+  printf("Routine addresses: 0x%08x 0x%08x 0x%08x 0x%08x\n",
+    routine_pc[0], routine_pc[1], routine_pc[2], routine_pc[3]);
 
-  for (int i = 0; i < 3; i++) {
+  for (int i = 0; i < 4; i++) {
     uc_context_alloc(uc, &routine_ctx[i]);
     uint32_t sp = MEM_END - i * STACK_SIZE;
     uint32_t lr = 0;
@@ -310,7 +310,7 @@ void emu()
   uint64_t last_frame = 0, last_upd = 0;
 
   while (1) {
-    for (int i = 0; i < 3; i++) {
+    for (int i = 0; i < 4; i++) if (routine_pc[i] != 0) {
       uc_context_restore(uc, routine_ctx[i]);
       uint32_t pc;
       uc_reg_read(uc, UC_ARM_REG_PC, &pc);

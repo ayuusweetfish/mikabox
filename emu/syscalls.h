@@ -59,9 +59,6 @@ static FILINFO finfo;
 #define syscall_log(_fmt, ...) \
   printf("%s: " _fmt, __func__, ##__VA_ARGS__)
 
-void syscall_read_mem(uint32_t addr, uint32_t size, void *buf);
-void syscall_write_mem(uint32_t addr, uint32_t size, void *buf);
-
 void syscall_reinit_rng();
 uint64_t syscalls_lcg;
 static uint32_t rng_count = 0;
@@ -70,12 +67,14 @@ static uint32_t rng_count = 0;
 
 def(GEN, 0, {
   if (routine_id != -1) {
-    syscall_log("Routines can only be chaned in initialization routine\n");
+    syscall_log("Routines can only be changed in initialization routine\n");
     return 0;
   }
-  routine_pc[0] = r0;
-  routine_pc[1] = r1;
-  routine_pc[2] = r2;
+  int bank = (routine_pc[0] == 0 ? 0 : 4);
+  routine_pc[bank + 0] = r0;
+  routine_pc[bank + 1] = r1;
+  routine_pc[bank + 2] = r2;
+  routine_pc[bank + 3] = r3;
 })
 
 def(GEN, 1, {

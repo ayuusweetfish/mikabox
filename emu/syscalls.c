@@ -1,5 +1,6 @@
 #define SYSCALLS_IMPL 1
 #include "syscalls.h"
+#include "emu.h"
 
 #include "unicorn/unicorn.h"
 #include <errno.h>

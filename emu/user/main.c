@@ -228,9 +228,6 @@ void main()
   syscall(512 + 33, "huhu.txt");
   syscall(512 + 33, "zzzz");
 
-  //f = syscall(512 + 0, "haha.txt", 0x02 | 0x08);
-  while (1) { }
-
   syscall(0, update, synth, draw);
   syscall(1);
 }
