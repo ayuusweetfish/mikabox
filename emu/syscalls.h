@@ -39,6 +39,7 @@ void syscalls_init();
 #include "emu.h"
 #include "v3d_wrapper.h"
 #include "ff_wrapper.h"
+#include "audio_wrapper.h"
 #include "../sys/pool.h"
 #include <stdio.h>
 #include <string.h>
@@ -497,6 +498,19 @@ def(FIL, 35, {
     syscall_log("f_mkdir() returns %d (%s)\n", (int)r, f_strerr(r));
     return 0;
   }
+})
+
+def(AUD, 0, {
+  return audio_blocksize();
+})
+
+def(AUD, 1, {
+  return audio_dropped();
+})
+
+def(AUD, 2, {
+  void *p = audio_write_pos();
+  syscall_read_mem(r0, audio_blocksize() * 2 * sizeof(int16_t), p);
 })
 
 #undef def

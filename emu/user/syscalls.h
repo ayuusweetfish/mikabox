@@ -4,6 +4,7 @@
 #define offs_mika   0
 #define offs_gfx  256
 #define offs_fil  512
+#define offs_aud  768
 
 #define argc_(_, _1, _2, _3, _4, _N, ...) _N
 #define fn__(_pfx, _argc) _pfx##_argc
@@ -120,10 +121,18 @@ def(34, _ rename, cp path_old, cp path_new)
 def(35, _ mkdir, cp path)
 
 #undef _group
+#define _group aud
+
+def(0, i blocksize)
+def(1, i dropped)
+def(2, _ write, p buf)
+
+#undef _group
 
 #undef offs_mika
 #undef offs_gfx
 #undef offs_fil
+#undef offs_aud
 
 #undef argc_
 #undef fn__

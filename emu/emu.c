@@ -3,13 +3,16 @@
 #include "swi.h"
 #include "syscalls.h"
 #include "v3d_wrapper.h"
+#include "audio_wrapper.h"
 
 #define GLEW_STATIC
 #include "GL/glew.h"
 #include "GLFW/glfw3.h"
+#include "miniaudio/miniaudio.h"
 #include "timer_lib/timer.h"
 #include "unicorn/unicorn.h"
 
+#include <math.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -84,6 +87,24 @@ void setup_glfw()
 static void render()
 {
   glfwSwapBuffers(window);
+}
+
+// Audio
+
+static void setup_audio()
+{
+  ma_device_config dev_config =
+    ma_device_config_init(ma_device_type_playback);
+  dev_config.playback.format = ma_format_s16;
+  dev_config.playback.channels = 2;
+  dev_config.sampleRate = 44100;
+  dev_config.dataCallback = (ma_device_callback_proc)audio_callback;
+
+  if (ma_device_init(NULL, &dev_config, &audio_device) != MA_SUCCESS ||
+      ma_device_start(&audio_device) != MA_SUCCESS) {
+    printf("Cannot start audio playback\n");
+    exit(1);
+  }
 }
 
 // Time and events
@@ -310,6 +331,18 @@ void emu()
   uint64_t last_frame = 0, last_upd = 0;
 
   while (1) {
+    if (audio_dropped()) printf("Dropped!");
+    if (audio_pending()) {
+      static uint32_t q = 0;
+      int16_t *p = audio_write_pos();
+      int sz = audio_blocksize();
+      for (int i = 0; i < sz; i++) {
+        p[i * 2] = p[i * 2 + 1] =
+          (int16_t)(sinf(q / 44100.0f * 440 * 2 * acosf(-1)) * 32767.0);
+        q++;
+      }
+    }
+
     for (int i = 0; i < 4; i++) if (routine_pc[i] != 0) {
       uc_context_restore(uc, routine_ctx[i]);
       uint32_t pc;
@@ -346,6 +379,7 @@ void emu()
 int main()
 {
   setup_glfw();
+  setup_audio();
   emu();
   return 0;
 }

@@ -22,3 +22,6 @@
 [submodule "emu/timer_lib"]
 	path = emu/timer_lib
 	url = https://github.com/mjansson/timer_lib.git
+[submodule "emu/miniaudio"]
+	path = emu/miniaudio
+	url = https://github.com/dr-soft/miniaudio.git

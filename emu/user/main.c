@@ -169,7 +169,7 @@ void update()
       s[j] = "0123456789abcdef"[t & 0xf];
       t >>= 4;
     }
-    mika_log(s);
+    //mika_log(s);
   }
 }
 
