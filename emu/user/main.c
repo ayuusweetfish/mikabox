@@ -1,5 +1,6 @@
 #include "mikabox.h"
 #include "syscalls.h"
+#include <math.h>
 
 extern unsigned char _bss_begin;
 extern unsigned char _bss_end;
@@ -7,6 +8,8 @@ extern unsigned char _bss_end;
 uint8_t qwq[1024];
 uint8_t qvq[] = "=~=";
 uint8_t quq = { 0 };
+
+uint32_t audio_blocksize;
 
 __attribute__ ((noinline)) void crt_init()
 {
@@ -155,6 +158,14 @@ void draw()
 void synth()
 {
   while (1) {
+    static int16_t p[8192];
+    static uint32_t q = 0;
+    for (int i = 0; i < audio_blocksize; i++) {
+      p[i * 2] = p[i * 2 + 1] =
+        (int16_t)(sinf(q / 44100.0f * 660 * 2 * acosf(-1)) * 32767.0);
+      q++;
+    }
+    aud_write(p);
     syscall(1);
   }
 }
@@ -230,6 +241,8 @@ void main()
   syscall(512 + 33, "huhu.txt");
   syscall(512 + 33, "zzzz");
 
-  syscall(0, update, synth, draw);
+  audio_blocksize = aud_blocksize();
+
+  syscall(0, draw, synth, update);
   syscall(1);
 }

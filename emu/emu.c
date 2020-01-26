@@ -331,19 +331,9 @@ void emu()
   uint64_t last_frame = 0, last_upd = 0;
 
   while (1) {
-    if (audio_dropped()) printf("Dropped!");
-    if (audio_pending()) {
-      static uint32_t q = 0;
-      int16_t *p = audio_write_pos();
-      int sz = audio_blocksize();
-      for (int i = 0; i < sz; i++) {
-        p[i * 2] = p[i * 2 + 1] =
-          (int16_t)(sinf(q / 44100.0f * 440 * 2 * acosf(-1)) * 32767.0);
-        q++;
-      }
-    }
-
     for (int i = 0; i < 4; i++) if (routine_pc[i] != 0) {
+      if (i == 1 && !audio_pending()) continue;
+
       uc_context_restore(uc, routine_ctx[i]);
       uint32_t pc;
       uc_reg_read(uc, UC_ARM_REG_PC, &pc);
