@@ -365,6 +365,10 @@ void emu()
   __atomic_test_and_set(&render_sem, __ATOMIC_RELAXED);
   __atomic_test_and_set(&vsync_sem, __ATOMIC_RELAXED);
 
+  uint64_t req_mask = 0;
+  for (int i = 0; i < 4; i++)
+    if (routine_pc[i] != 0) req_mask |= (1 << i);
+
   pthread_t vsync_thread;
   int err_i;
   if ((err_i = pthread_create(&vsync_thread, NULL, vsync_fn, NULL)) != 0) {
@@ -377,7 +381,9 @@ void emu()
   }
 
   while (1) {
-    for (int i = 3; i >= 0; i--)
+    if ((req_flags & req_mask) == 0) {
+      usleep(500);
+    } else for (int i = 3; i >= 0; i--) {
       if (routine_pc[i] != 0 && (req_flags & (1 << i))) {
         update_tick();
         routine_id = i;
@@ -388,6 +394,7 @@ void emu()
           __atomic_clear(&render_sem, __ATOMIC_RELAXED);
         }
       }
+    }
 
     update_tick();
 
