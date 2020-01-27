@@ -33,6 +33,7 @@ uint32_t routine_pc[8];
 uc_context *routine_ctx[8];
 
 uint64_t app_tick;
+uint32_t req_flags;
 
 // GLFW
 
@@ -82,11 +83,6 @@ void setup_glfw()
 
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-}
-
-static void render()
-{
-  glfwSwapBuffers(window);
 }
 
 // Audio
@@ -234,6 +230,42 @@ static void handler_unmapped(
     (uint32_t)address, mem_type_str(type), (uint32_t)value);
 }
 
+static void step_context(uc_context *ctx)
+{
+  uc_err err;
+
+  uc_context_restore(uc, ctx);
+  uint32_t pc;
+  uc_reg_read(uc, UC_ARM_REG_PC, &pc);
+
+  update_tick();
+
+  // XXX: uc_emu_continue()?
+  if ((err = uc_emu_start(uc, pc, 0, 100000, 0)) != UC_ERR_OK) {
+    printf("uc_emu_start() returned error %u (%s)\n", err, uc_strerror(err));
+    uc_reg_read(uc, UC_ARM_REG_PC, &pc);
+    printf("PC = 0x%08x\n", pc);
+    exit(1);
+  }
+
+  uc_context_save(uc, ctx);
+}
+
+static bool render_sem; // false denotes that drawing commands are issued
+static bool vsync_sem;  // false denotes that v-sync has triggered
+
+void *vsync_fn(void *_unused)
+{
+  while (1) {
+    if (!__atomic_test_and_set(&render_sem, __ATOMIC_RELAXED)) {
+      glfwSwapBuffers(window);
+      usleep(8000);
+      __atomic_clear(&vsync_sem, __ATOMIC_RELAXED);
+    }
+    usleep(1000);
+  }
+}
+
 void emu()
 {
   uc_err err;
@@ -328,41 +360,77 @@ void emu()
   }
 
   // Execute loop
-  uint64_t last_frame = 0, last_upd = 0;
+  uint64_t last_poll = 0, last_comp = 0;
+  req_flags = 0xf;
+  __atomic_test_and_set(&render_sem, __ATOMIC_RELAXED);
+  __atomic_test_and_set(&vsync_sem, __ATOMIC_RELAXED);
+
+  pthread_t vsync_thread;
+  int err_i;
+  if ((err_i = pthread_create(&vsync_thread, NULL, vsync_fn, NULL)) != 0) {
+    printf("pthread_create() returned error %i (%s)\n", err_i, strerror(err_i));
+    return;
+  }
+  if ((err_i = pthread_detach(vsync_thread)) != 0) {
+    printf("pthread_detach() returned error %i (%s)\n", err_i, strerror(err_i));
+    return;
+  }
 
   while (1) {
-    for (int i = 0; i < 4; i++) if (routine_pc[i] != 0) {
-      if (i == 1 && !audio_pending()) continue;
+    for (int i = 3; i >= 0; i--)
+      if (routine_pc[i] != 0 && (req_flags & (1 << i))) {
+        update_tick();
+        routine_id = i;
+        step_context(routine_ctx[i]);
 
-      uc_context_restore(uc, routine_ctx[i]);
-      uint32_t pc;
-      uc_reg_read(uc, UC_ARM_REG_PC, &pc);
-      //printf("Restoring routine %d at 0x%08x\n", i, pc);
-
-      update_tick();
-
-      // XXX: uc_emu_continue()?
-      if ((err = uc_emu_start(uc, pc, 0, 100000, 0)) != UC_ERR_OK) {
-        printf("uc_emu_start() returned error %u (%s)\n", err, uc_strerror(err));
-        uc_reg_read(uc, UC_ARM_REG_PC, &pc);
-        printf("PC = 0x%08x\n", pc);
-        exit(1);
+        if (i == 0 && !(req_flags & (1 << i))) {
+          // Signal that rendering commands have been issued
+          __atomic_clear(&render_sem, __ATOMIC_RELAXED);
+        }
       }
 
-      uc_context_save(uc, routine_ctx[i]);
+    update_tick();
+
+    if (!__atomic_test_and_set(&vsync_sem, __ATOMIC_RELAXED))
+      req_flags |= (1 << 0);
+
+    if (audio_pending())
+      req_flags |= (1 << 1);
+
+    if (app_tick - last_poll >= 3000) {
+      glfwPollEvents();
+      if (glfwWindowShouldClose(window)) break;
+      update_input();
+      last_poll = app_tick - app_tick % 3000;
+      req_flags |= (1 << 2);
+    }
+
+    if (last_comp != app_tick * 240 / 1000000) {
+      last_comp = app_tick * 240 / 1000000;
+      req_flags |= (1 << 3);
+    }
+
+  /*
+    for (int i = 3; i >= 0; i--) if (routine_pc[i] != 0) {
+      if (i == 0 && app_tick - last_bufswp < 12000) continue;
+      if (i == 1 && !audio_pending()) continue;
+      step_context(routine_ctx[i]);
+
+      if (i == 0) {
+        render();
+        update_tick();
+        last_bufswp = app_tick;
+      }
     }
 
     update_tick();
-    if (app_tick - last_upd >= 3000) {
-      last_upd = app_tick;
+    if (app_tick - last_poll >= 3000) {
+      last_poll = app_tick;
       glfwPollEvents();
+      if (glfwWindowShouldClose(window)) break;
       update_input();
     }
-    if (app_tick - last_frame >= 12000) {
-      last_frame = app_tick;
-      if (glfwWindowShouldClose(window)) break;
-      render();
-    }
+  */
   }
 }
 

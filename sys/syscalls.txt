@@ -2,7 +2,7 @@ num #in #ou desc
 
 +0: General
 0   4   0   Register coroutines
-1   0   0   Yield from routine
+1   1   0   Yield from routine
 2   0   1   Get current tick in-game
 3   0   0   Get number of players connected
 4   1   1   Get buttons for a player

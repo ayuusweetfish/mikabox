@@ -55,7 +55,7 @@
 #define _group mika
 
 def(0, _ rout, i c1, i c2, i c3, i c4)
-def(1, _ yield)
+def(1, _ yield, i clear)
 def(2, _ tick)
 def(3, i party)
 def(4, l btns, i player)

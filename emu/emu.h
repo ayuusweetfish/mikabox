@@ -6,6 +6,8 @@
 extern int8_t routine_id;
 extern uint32_t routine_pc[8];
 
+extern uint32_t req_flags;
+
 extern uint64_t app_tick;
 void update_tick();
 

@@ -9,7 +9,7 @@ ma_device audio_device;
 
 #define MAX_BLOCK_SIZE  8192
 #define N_BUFS  2
-static uint32_t block_size = 2048;
+static uint32_t block_size = 1024;
 
 static uint16_t buf[N_BUFS][MAX_BLOCK_SIZE][2] = {{{ 0 }}};
 

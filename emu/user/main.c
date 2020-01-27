@@ -11,6 +11,8 @@ uint8_t quq = { 0 };
 
 uint32_t audio_blocksize;
 
+static uint32_t buttons;
+
 __attribute__ ((noinline)) void crt_init()
 {
   unsigned char *begin = &_bss_begin, *end = &_bss_end;
@@ -151,7 +153,7 @@ void draw()
 
     // Issue and wait
     gfx_ctx_issue(ctx);
-    syscall(1);
+    mika_yield(1);
   }
 }
 
@@ -162,11 +164,19 @@ void synth()
     static uint32_t q = 0;
     for (int i = 0; i < audio_blocksize; i++) {
       p[i * 2] = p[i * 2 + 1] =
-        (int16_t)(sinf(q / 44100.0f * 660 * 2 * acosf(-1)) * 32767.0);
+        (int16_t)(sinf(q / 44100.0f * (buttons ? 660 : 440) * 2 * acosf(-1)) * 16384.0);
       q++;
     }
     aud_write(p);
-    syscall(1);
+    mika_yield(1);
+  }
+}
+
+void event()
+{
+  while (1) {
+    buttons = mika_btns(0);
+    mika_yield(1);
   }
 }
 
@@ -174,13 +184,15 @@ void update()
 {
   char s[17] = { 0 };
   while (1) {
-    syscall(1);
-    uint64_t t = syscall64(4, 0);
+    mika_yield(1);
+    /*uint64_t t = syscall64(4, 0);
     for (int j = 15; j >= 0; j--) {
       s[j] = "0123456789abcdef"[t & 0xf];
       t >>= 4;
     }
-    //mika_log(s);
+    mika_log(s);*/
+    //for (int i = 0; i < 3e5; i++) __asm__ __volatile__ ("");
+    //for (int i = 0; i < 1e4; i++) mika_rand();
   }
 }
 
@@ -243,6 +255,6 @@ void main()
 
   audio_blocksize = aud_blocksize();
 
-  syscall(0, draw, synth, update);
-  syscall(1);
+  syscall(0, draw, synth, event, update);
+  mika_yield(1);
 }
