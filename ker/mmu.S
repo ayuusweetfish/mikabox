@@ -32,3 +32,8 @@ mmu_flush:
 mmu_domain_access_control:
   mcr   p15, 0, r0, c3, c0, 0
   bx    lr
+
+.global mmu_domain_access_control_get
+mmu_domain_access_control_get:
+  mrc   p15, 0, r0, c3, c0, 0
+  bx    lr

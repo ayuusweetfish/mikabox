@@ -7,8 +7,14 @@
 static irq_callback_t callbacks[IRQ_MAX] = { NULL };
 static void *args[IRQ_MAX] = { NULL };
 
+void v1();
 void irq_handler(uint32_t ret_addr)
 {
+  static int count = 0;
+  if (++count == 300) {
+    v1();
+    count = 0;
+  }
   // Check interrupt source
   mem_barrier();
   uint32_t pend_base = *IRQ_PENDBASIC;

@@ -11,6 +11,7 @@ void mmu_enable(uint32_t *table_base);
 void mmu_flush();
 
 void mmu_domain_access_control(uint32_t access_vector);
+uint32_t mmu_domain_access_control_get();
 
 void *mmu_ord_alloc(size_t size, size_t align);
 void mmu_ord_pop();
