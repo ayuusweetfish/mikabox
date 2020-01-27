@@ -25,6 +25,8 @@
 #define M_PI  3.1415926535897932384626433832795
 #endif
 
+extern unsigned char _text_user_begin;
+extern unsigned char _text_user_end;
 extern unsigned char _bss_begin;
 extern unsigned char _bss_end;
 extern unsigned char _bss_ord_begin;
@@ -301,22 +303,31 @@ static void usertwt()
   while (1) { }
 }
 
+void userovo();
+
 void sys_main()
 {
   for (uint8_t *p = &_bss_begin; p < &_bss_end; p++) *p = 0;
   for (uint8_t *p = &_bss_ord_begin; p < &_bss_ord_end; p++) *p = 0;
 
+  uint32_t text_user_page_begin = (uint32_t)&_text_user_begin >> 20;
+  uint32_t text_user_page_end = (uint32_t)(&_text_user_end - 1) >> 20;
+
   uint32_t bss_ord_page_begin = (uint32_t)&_bss_ord_begin >> 20;
   uint32_t bss_ord_page_end = (uint32_t)(&_bss_ord_end - 1) >> 20;
 
   for (uint32_t i = 0; i < 4096; i++)
-    mmu_table_section(mmu_table, i << 20, i << 20, (i < 64 ? (8 | 4) : 0));
+    mmu_table_section(mmu_table, i << 20, i << 20, (i < 64 ? (8 | 4) : 0) | (1 << 10));
   for (uint32_t i = bss_ord_page_begin; i <= bss_ord_page_end; i++)
-    mmu_table_section(mmu_table, i << 20, i << 20, 0);
+    mmu_table_section(mmu_table, i << 20, i << 20, (1 << 10));
   for (uint32_t i = 0x20000000; i <= 0x24000000; i += 0x100000)
     // 1 << 5: domain 1
     // 1 << 10: AP = 0b01 privileged access only
     mmu_table_section(mmu_table, i, i, (1 << 5) | (1 << 10));
+  for (uint32_t i = text_user_page_begin; i <= text_user_page_end; i++)
+    // 1 << 5: domain 1
+    // 2 << 10: AP = 0b10 read only in user mode
+    mmu_table_section(mmu_table, i << 20, i << 20, (1 << 5) | (2 << 10));
   mmu_enable(mmu_table);
 
   // Initialize RNG
@@ -473,10 +484,10 @@ void sys_main()
   while (1) { }
 */
 
-  // Client for domain 1, manager for domain 0
-  mmu_domain_access_control((1 << 2) | 3);
-  change_mode(MODE_USR);
-  usertwt();
+  printf("%08x %08x\n", _text_user_begin, _text_user_end);
+  printf("%u %u\n", text_user_page_begin, text_user_page_end);
+  //usertwt();
+  jump_user(userovo);
   mmu_domain_access_control((3 << 2) | 3);
   printf("Done!\n");
 

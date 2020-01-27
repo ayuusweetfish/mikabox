@@ -16,7 +16,7 @@ startup:
 _addr_reset:        .word _reset
 _addr_int_uinstr:   .word _reset
 _addr_int_swi:      .word _swi_stub
-_addr_int_pfabort:  .word _reset
+_addr_int_pfabort:  .word _pfabt_stub
 _addr_int_dabort:   .word _dabt_stub
 _addr_int_uhandler: .word _reset
 _addr_int_irq:      .word _irq_stub

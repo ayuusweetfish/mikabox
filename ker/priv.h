@@ -13,6 +13,7 @@ void change_mode(uint32_t mode);
 void change_mode_b(uint32_t mode, void *addr);
 void set_user_sp(void *sp);
 void *get_user_sp();
+void jump_user(void *pc);
 
 #include "coroutine.h"
 
