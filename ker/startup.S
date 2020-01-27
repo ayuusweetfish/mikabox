@@ -41,6 +41,7 @@ _irq_stub:
   bl    irq_handler // External symbol
   ldmfd sp!, {r0-r12, pc}^
 
+.global _reset
 _reset:
   // Initialize interrupt vector table
   // Copy instructions and constant values to address 0x0

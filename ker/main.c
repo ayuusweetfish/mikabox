@@ -117,12 +117,6 @@ void vsync_callback(void *_unused)
   fb_flip_buffer();
 }
 
-void v1()
-{
-  charbuf_flush();
-  fb_flip_buffer();
-}
-
 bool has_key = false;
 static bool has_kbd_key = false, has_gpad_key = false;
 
@@ -335,6 +329,7 @@ void sys_main()
     // 2 << 10: AP = 0b10 read only in user mode
     mmu_table_section(mmu_table, i << 20, i << 20, (1 << 5) | (2 << 10));
   mmu_enable(mmu_table);
+  // Client for domain 1, manager for domain 0
   mmu_domain_access_control((1 << 2) | 3);
 
   // Initialize RNG
@@ -404,14 +399,6 @@ void sys_main()
 
   // List directory contents
   printf("====\n");
-  mem_barrier();
-  *GPFSEL4 |= (1 << 21);
-  {
-    *GPCLR1 = (1 << 15);
-    for (uint32_t i = 0; i < 100000000; i++) __asm__ __volatile__ ("");
-    *GPSET1 = (1 << 15);
-    for (uint32_t i = 0; i < 100000000; i++) __asm__ __volatile__ ("");
-  }
   uint32_t di = syscall(512 + 16, (uint32_t)"/");
   uint32_t type;
   while ((type = syscall(512 + 18, di, (uint32_t)buff)) != 0)
@@ -500,9 +487,7 @@ void sys_main()
 */
 
   printf("0x%08x\n", mmu_domain_access_control_get());
-  // Client for domain 1, manager for domain 0
-  //jump_user(userovo);
-  mmu_domain_access_control((3 << 2) | 3);
+  jump_user(userovo);
   printf("Done!\n");
 
   while (1) {
