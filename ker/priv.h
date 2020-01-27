@@ -1,5 +1,5 @@
-#ifndef _Mikabox_sys_h_
-#define _Mikabox_sys_h_
+#ifndef _Mikabox_priv_h_
+#define _Mikabox_priv_h_
 
 #define MODE_USR  0x10
 #define MODE_FIQ  0x11

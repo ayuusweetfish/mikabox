@@ -1,5 +1,5 @@
 #include "main.h"
-#include "sys.h"
+#include "priv.h"
 #include "common.h"
 #include "charbuf.h"
 #include "mmu.h"

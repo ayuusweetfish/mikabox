@@ -1,7 +1,7 @@
 #include "swi.h"
 #include "printf/printf.h"
 #include "coroutine.h"
-#include "sys.h"
+#include "priv.h"
 #include "syscalls.h"
 
 typedef uint64_t (*syscall_fn_t)(uint32_t r0, uint32_t r1, uint32_t r2, uint32_t r3);
