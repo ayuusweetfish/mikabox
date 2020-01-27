@@ -1,14 +1,14 @@
 [submodule "sys/printf"]
-	path = sys/printf
+	path = ker/printf
 	url = https://github.com/mpaland/printf.git
 [submodule "sys/stb"]
-	path = sys/stb
+	path = ker/stb
 	url = https://github.com/nothings/stb.git
 [submodule "sys/AMPi"]
-	path = sys/AMPi
+	path = ker/AMPi
 	url = https://github.com/kawa-yoiko/AMPi.git
 [submodule "sys/uspi"]
-	path = sys/uspi
+	path = ker/uspi
 	url = https://github.com/kawa-yoiko/uspi.git
 [submodule "emu/unicorn"]
 	path = emu/unicorn
