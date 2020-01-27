@@ -317,9 +317,9 @@ void sys_main()
   uint32_t bss_ord_page_end = (uint32_t)(&_bss_ord_end - 1) >> 20;
 
   for (uint32_t i = 0; i < 4096; i++)
-    mmu_table_section(mmu_table, i << 20, i << 20, (i < 64 ? (8 | 4) : 0) | (1 << 10));
+    mmu_table_section(mmu_table, i << 20, i << 20, (i < 64 ? (8 | 4) : 0));
   for (uint32_t i = bss_ord_page_begin; i <= bss_ord_page_end; i++)
-    mmu_table_section(mmu_table, i << 20, i << 20, (1 << 10));
+    mmu_table_section(mmu_table, i << 20, i << 20, 0);
   for (uint32_t i = 0x20000000; i <= 0x24000000; i += 0x100000)
     // 1 << 5: domain 1
     // 1 << 10: AP = 0b01 privileged access only
@@ -329,6 +329,8 @@ void sys_main()
     // 2 << 10: AP = 0b10 read only in user mode
     mmu_table_section(mmu_table, i << 20, i << 20, (1 << 5) | (2 << 10));
   mmu_enable(mmu_table);
+  // Client for domain 1, manager for domain 0
+  mmu_domain_access_control((1 << 2) | 3);
 
   // Initialize RNG
   // https://github.com/bztsrc/raspi3-tutorial/blob/master/06_random/rand.c
@@ -484,11 +486,8 @@ void sys_main()
   while (1) { }
 */
 
-  printf("%08x %08x\n", _text_user_begin, _text_user_end);
-  printf("%u %u\n", text_user_page_begin, text_user_page_end);
-  //usertwt();
+  printf("0x%08x\n", mmu_domain_access_control_get());
   jump_user(userovo);
-  mmu_domain_access_control((3 << 2) | 3);
   printf("Done!\n");
 
   while (1) {

@@ -9,6 +9,7 @@ static void *args[IRQ_MAX] = { NULL };
 
 void irq_handler(uint32_t ret_addr)
 {
+retry:
   // Check interrupt source
   mem_barrier();
   uint32_t pend_base = *IRQ_PENDBASIC;
@@ -23,7 +24,9 @@ void irq_handler(uint32_t ret_addr)
     source = 64 + __builtin_ctz(pend_base & 0xff);
   } else {
     // Should not reach here
-    return;
+    // Retrying fixes a bunch of problems anyway
+    // XXX: Why is this ever needed?
+    goto retry;
   }
   mem_barrier();
 
