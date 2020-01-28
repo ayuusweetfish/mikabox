@@ -84,7 +84,7 @@ def(GEN, 1, {
 })
 
 def(GEN, 2, {
-  update_tick();
+  //update_tick();
   return app_tick;
 })
 

@@ -27,6 +27,7 @@
 
 #define TMR_CS  (volatile uint32_t *)(PERI_BASE + 0x3000 + 0x00)
 #define TMR_CLO (volatile uint32_t *)(PERI_BASE + 0x3000 + 0x04)
+#define TMR_CHI (volatile uint32_t *)(PERI_BASE + 0x3000 + 0x08)
 #define TMR_C0  (volatile uint32_t *)(PERI_BASE + 0x3000 + 0x0c)
 #define TMR_C1  (volatile uint32_t *)(PERI_BASE + 0x3000 + 0x10)
 #define TMR_C2  (volatile uint32_t *)(PERI_BASE + 0x3000 + 0x14)

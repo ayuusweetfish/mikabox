@@ -14,7 +14,7 @@ void update_tick();
 #define MAX_PLAYERS 4
 extern int num_players;
 extern uint64_t player_btns[MAX_PLAYERS];
-extern uint64_t player_axes[MAX_PLAYERS]; // Packed quad s8
+extern uint64_t player_axes[MAX_PLAYERS]; // Packed octal s8
 
 void syscall_read_mem(uint32_t addr, uint32_t size, void *buf);
 void *syscall_dup_mem(uint32_t addr, uint32_t size);

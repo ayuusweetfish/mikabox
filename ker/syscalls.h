@@ -4,6 +4,7 @@
   syscall_##__grp##_##__id
 
 #define init(__fn)
+#define syscall_export(__decl)
 
 #if !SYSCALLS_DECL && !SYSCALLS_IMPL && !SYSCALLS_TABLE && !SYSCALLS_INIT
 #define SYSCALLS_DECL 1
@@ -12,10 +13,14 @@
 #if SYSCALLS_DECL
   #define def(__grp, __id, __fn)  \
     uint64_t FN(__grp, __id)(uint32_t r0, uint32_t r1, uint32_t r2, uint32_t r3);
+  #undef syscall_export
+  #define syscall_export(__decl) extern __decl;
 #elif SYSCALLS_IMPL
   #define def(__grp, __id, __fn)  \
     uint64_t FN(__grp, __id)(uint32_t r0, uint32_t r1, uint32_t r2, uint32_t r3) \
     { __fn return 0; }
+  #undef syscall_export
+  #define syscall_export(__decl) __decl;
 #elif SYSCALLS_TABLE
   #define def(__grp, __id, __fn)  \
     [SYSCALL_GRP_OFFS_##__grp + __id] = &FN(__grp, __id),
@@ -30,6 +35,16 @@
 #define SYSCALL_GRP_OFFS_GEN  0
 #define SYSCALL_GRP_OFFS_GFX  256
 #define SYSCALL_GRP_OFFS_FIL  512
+
+syscall_export(int8_t routine_id)
+syscall_export(uint32_t routine_pc[8])
+syscall_export(uint32_t req_flags)
+syscall_export(uint64_t app_tick)
+
+#define MAX_PLAYERS 4
+syscall_export(int num_players)
+syscall_export(uint64_t player_btns[MAX_PLAYERS])
+syscall_export(uint64_t player_axes[MAX_PLAYERS]) // Packed octal s8
 
 #if SYSCALLS_DECL
 void syscalls_init();
@@ -89,11 +104,37 @@ static inline const char *f_strerr(FRESULT fr)
 def(GEN, 1, {
 })
 
+def(GEN, 2, {
+  return app_tick;
+})
+
+def(GEN, 3, {
+  return num_players;
+})
+
+def(GEN, 4, {
+  if (r0 < num_players)
+    return player_btns[r0];
+})
+
+def(GEN, 5, {
+  if (r0 < num_players)
+    return player_axes[r0];
+})
+
 def(GEN, 6, {
   mem_barrier();
   uint32_t data = *RNG_DATA;
   mem_barrier();
   return (uint64_t)data | 0x100000000LL;
+})
+
+def(GEN, 7, {
+  printf("[%d] ", r0);
+  const char *p = (const char *)r1;
+  for (uint32_t i = 0; i < 256 && p[i] != 0; i++)
+    _putchar(p[i]);
+  _putchar('\n');
 })
 
 def(GEN, 43, {
@@ -475,6 +516,7 @@ def(FIL, 35, {
   }
 })
 
+#undef syscall_export
 #undef def
 #undef init
 #undef FN

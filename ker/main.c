@@ -157,6 +157,7 @@ static void gpad_upd_callback(unsigned index, const USPiGamePadState *state)
   printf("\r%d %08x", state->nbuttons, state->buttons);
   has_gpad_key = (state->buttons & 0x800);
   has_key = has_kbd_key | has_gpad_key;
+  player_btns[0] = state->buttons;
 }
 
 void doda();
@@ -479,6 +480,23 @@ void sys_main()
 
   mem_barrier();
   syscalls_init();
+
+  num_players = 1;
+  player_btns[0] = 0;
+
+  mem_barrier();
+  uint64_t app_start_time = ((uint64_t)*TMR_CHI << 32) | *TMR_CLO;
+
+  for (int i = 0; i < 10; i++) {
+    mem_barrier();
+    uint64_t t = ((uint64_t)*TMR_CHI << 32) | *TMR_CLO;
+    mem_barrier();
+    app_tick = t - app_start_time;
+
+    snprintf(buff, sizeof buff, "hahahaha %u %llu", syscall(3), syscall64(2));
+    syscall(7, 1234, (uint32_t)buff);
+  }
+  while (1) { }
 
 /*
   set_user_sp(user_stack + sizeof user_stack);
