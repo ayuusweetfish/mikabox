@@ -25,7 +25,7 @@ co_jump:
   // Enter user mode
   ldmia     r1!, {r4-r11, sp, lr}
   mov       r0, lr
-  b         jump_user
+  b         _text_user_vaddr
 
 // Saves all registers, including VFP ones and lr
 // ip: Address to struct reg_set

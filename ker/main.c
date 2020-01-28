@@ -32,6 +32,8 @@ extern unsigned char _bss_begin;
 extern unsigned char _bss_end;
 extern unsigned char _bss_ord_begin;
 extern unsigned char _bss_ord_end;
+extern unsigned char _kernel_end;
+extern unsigned char _text_user_vaddr;
 
 struct framebuffer {
   uint32_t pwidth;
@@ -211,29 +213,32 @@ void sys_main()
   for (uint8_t *p = &_bss_begin; p < &_bss_end; p++) *p = 0;
   for (uint8_t *p = &_bss_ord_begin; p < &_bss_ord_end; p++) *p = 0;
 
-  uint32_t text_user_page_begin = (uint32_t)&_text_user_begin >> 20;
-  uint32_t text_user_page_end = (uint32_t)(&_text_user_end - 1) >> 20;
-
   uint32_t bss_ord_page_begin = (uint32_t)&_bss_ord_begin >> 20;
   uint32_t bss_ord_page_end = (uint32_t)(&_bss_ord_end - 1) >> 20;
 
+  uint32_t text_user_page = (uint32_t)&_text_user_vaddr >> 20;
+
+  // Everything: sys RW, user N; cached up to 64 MiB
   for (uint32_t i = 0; i < 4096; i++)
     mmu_table_section(mmu_table, i << 20, i << 20, (i < 64 ? (8 | 4) : 0) | (1 << 5) | (1 << 10));
+  // .bss.ord: sys RW, user N
   for (uint32_t i = bss_ord_page_begin; i <= bss_ord_page_end; i++)
-    mmu_table_section(mmu_table, i << 20, i << 20, 0 | (1 << 5) | (1 << 10));
+    mmu_table_section(mmu_table, i << 20, i << 20, (1 << 5) | (1 << 10));
+  // MMIO: sys RW, user N
   for (uint32_t i = 0x20000000; i <= 0x24000000; i += 0x100000)
-    // 1 << 5: domain 1
-    // 1 << 10: AP = 0b01 privileged access only
     mmu_table_section(mmu_table, i, i, (1 << 5) | (1 << 10));
-  for (uint32_t i = text_user_page_begin; i <= text_user_page_end; i++)
-    // 1 << 5: domain 1
-    // 2 << 10: AP = 0b10 read only in user mode
-    mmu_table_section(mmu_table, i << 20, i << 20, (1 << 5) | (2 << 10));
+  // .text.user: sys RW, user R
+  mmu_table_section(mmu_table, text_user_page << 20, text_user_page << 20, (1 << 5) | (2 << 10));
+  // User region: sys RW, user RW
   for (uint32_t i = 0x80000000; i < 0x84000000; i += 0x100000)
     mmu_table_section(mmu_table, i, i - 0x80000000 + (32 << 20), (1 << 5) | (3 << 10) | (8 | 4));
+
   mmu_enable(mmu_table);
   // Client for domain 1, manager for domain 0
   mmu_domain_access_control((1 << 2) | 3);
+
+  // Copy .text.user to separate page
+  memcpy(&_text_user_vaddr, &_text_user_begin, &_text_user_end - &_text_user_begin);
 
   // Initialize RNG
   // https://github.com/bztsrc/raspi3-tutorial/blob/master/06_random/rand.c

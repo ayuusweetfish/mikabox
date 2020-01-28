@@ -202,7 +202,7 @@ void main()
 
   int j = 0;
   while (1) {
-    for (int i = 0; i < 500000; i++) __asm__ __volatile__ ("");
+    for (int i = 0; i < 1000000; i++) __asm__ __volatile__ ("");
     if (++j == 100) {
         mika_log(0, "Hello world!\n");
         j = 0;

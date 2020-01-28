@@ -5,6 +5,11 @@ SECTIONS
 
   .text.startup : { *(.text.startup) }
   .text : { EXCLUDE_FILE(*user.o) *(.text .text.*) }
+
+  _text_user_begin = .;
+  .text.user : { *user.o(.text) }
+  _text_user_end = .;
+
   .rodata : { *(.rodata .rodata.*) }
   .data : { *(.data .data.*) }
 
@@ -18,8 +23,8 @@ SECTIONS
   .bss.ord : { *(.bss.ord) }
   _bss_ord_end = .;
 
+  _kernel_end = .;
+
   . = ALIGN(0x100000);
-  _text_user_begin = .;
-  .text.user : { *user.o(.text) }
-  _text_user_end = .;
+  _text_user_vaddr = .;
 }
