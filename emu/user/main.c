@@ -190,7 +190,7 @@ void update()
       s[j] = "0123456789abcdef"[t & 0xf];
       t >>= 4;
     }
-    mika_log(s);*/
+    mika_log(0, s);*/
     //for (int i = 0; i < 3e5; i++) __asm__ __volatile__ ("");
     //for (int i = 0; i < 1e4; i++) mika_rand();
   }
@@ -200,7 +200,7 @@ void main()
 {
   crt_init();
 
-  mika_log("Hello world!\n");
+  mika_log(0, "Hello world!\n");
 
   uint32_t f;
   // Write
@@ -214,13 +214,13 @@ void main()
   char buf[32] = { 0 };
   f = fil_open("haha.txt", 0x01);
   fil_read(f, buf, 1);
-  mika_log(buf);
+  mika_log(0, buf);
   uint32_t sz = fil_size(f);
   fil_read(f, buf, 1);
-  mika_log(buf);
+  mika_log(0, buf);
   fil_seek(f, sz - 2);
   fil_read(f, buf, sizeof(buf) - 1);
-  mika_log(buf);
+  mika_log(0, buf);
 
   // Rename
   fil_rename("haha.txt", "huhu.txt");
@@ -229,24 +229,24 @@ void main()
   fil_mkdir("ahahab");
   // Stat
   buf[1] = '\0';
-  buf[0] = "-FD"[fil_stat("ahahaa")]; mika_log(buf);
-  buf[0] = "-FD"[fil_stat("huhu.txt")]; mika_log(buf);
+  buf[0] = "-FD"[fil_stat("ahahaa")]; mika_log(0, buf);
+  buf[0] = "-FD"[fil_stat("huhu.txt")]; mika_log(0, buf);
   // - Different behaviour: trailing slashes should be accepted on hardware
-  buf[0] = "-FD"[fil_stat("ahahaa/")]; mika_log(buf);
-  buf[0] = "-FD"[fil_stat("zzzz")]; mika_log(buf);
+  buf[0] = "-FD"[fil_stat("ahahaa/")]; mika_log(0, buf);
+  buf[0] = "-FD"[fil_stat("zzzz")]; mika_log(0, buf);
 
   // Open directory
   // - Both should succeed
   fil_opendir("ahahaa");
-  mika_log("----");
+  mika_log(0, "----");
   uint32_t d = fil_opendir("/");
   uint32_t ty;
   while ((ty = fil_readdir(d, buf)) != 0) {
-    if (ty == 2) mika_log("> dir");
-    mika_log(buf);
+    if (ty == 2) mika_log(0, "> dir");
+    mika_log(0, buf);
   }
   fil_closedir(d);
-  mika_log("----");
+  mika_log(0, "----");
 
   // Unlink
   syscall(512 + 33, "ahahaa");

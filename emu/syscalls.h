@@ -40,7 +40,7 @@ void syscalls_init();
 #include "v3d_wrapper.h"
 #include "ff_wrapper.h"
 #include "audio_wrapper.h"
-#include "../sys/pool.h"
+#include "../ker/pool.h"
 #include <stdio.h>
 #include <string.h>
 
@@ -119,8 +119,8 @@ def(GEN, 6, {
 def(GEN, 7, {
   char last;
   char ch;
-  while (1) {
-    syscall_read_mem(r0++, 1, &ch);
+  for (int i = 0; i < 256; i++) {
+    syscall_read_mem(r1++, 1, &ch);
     if (ch == '\0') break;
     putchar(last = ch);
   }

@@ -132,9 +132,10 @@ def(GEN, 6, {
 def(GEN, 7, {
   printf("[%d] ", r0);
   const char *p = (const char *)r1;
+  char last = '\0';
   for (uint32_t i = 0; i < 256 && p[i] != 0; i++)
-    _putchar(p[i]);
-  _putchar('\n');
+    _putchar(last = p[i]);
+  if (last != '\n') _putchar('\n');
 })
 
 def(GEN, 43, {

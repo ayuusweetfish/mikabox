@@ -61,7 +61,7 @@ def(3, i party)
 def(4, l btns, i player)
 def(5, l axes, i player)
 def(6, l rand)
-def(7, _ log, cp str)
+def(7, _ log, i level, cp str)
 
 #undef _group
 #define _group gfx
