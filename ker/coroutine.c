@@ -2,10 +2,7 @@
 #include "printf/printf.h"
 
 #define MAX_RECURSION 16
-static struct coroutine co_toplevel = {
-  .state = CO_STATE_RUN,
-  .flags = 0
-};
+static struct coroutine co_toplevel = { 0 };
 struct coroutine *stack[MAX_RECURSION] = { &co_toplevel };
 uint16_t stack_top = 0;  // Points directly to the topmost level
 

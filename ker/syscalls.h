@@ -101,6 +101,19 @@ static inline const char *f_strerr(FRESULT fr)
 }
 #endif
 
+init({
+  pool_init(v3d_ctx, 16, ctxs);
+  pool_init(v3d_tex, 4096, texs);
+  pool_init(v3d_vertarr, 4096, vas);
+  pool_init(v3d_unifarr, 4096, uas);
+  pool_init(v3d_shader, 256, shaders);
+  pool_init(v3d_batch, 4096, batches);
+  pool_init(v3d_mem, 4096, ias);
+
+  pool_init(FIL, 4096, files);
+  pool_init(DIR, 256, dirs);
+})
+
 def(GEN, 1, {
 })
 

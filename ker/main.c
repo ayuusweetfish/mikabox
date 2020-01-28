@@ -299,6 +299,13 @@ void sys_main()
   num_players = 1;
   player_btns[0] = 0;
 
+/*
+  void doda();
+  void dodo(uint32_t);
+  doda();
+  while (1) dodo((uint32_t)fb_buf);
+*/
+
   mem_barrier();
   uint64_t app_start_time = ((uint64_t)*TMR_CHI << 32) | *TMR_CLO;
 

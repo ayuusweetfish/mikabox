@@ -5,20 +5,21 @@
 #include <stdint.h>
 
 #define pool_type(__type, __count) struct { \
-  const size_t sz, cnt; \
-  const size_t elm_offs, used_offs; \
+  size_t sz, cnt; \
+  size_t elm_offs, used_offs; \
   __type elm[__count]; \
   uint32_t used[(__count + 31) / 32]; \
 }
 
 #define pool_decl(__type, __count, __name) \
-  pool_type(__type, __count) __name = { \
-    .sz = sizeof(__type), \
-    .cnt = (__count), \
-    .elm_offs = (uint8_t *)&__name.elm - (uint8_t *)&__name, \
-    .used_offs = (uint8_t *)&__name.used - (uint8_t *)&__name, \
-    .used = { 0 }, \
-  }
+  pool_type(__type, __count) __name = { 0 };
+
+#define pool_init(__type, __count, __name) do { \
+  __name.sz = sizeof(__type); \
+  __name.cnt = (__count); \
+  __name.elm_offs = (uint8_t *)&__name.elm - (uint8_t *)&__name; \
+  __name.used_offs = (uint8_t *)&__name.used - (uint8_t *)&__name; \
+} while (0)
 
 #define pool_sz(__p)  (*((size_t *)(__p) + 0))
 #define pool_cnt(__p) (*((size_t *)(__p) + 1))
