@@ -307,6 +307,53 @@ static void usertwt()
 
 void userovo();
 
+static void file_get(void *user, void *dest, uint32_t offs, uint32_t len)
+{
+  FIL *f = (FIL *)user;
+  UINT br;
+
+  f_lseek(f, offs);
+  f_read(f, dest, len, &br);
+
+  if (len != br)
+    printf("Read incomplete: offs = %u len = %u br = %u\n",
+      offs, len, (unsigned)br);
+}
+
+static void *mem_map(elf_word vaddr, elf_word memsz, elf_word flags)
+{
+  uint32_t page_start = vaddr >> 20;
+  uint32_t page_end = ((vaddr + memsz - 1) >> 20);
+  for (uint32_t page = page_start; page <= page_end; page++) {
+    uint32_t addr = page << 20;
+    mmu_table_section(mmu_table, addr, addr - 0x80000000 + (32 << 20), (1 << 5) | (3 << 10) | (8 | 4));
+  }
+
+  mmu_flush();
+  return (void *)vaddr;
+}
+
+uint32_t load_program(const char *path)
+{
+  FIL f;
+  FRESULT r;
+
+  if ((r = f_open(&f, path, FA_READ)) != FR_OK) {
+    printf("f_open() returned error %d\n", (int)r);
+    return 0;
+  }
+
+  elf_addr entry;
+  uint8_t elfret = elf_load(file_get, mem_map, &f, &entry);
+  f_close(&f);
+
+  if (elfret != 0) {
+    printf("elf_load() returned error %u\n", (unsigned)elfret);
+    return 0;
+  }
+  return entry;
+}
+
 void sys_main()
 {
   for (uint8_t *p = &_bss_begin; p < &_bss_end; p++) *p = 0;
@@ -330,6 +377,8 @@ void sys_main()
     // 1 << 5: domain 1
     // 2 << 10: AP = 0b10 read only in user mode
     mmu_table_section(mmu_table, i << 20, i << 20, (1 << 5) | (2 << 10));
+  for (uint32_t i = 0x80000000; i < 0x84000000; i += 0x100000)
+    mmu_table_section(mmu_table, i, i - 0x80000000 + (32 << 20), (1 << 5) | (3 << 10) | (8 | 4));
   mmu_enable(mmu_table);
   // Client for domain 1, manager for domain 0
   mmu_domain_access_control((1 << 2) | 3);
@@ -497,7 +546,13 @@ void sys_main()
     snprintf(buff, sizeof buff, "hahahaha %u %llu", syscall(3), syscall64(2));
     syscall(7, 1234, (uint32_t)buff);
   }
-  while (1) { }
+
+  uint32_t entry = load_program("/a.out");
+  printf("entry 0x%08x\n", entry);
+
+  set_user_sp((void *)0x84000000);
+  //jump_user((void *)entry);
+  //while (1) { }
 
 /*
   set_user_sp(user_stack + sizeof user_stack);
@@ -516,7 +571,7 @@ void sys_main()
   }
 */
 
-  co_create(&userco, userovo);
+  co_create(&userco, (void *)entry);
   userco.flags = CO_FLAG_FPU | CO_FLAG_USER;
   /*while (userco.state != CO_STATE_DONE) {
     printf("====\n");
@@ -537,10 +592,26 @@ void sys_main()
   co_create(&c1, usb_loop);
   co_create(&c2, audio_loop);
   co_create(&c3, print_loop);
+  int count = 0, t1 = 0, t2 = 0, t3 = 0;
+  uint32_t last, cur;
   while (1) {
+    mem_barrier(); last = *TMR_CLO;
     co_next(&userco);
+    mem_barrier(); cur = *TMR_CLO;
+    t1 += cur - last; last = cur;
+
     co_next(&c1);
+    mem_barrier(); cur = *TMR_CLO;
+    t2 += cur - last; last = cur;
+
     co_next(&c2);
+    mem_barrier(); cur = *TMR_CLO;
+    t3 += cur - last; last = cur;
+
+    if (++count == 200) {
+      printf("%4d %7d %7d %7d\n", count, t1, t2, t3);
+      count = t1 = t2 = t3 = 0;
+    }
     //co_next(&c3);
   }
 

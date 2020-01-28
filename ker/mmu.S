@@ -23,7 +23,6 @@ mmu_enable:
 .global mmu_flush
 mmu_flush:
   mov   r0, #0
-  mcr   p15, 0, r0, c7, c7, 0
   mcr   p15, 0, r0, c8, c7, 0
   mcr   p15, 0, r0, c7, c10, 0  // Clean data cache
   bx    lr

@@ -200,8 +200,17 @@ void main()
 {
   crt_init();
 
-  mika_log(0, "Hello world!\n");
+  int j = 0;
+  while (1) {
+    for (int i = 0; i < 500000; i++) __asm__ __volatile__ ("");
+    if (++j == 100) {
+        mika_log(0, "Hello world!\n");
+        j = 0;
+    }
+    mika_yield(1);
+  }
 
+/*
   uint32_t f;
   // Write
   f = fil_open("haha.txt", 0x02 | 0x08);
@@ -257,4 +266,5 @@ void main()
 
   syscall(0, draw, synth, event, update);
   mika_yield(1);
+*/
 }
