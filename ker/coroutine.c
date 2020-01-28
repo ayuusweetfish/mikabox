@@ -55,8 +55,8 @@ void co_next(struct coroutine *co)
   }
   co->state = CO_STATE_RUN;
   stack[++stack_top] = co;
-  printf("sp = 0x%08x pc = 0x%08x\n",
-    co->regs.sp, co->regs.pc);
+  //printf("sp = 0x%08x pc = 0x%08x\n",
+  //  co->regs.sp, co->regs.pc);
   co_jump(
     &stack[stack_top - 1]->regs, &co->regs,
     catflags(stack[stack_top - 1]->flags, co->flags));

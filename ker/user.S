@@ -10,10 +10,15 @@ jump_user:
 userovo:
   ldr   r4, =#555
 userovovo:
-  mov   r7, #43
+  mov   r7, #42
   mov   r0, r4
   swi   0
   mov   r7, #1
   swi   0
+
+  ldr   r0, =#3000555
+  cmp   r4, r0
+  beq   vsync_callback
+
   add   r4, #1
   b     userovovo
