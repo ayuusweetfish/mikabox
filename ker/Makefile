@@ -60,7 +60,7 @@ utils/nanikore.o: utils/nanikore.png
 	$(V) ffmpeg -f rawvideo -pix_fmt rgb24 - -i $< > utils/nanikore.bin 2> /dev/null
 	@ printf "  %-7s %s\n" LD utils/nanikore.bin
 	$(V) $(LD) -b binary utils/nanikore.bin -o $@ 2> /dev/null
-EXTRA_OBJS += utils/nanikore.o
+# EXTRA_OBJS += utils/nanikore.o
 EXTRA_CLEAN += utils/nanikore.bin utils/nanikore.o
 
 FX_H := $(patsubst %.fx, %.fx.h, $(wildcard v3d/*.fx))

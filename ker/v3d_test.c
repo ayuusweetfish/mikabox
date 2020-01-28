@@ -103,7 +103,7 @@ void doda()
 
   extern uint8_t _binary_utils_nanikore_bin_start;
   nanikore = syscall(256 + 16, 512, 256);
-  syscall(256 + 17, nanikore, (uint32_t)&_binary_utils_nanikore_bin_start, 0);
+  //syscall(256 + 17, nanikore, (uint32_t)&_binary_utils_nanikore_bin_start, 0);
 
   ua1 = syscall(256 + 48, 3);
   syscall(256 + 50, ua1, 0, nanikore, 0);
