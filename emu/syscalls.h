@@ -44,6 +44,8 @@ void syscalls_init();
 #include <stdio.h>
 #include <string.h>
 
+#define DIR DIR_
+
 static pool_decl(v3d_ctx, 16, ctxs);
 static pool_decl(v3d_tex, 4096, texs);
 static pool_decl(v3d_vertarr, 4096, vas);
@@ -52,7 +54,6 @@ static pool_decl(v3d_shader, 256, shaders);
 static pool_decl(v3d_batch, 4096, batches);
 static pool_decl(v3d_buf, 4096, ias);
 
-#define DIR DIR_
 static pool_decl(FIL, 4096, files);
 static pool_decl(DIR, 256, dirs);
 static FILINFO finfo;
@@ -65,6 +66,19 @@ uint64_t syscalls_lcg;
 static uint32_t rng_count = 0;
 
 #endif
+
+init({
+  pool_init(v3d_ctx, 16, ctxs);
+  pool_init(v3d_tex, 4096, texs);
+  pool_init(v3d_vertarr, 4096, vas);
+  pool_init(v3d_unifarr, 4096, uas);
+  pool_init(v3d_shader, 256, shaders);
+  pool_init(v3d_batch, 4096, batches);
+  pool_init(v3d_buf, 4096, ias);
+
+  pool_init(FIL, 4096, files);
+  pool_init(DIR, 256, dirs);
+})
 
 def(GEN, 0, {
   if (routine_id != -1) {
