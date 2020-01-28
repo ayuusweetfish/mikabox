@@ -1,6 +1,6 @@
 #include "v3d.h"
 #include "main.h"
-#include "common.h"
+#include "regs.h"
 #include "prop_tag.h"
 #include "printf/printf.h"
 #include "coroutine.h"

@@ -1,5 +1,5 @@
-#ifndef _Mikabox_common_h_
-#define _Mikabox_common_h_
+#ifndef _Mikabox_regs_h_
+#define _Mikabox_regs_h_
 
 #include <stdint.h>
 
@@ -37,8 +37,5 @@
 #define RNG_STATUS  (volatile uint32_t *)(PERI_BASE + 0x104000 + 0x04)
 #define RNG_DATA    (volatile uint32_t *)(PERI_BASE + 0x104000 + 0x08)
 #define RNG_INTMASK (volatile uint32_t *)(PERI_BASE + 0x104000 + 0x10)
-
-void send_mail(uint32_t data, uint8_t channel);
-uint32_t recv_mail(uint8_t channel);
 
 #endif

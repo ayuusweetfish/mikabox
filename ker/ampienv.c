@@ -1,5 +1,5 @@
 #include "ampienv.h"
-#include "common.h"
+#include "regs.h"
 #include "kmalloc.h"
 #include "irq.h"
 #include "prop_tag.h"

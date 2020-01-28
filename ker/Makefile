@@ -14,11 +14,11 @@ V := @
 
 BUILD_DIR := build
 C_OPTIONS := -std=c99 -Wall -O2
-INCLUDES := -I. -I./AMPi/ampi -I./uspi/include -I./deps
+INCLUDES := -I. -I./common -I./AMPi/ampi -I./uspi/include -I./deps
 STATIC_LIBS := AMPi/ampi/libampi.a uspi/lib/libuspi.a
 LIBS := -lm $(STATIC_LIBS)
 
-SRCS := $(wildcard *.[Sc]) $(wildcard deps/*/*.c)
+SRCS := $(wildcard *.[Sc]) $(wildcard common/*.c) $(wildcard deps/*/*.c)
 
 # Library printf
 SRCS += printf/printf.c
@@ -87,13 +87,9 @@ $(BUILD_DIR)/%.o: %.S
 	$(V) mkdir -p $(BUILD_DIR)/$(dir $<)
 	$(V) $(CC) -c $< -o $@ $(CFLAGS)
 
-$(BUILD_DIR)/deps/%.o: deps/%.c
-	@ printf "  %-7s %-16s %s\n" CC deps/$(notdir $<) "$(C_OPTIONS)"
-	$(V) mkdir -p $(BUILD_DIR)/$(dir $<)
-	$(V) $(CC) -c $< -o $@ $(CFLAGS)
-
+$(BUILD_DIR)/%.o: FLATDIR = $(subst ./, , $(firstword $(subst /, , $(dir $<)))/)
 $(BUILD_DIR)/%.o: %.c
-	@ printf "  %-7s %-16s %s\n" CC $(notdir $<) "$(C_OPTIONS)"
+	@ printf "  %-7s %-16s %s\n" CC $(FLATDIR)$(notdir $<) "$(C_OPTIONS)"
 	$(V) mkdir -p $(BUILD_DIR)/$(dir $<)
 	$(V) $(CC) -c $< -o $@ $(CFLAGS)
 

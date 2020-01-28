@@ -51,7 +51,7 @@ void syscalls_init();
 
 #elif SYSCALLS_IMPL
 #include "printf/printf.h"
-#include "common.h"
+#include "regs.h"
 #include "coroutine.h"
 #include "v3d.h"
 #include "fatfs/ff.h"

@@ -1,5 +1,5 @@
 #include "irq.h"
-#include "common.h"
+#include "regs.h"
 #include "printf/printf.h"
 #include <stddef.h>
 

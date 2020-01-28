@@ -1,11 +1,14 @@
 #include "main.h"
 #include "priv.h"
-#include "common.h"
+#include "regs.h"
 #include "charbuf.h"
 #include "mmu.h"
 #include "irq.h"
 #include "prop_tag.h"
 #include "v3d.h"
+#include "coroutine.h"
+#include "swi.h"
+#include "syscalls.h"
 
 #include "printf/printf.h"
 #include "ampi.h"
@@ -14,9 +17,7 @@
 #include "uspios.h"
 #include "sdcard/sdcard.h"
 #include "fatfs/ff.h"
-#include "coroutine.h"
-#include "swi.h"
-#include "syscalls.h"
+#include "elf.h"
 
 #include <math.h>
 #include <string.h>

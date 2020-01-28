@@ -1,5 +1,5 @@
 #include "uspios.h"
-#include "common.h"
+#include "regs.h"
 #include "kmalloc.h"
 #include "prop_tag.h"
 #include "printf/printf.h"

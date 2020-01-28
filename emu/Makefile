@@ -7,11 +7,11 @@ V := @
 
 BUILD_DIR := build
 C_OPTIONS := -std=c99 -Wall -O2
-INCLUDES := -I. -I./unicorn/include -I./glew/include -I./glfw/include
+INCLUDES := -I. -I./common -I./unicorn/include -I./glew/include -I./glfw/include
 STATIC_LIBS := unicorn/libunicorn.a glew/lib/libGLEW.a glfw/build/src/libglfw3.a
 LIBS := -lm $(STATIC_LIBS)
 
-SRCS := $(wildcard *.c)
+SRCS := $(wildcard *.c) $(wildcard common/*.c)
 SRCS += timer_lib/timer.c
 
 OBJS := $(patsubst %.c, %.o, $(SRCS))
@@ -43,8 +43,9 @@ glfw/build/src/libglfw3.a:
 $(BUILD_DIR)/swi.o: syscalls.h
 $(BUILD_DIR)/syscalls.o: syscalls.h
 
+$(BUILD_DIR)/%.o: FLATDIR = $(subst ./, , $(firstword $(subst /, , $(dir $<)))/)
 $(BUILD_DIR)/%.o: %.c
-	@ printf "  %-7s %-16s %s\n" CC $(notdir $<) "$(C_OPTIONS)"
+	@ printf "  %-7s %-16s %s\n" CC $(FLATDIR)$(notdir $<) "$(C_OPTIONS)"
 	$(V) mkdir -p $(BUILD_DIR)/$(dir $<)
 	$(V) $(CC) -c $< -o $@ $(CFLAGS)
 

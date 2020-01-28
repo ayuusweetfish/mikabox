@@ -1,7 +1,7 @@
 #include "charbuf.h"
 #include "main.h"
 #include "kmalloc.h"
-#include "common.h"
+#include "regs.h"
 #include "utils/font_bitmap.h"
 /*
 #include "utils/FantasqueSansMono-Regular.ttf.h"

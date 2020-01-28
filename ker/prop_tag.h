@@ -4,6 +4,9 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+void send_mail(uint32_t data, uint8_t channel);
+uint32_t recv_mail(uint8_t channel);
+
 uint32_t get_clock_rate(uint8_t id);
 void set_clock_rate(uint8_t id, uint32_t hz);
 void set_virtual_offs(uint32_t x, uint32_t y);

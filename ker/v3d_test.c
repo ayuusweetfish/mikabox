@@ -2,7 +2,7 @@
 #include "prop_tag.h"
 #include "swi.h"
 #include "printf/printf.h"
-#include "common.h"
+#include "regs.h"
 #include <math.h>
 
 static uint32_t ctx;
