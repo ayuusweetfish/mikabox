@@ -1,2 +1,2 @@
-sys/deps/** linguist-vendored
-sys/utils/qpuasm.js linguist-vendored
+ker/deps/** linguist-vendored
+ker/utils/qpuasm.js linguist-vendored
