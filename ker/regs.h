@@ -4,6 +4,7 @@
 #include <stdint.h>
 
 #define mem_barrier() __asm__ __volatile__ ("mcr p15, 0, %0, c7, c10, 5" : : "r" (0) : "memory")
+#define standby()     __asm__ __volatile__ ("mcr p15, 0, %0, c7, c0,  4" : : "r" (0) : "memory")
 
 #define PERI_BASE 0x20000000
 

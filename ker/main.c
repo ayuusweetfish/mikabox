@@ -278,6 +278,8 @@ void sys_main()
 
   irq_set_callback(48, vsync_callback, NULL);
 
+  //while (1) standby();
+
   sdInit();
   int32_t i = sdInitCard();
   printf("sdInitCard() returns %d\n", i);
