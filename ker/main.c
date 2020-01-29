@@ -111,6 +111,7 @@ static void kbd_upd_callback(uint8_t mod, const uint8_t k[6])
     k[0], k[1], k[2], k[3], k[4], k[5], mod);
   has_kbd_key = (k[0] || k[1] || k[2] || k[3] || k[4] || k[5]);
   has_key = has_kbd_key | has_gpad_key;
+  player_btns[0] = has_key;
 }
 
 static void gpad_upd_callback(unsigned index, const USPiGamePadState *state)
@@ -118,7 +119,7 @@ static void gpad_upd_callback(unsigned index, const USPiGamePadState *state)
   printf("\r%d %08x", state->nbuttons, state->buttons);
   has_gpad_key = (state->buttons & 0x800);
   has_key = has_kbd_key | has_gpad_key;
-  player_btns[0] = state->buttons;
+  player_btns[0] = has_key;
 }
 
 static struct coroutine usb_co, audio_co;

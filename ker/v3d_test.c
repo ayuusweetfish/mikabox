@@ -37,7 +37,6 @@ void doda()
 {
   ctx = syscall(256);
 
-#if 0
   static v3d_vert v = { .varyings = {0, 0, 0, 0, 0, 0} };
 
   va3 = syscall(256 + 32, 3, 4);
@@ -55,6 +54,7 @@ void doda()
   sca = syscall(256 + 64, (uint32_t)"#CA");
   batch3 = syscall(256 + 80, va3, ua3, sca);
 
+#if 0
 /*
   ctx = v3d_ctx_create();
   va1 = v3d_vertarr_create(4, 6);
@@ -191,40 +191,16 @@ void doda()
 
 void dodo(uint32_t fb)
 {
-  uint32_t scr = syscall(256 + 18, fb);
+  syscall(256 + 5, ctx);
+
+  uint32_t scr = syscall(256 + 18);
   syscall(256 + 1, ctx, scr, 0xffadbecf);
-  syscall(256 + 4, ctx);
-  syscall(256 + 5, ctx);
 
-#if 0
-  syscall(256 + 5, ctx);
-
-  uint32_t scr = syscall(256 + 18, fb);
-  syscall(256 + 1, ctx, target, 0x0);
-  //syscall(256 + 1, ctx, scr,
-  //  (*TMR_CLO & 0x100000) ? 0xffdecabf : syscall(6, 0, 1, 2, 3));
-
-#if 0
-  // Use batch
-  syscall(256 + 2, ctx, batch1);
-  syscall(256 + 3, ctx, 1, 6, idxs);
-#endif
-
-  // Issue and wait
-  syscall(256 + 4, ctx);
-  syscall(256 + 5, ctx);
-
-  // Start anew
-  syscall(256 + 1, ctx, scr,
-    (*TMR_CLO & 0x100000) ? 0xffdecabf : syscall(6, 0, 1, 2, 3));
-
-#if 0
   syscall(256 + 2, ctx, batch3);
   syscall(256 + 3, ctx, 0, 3, 0);
-#endif
 
-  syscall(256 + 2, ctx, batch2);
-  syscall(256 + 3, ctx, 1, 6, idxs);
+  //syscall(256 + 2, ctx, batch2);
+  //syscall(256 + 3, ctx, 1, 6, idxs);
 
   syscall(256 + 4, ctx);
 
@@ -290,5 +266,4 @@ void dodo(uint32_t fb)
 
   v3d_ctx_issue(&ctx);
 */
-#endif
 }
