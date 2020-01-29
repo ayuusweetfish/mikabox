@@ -51,6 +51,7 @@ void syscalls_init();
 
 #elif SYSCALLS_IMPL
 #include "printf/printf.h"
+#include "main.h"
 #include "regs.h"
 #include "coroutine.h"
 #include "v3d.h"
@@ -251,7 +252,7 @@ init({
 def(GFX, 18, {
   v3d_tex *t = pool_elm(&texs, 0);
   if (t == NULL) return (uint32_t)-2;
-  *t = v3d_tex_screen(r0);
+  *t = v3d_tex_screen((uint32_t)fb_buf);
   return 0;
 })
 

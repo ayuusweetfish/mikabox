@@ -24,6 +24,7 @@ void draw()
   // Create context
   int ctx = gfx_ctx_create();
 
+#if 0
   // Create vertex arrays, uniform arrays and shader
   int va1, ua1, sh1;
   va1 = gfx_varr_create(6, 3);
@@ -126,16 +127,17 @@ void draw()
     attr[4] = 0.5; attr[7] = 0.1;
     gfx_varr_put(va3, i * 3 + 2, &attr[0], 1);
   }
+#endif
 
   while (1) {
     // Wait
-    syscall(256 + 5, ctx);
+    gfx_ctx_wait(ctx);
 
     // Reset
-    uint64_t t = syscall64(4, 0);
-    syscall(256 + 1, ctx, syscall(256 + 18),
-      t == 0 ? 0xffffffff : 0xffffddcc);
+    gfx_ctx_reset(ctx, gfx_tex_screen(),
+      (mika_tick() % 2000000 < 1000000) ? 0xffffffff : 0xffffddcc);
 
+/*
     // Use batch 1 and add call
     gfx_ctx_batch(ctx, bat1);
     gfx_ctx_call(ctx, 0, 3, t == 0 ? 0 : 3);
@@ -150,6 +152,7 @@ void draw()
     uint64_t tick = syscall64(2);
     gfx_ctx_batch(ctx, tick % 1000000 < 500000 ? bat3 : bat3t);
     gfx_ctx_call(ctx, 0, 6, 0);
+*/
 
     // Issue and wait
     gfx_ctx_issue(ctx);

@@ -37,6 +37,7 @@ void doda()
 {
   ctx = syscall(256);
 
+#if 0
   static v3d_vert v = { .varyings = {0, 0, 0, 0, 0, 0} };
 
   va3 = syscall(256 + 32, 3, 4);
@@ -185,18 +186,29 @@ void doda()
   v3d_unifarr_putf32(&ua3, 0, 0);
   batch3 = v3d_batch_create(va3, ua3, v3d_shader_create("#CA"));
 */
+#endif
 }
 
 void dodo(uint32_t fb)
 {
+  uint32_t scr = syscall(256 + 18, fb);
+  syscall(256 + 1, ctx, scr, 0xffadbecf);
+  syscall(256 + 4, ctx);
+  syscall(256 + 5, ctx);
+
+#if 0
   syscall(256 + 5, ctx);
 
   uint32_t scr = syscall(256 + 18, fb);
   syscall(256 + 1, ctx, target, 0x0);
+  //syscall(256 + 1, ctx, scr,
+  //  (*TMR_CLO & 0x100000) ? 0xffdecabf : syscall(6, 0, 1, 2, 3));
 
+#if 0
   // Use batch
   syscall(256 + 2, ctx, batch1);
   syscall(256 + 3, ctx, 1, 6, idxs);
+#endif
 
   // Issue and wait
   syscall(256 + 4, ctx);
@@ -206,8 +218,10 @@ void dodo(uint32_t fb)
   syscall(256 + 1, ctx, scr,
     (*TMR_CLO & 0x100000) ? 0xffdecabf : syscall(6, 0, 1, 2, 3));
 
+#if 0
   syscall(256 + 2, ctx, batch3);
   syscall(256 + 3, ctx, 0, 3, 0);
+#endif
 
   syscall(256 + 2, ctx, batch2);
   syscall(256 + 3, ctx, 1, 6, idxs);
@@ -276,4 +290,5 @@ void dodo(uint32_t fb)
 
   v3d_ctx_issue(&ctx);
 */
+#endif
 }

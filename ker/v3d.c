@@ -413,7 +413,7 @@ v3d_ctx v3d_ctx_create()
   c.mem = v3d_mem_create(CTX_MEM_TOTAL, 0x1000,
     MEM_FLAG_COHERENT | MEM_FLAG_ZERO | MEM_FLAG_HINT_PERMALOCK);
   c.offs = 0;
-  c.ren_ctrl_start = 0;
+  c.bin_ctrl_end = 0;
   return c;
 }
 
@@ -589,7 +589,7 @@ void v3d_ctx_issue(v3d_ctx *c)
 
 void v3d_ctx_wait(v3d_ctx *c)
 {
-  if (c->ren_ctrl_start != 0)
+  if (c->bin_ctrl_end != 0)
     while (*V3D_RFC == 0) { } // co_yield();
-  c->ren_ctrl_start = 0;
+  c->bin_ctrl_end = 0;
 }
