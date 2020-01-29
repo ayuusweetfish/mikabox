@@ -180,7 +180,7 @@ static void *mem_map(elf_word vaddr, elf_word memsz, elf_word flags)
   uint32_t page_end = ((vaddr + memsz - 1) >> 20);
   for (uint32_t page = page_start; page <= page_end; page++) {
     uint32_t addr = page << 20;
-    mmu_table_section(mmu_table, addr, addr - 0x80000000 + (32 << 20), (1 << 5) | (3 << 10) | (8 | 4));
+    mmu_table_section(mmu_table, addr, addr - 0x40000000 + (32 << 20), (1 << 5) | (3 << 10) | (8 | 4 | 16));
   }
 
   mmu_flush();
@@ -230,8 +230,8 @@ void sys_main()
   // .text.user: sys RW, user R
   mmu_table_section(mmu_table, text_user_page << 20, text_user_page << 20, (1 << 5) | (2 << 10));
   // User region: sys RW, user RW
-  for (uint32_t i = 0x80000000; i < 0x84000000; i += 0x100000)
-    mmu_table_section(mmu_table, i, i - 0x80000000 + (32 << 20), (1 << 5) | (3 << 10) | (8 | 4));
+  for (uint32_t i = 0x40000000; i < 0x44000000; i += 0x100000)
+    mmu_table_section(mmu_table, i, i - 0x40000000 + (32 << 20), (1 << 5) | (3 << 10) | (8 | 4 | 16));
 
   mmu_enable(mmu_table);
   // Client for domain 1, manager for domain 0
@@ -318,7 +318,7 @@ void sys_main()
 
   uint32_t entry = load_program("/a.out");
 
-  set_user_sp((void *)0x84000000);
+  set_user_sp((void *)0x44000000);
 
   co_create(&usb_co, usb_loop);
   co_create(&audio_co, audio_loop);

@@ -16,14 +16,15 @@
 #include <stdio.h>
 #include <string.h>
 
-#define MEM_START   0x80000000
-#define MEM_SIZE    0x18000000  // 384 MiB
-#define MEM_END     (MEM_START + MEM_SIZE)
+#define MEM_START_O 0x40000000
+#define MEM_SIZE_O  0x01000000  // 16 MiB
+#define MEM_END_O   (MEM_START_O + MEM_SIZE_O)
+#define MEM_START_U 0x80000000
+#define MEM_SIZE_U  0x18000000  // 384 MiB
+#define MEM_END_U   (MEM_START_U + MEM_SIZE_U)
+
 #define PAGE_SIZE   0x100000
 #define STACK_SIZE  0x100000    // 1 MiB
-
-#undef MEM_SIZE
-#define MEM_SIZE    0x1000000   // 16 MiB
 
 #define WIN_W 800
 #define WIN_H 480
@@ -278,7 +279,7 @@ void emu()
 
   // Map memory
   if ((err = uc_mem_map(
-      uc, MEM_START, MEM_SIZE, UC_PROT_READ | UC_PROT_WRITE)) != UC_ERR_OK) {
+      uc, MEM_START_O, MEM_SIZE_O, UC_PROT_READ | UC_PROT_WRITE)) != UC_ERR_OK) {
     printf("uc_mem_map() returned error %u (%s)\n", err, uc_strerror(err));
     return;
   }
@@ -329,7 +330,7 @@ void emu()
   memset(routine_pc, 0, sizeof routine_pc);
 
   // Initialize stack pointer
-  uint32_t initial_sp = MEM_END;
+  uint32_t initial_sp = MEM_END_O;
   uint32_t initial_lr = 0x0;
   uc_reg_write(uc, UC_ARM_REG_SP, &initial_sp);
   uc_reg_write(uc, UC_ARM_REG_LR, &initial_lr);
@@ -350,7 +351,7 @@ void emu()
 
   for (int i = 0; i < 4; i++) {
     uc_context_alloc(uc, &routine_ctx[i]);
-    uint32_t sp = MEM_END - i * STACK_SIZE;
+    uint32_t sp = MEM_END_O - i * STACK_SIZE;
     uint32_t lr = 0;
     uint32_t pc = routine_pc[i];
     uc_reg_write(uc, UC_ARM_REG_SP, &sp);

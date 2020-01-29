@@ -15,8 +15,9 @@ mmu_enable:
   mcr   p15, 0, r1, c3, c0, 0
   // Turn on MMU, with i/d caches
   mrc   p15, 0, r1, c1, c0, 0
-  orr   r1, r1, #0xd    // MMU & d-cache
-  orr   r1, r1, #0x1f00 // i-cache & branch prediction
+  orr   r1, r1, #0xd      // M, C, W: MMU & d-cache
+  orr   r1, r1, #0x1800   // Z, I: i-cache & branch prediction
+  orr   r1, r1, #0x800000 // XP: disable subpage AP bits
   mcr   p15, 0, r1, c1, c0, 0
   bx    lr
 

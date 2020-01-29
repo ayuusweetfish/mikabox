@@ -2,7 +2,7 @@ ENTRY(main)
 
 SECTIONS
 {
-  . = 0x80000000;
+  . = 0x40000000;
 
   /DISCARD/ : { *(.ARM.* .debug_frame) }
 
