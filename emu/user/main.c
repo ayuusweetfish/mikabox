@@ -200,8 +200,9 @@ void main()
 {
   crt_init();
 
+/*
   int j = 0;
-  while (1) {
+  for (int k = 0; k < 10; k++) {
     for (int i = 0; i < 1000000; i++) __asm__ __volatile__ ("");
     if (++j == 100) {
         mika_log(0, "Hello world!\n");
@@ -209,8 +210,8 @@ void main()
     }
     mika_yield(1);
   }
+*/
 
-/*
   uint32_t f;
   // Write
   f = fil_open("haha.txt", 0x02 | 0x08);
@@ -250,10 +251,13 @@ void main()
   mika_log(0, "----");
   uint32_t d = fil_opendir("/");
   uint32_t ty;
+/*
   while ((ty = fil_readdir(d, buf)) != 0) {
     if (ty == 2) mika_log(0, "> dir");
     mika_log(0, buf);
   }
+*/
+  mika_yield(1);
   fil_closedir(d);
   mika_log(0, "----");
 
@@ -264,7 +268,6 @@ void main()
 
   audio_blocksize = aud_blocksize();
 
-  syscall(0, draw, synth, event, update);
+  mika_rout(draw, synth, event, update);
   mika_yield(1);
-*/
 }

@@ -180,7 +180,7 @@ static void *mem_map(elf_word vaddr, elf_word memsz, elf_word flags)
   uint32_t page_end = ((vaddr + memsz - 1) >> 20);
   for (uint32_t page = page_start; page <= page_end; page++) {
     uint32_t addr = page << 20;
-    mmu_table_section(mmu_table, addr, addr - 0x40000000 + (32 << 20), (1 << 5) | (3 << 10) | (8 | 4 | 16));
+    mmu_table_section(mmu_table, addr, addr - 0x40000000 + (32 << 20), (1 << 5) | (3 << 10) | (8 | 4));
   }
 
   mmu_flush();
@@ -231,7 +231,7 @@ void sys_main()
   mmu_table_section(mmu_table, text_user_page << 20, text_user_page << 20, (1 << 5) | (2 << 10));
   // User region: sys RW, user RW
   for (uint32_t i = 0x40000000; i < 0x44000000; i += 0x100000)
-    mmu_table_section(mmu_table, i, i - 0x40000000 + (32 << 20), (1 << 5) | (3 << 10) | (8 | 4 | 16));
+    mmu_table_section(mmu_table, i, i - 0x40000000 + (32 << 20), (1 << 5) | (3 << 10) | (8 | 4));
 
   mmu_enable(mmu_table);
   // Client for domain 1, manager for domain 0
@@ -313,19 +313,22 @@ void sys_main()
   while (1) dodo((uint32_t)fb_buf);
 */
 
-  mem_barrier();
-  uint64_t app_start_time = ((uint64_t)*TMR_CHI << 32) | *TMR_CLO;
-
-  uint32_t entry = load_program("/a.out");
-
-  set_user_sp((void *)0x44000000);
-
+  // USB and audio threads
   co_create(&usb_co, usb_loop);
   co_create(&audio_co, audio_loop);
+
+  // Load overworld program
+  uint32_t entry = load_program("/a.out");
+  set_user_sp((void *)0x44000000);
+
   co_create(&userco, (void *)entry);
   userco.flags = CO_FLAG_FPU | CO_FLAG_USER;
 
-  while (1) {
+  mem_barrier();
+  uint64_t app_start_time = ((uint64_t)*TMR_CHI << 32) | *TMR_CLO;
+  routine_id = -1;
+
+  while (routine_pc[0] == 0) {
     co_next(&usb_co);
     co_next(&audio_co);
 
@@ -334,4 +337,10 @@ void sys_main()
     app_tick = cur_time - app_start_time;
     co_next(&userco);
   }
+
+  printf("Overworld initialized!\n");
+  printf("routines: 0x%08x 0x%08x 0x%08x 0x%08x\n",
+    routine_pc[0], routine_pc[1], routine_pc[2], routine_pc[3]);
+
+  while (1) { }
 }

@@ -114,6 +114,18 @@ init({
   pool_init(DIR, 256, dirs);
 })
 
+def(GEN, 0, {
+  if (routine_id != -1) {
+    syscall_log("Routines can only be changed in initialization routine\n");
+    return 0;
+  }
+  int bank = (routine_pc[0] == 0 ? 0 : 4);
+  routine_pc[bank + 0] = r0;
+  routine_pc[bank + 1] = r1;
+  routine_pc[bank + 2] = r2;
+  routine_pc[bank + 3] = r3;
+})
+
 def(GEN, 1, {
 })
 

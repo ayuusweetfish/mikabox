@@ -7,7 +7,7 @@ mmu_enable:
   // Invalidate d/i/unified TLBs
   mcr   p15, 0, r1, c8, c7, 0
   // Table address
-  orr   r0, #3
+  orr   r0, #0x1b         // Mark page walk as inner and outer cacheable
   mcr   p15, 0, r0, c2, c0, 0
   mcr   p15, 0, r0, c2, c0, 1
   // Set domain control access to Manager
