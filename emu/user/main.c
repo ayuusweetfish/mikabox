@@ -85,21 +85,26 @@ void draw()
 
 #if 1
   float attr[8];
-  attr[3] = 1.0;
-  attr[4] = 0.8;
-  attr[5] = 0.5;
   for (int i = 0; i <= 1; i++) {
     attr[0] = (i == 0 ? 0.25 : 0.75) * 800;
     attr[1] = (i == 0 ? 0.25 : 0.75) * 480;
-    attr[2] = 0.9;
+    attr[2] = 0.9 * 0.5;
+    attr[3] = 1.0 * 0.5;
+    attr[4] = 0.8 * 0.5;
+    attr[5] = 0.5;
     gfx_varr_put(va1, i * 3 + 0, &attr[0], 1);
     attr[0] = 0.75 * 800;
     attr[1] = 0.25 * 480;
-    attr[2] = 0.7;
+    attr[2] = 0.7 * 0.1;
+    attr[3] = 1.0 * 0.1;
+    attr[4] = 0.8 * 0.1;
+    attr[5] = 0.1;
     gfx_varr_put(va1, i * 3 + 1, &attr[0], 1);
     attr[0] = 0.25 * 800;
     attr[1] = 0.75 * 480;
     attr[2] = 0.5;
+    attr[3] = 1.0;
+    attr[4] = 0.8;
     attr[5] = 1.0;
     gfx_varr_put(va1, i * 3 + 2, &attr[0], 1);
   }
@@ -123,7 +128,7 @@ void draw()
 #endif
 
   ua1 = gfx_uarr_create(0);
-  sh1 = gfx_shad_create("#C");
+  sh1 = gfx_shad_create("#CA");
   bat1 = gfx_bat_create(va1, ua1, sh1);
 
 /*
