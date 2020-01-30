@@ -77,6 +77,8 @@ void timer2_callback(void *_unused)
 }
 
 static bool flipped = false;
+static bool audio_pending = false;
+static bool input_updated = false;
 
 void vsync_callback(void *_unused)
 {
@@ -110,19 +112,21 @@ static unsigned synth(int16_t *buf, unsigned chunk_size)
 
 static void kbd_upd_callback(uint8_t mod, const uint8_t k[6])
 {
-  printf("\r%02x %02x %02x %02x %02x %02x | mod = %02x",
-    k[0], k[1], k[2], k[3], k[4], k[5], mod);
+  //printf("\r%02x %02x %02x %02x %02x %02x | mod = %02x",
+  //  k[0], k[1], k[2], k[3], k[4], k[5], mod);
   has_kbd_key = (k[0] || k[1] || k[2] || k[3] || k[4] || k[5]);
   has_key = has_kbd_key | has_gpad_key;
   player_btns[0] = has_key;
+  input_updated = true;
 }
 
 static void gpad_upd_callback(unsigned index, const USPiGamePadState *state)
 {
-  printf("\r%d %08x", state->nbuttons, state->buttons);
+  //printf("\r%d %08x", state->nbuttons, state->buttons);
   has_gpad_key = (state->buttons & 0x800);
   has_key = has_kbd_key | has_gpad_key;
   player_btns[0] = has_key;
+  input_updated = true;
 }
 
 static struct coroutine usb_co, audio_co;
@@ -355,21 +359,39 @@ void sys_main()
     user_co[i].flags = CO_FLAG_FPU | CO_FLAG_USER;
   }
 
+  uint64_t last_comp = 0;
+  req_flags = 0xf;
+
   // Main loop!
   while (1) {
-    for (int i = 0; i < 500; i++) {
-      co_next(&usb_co);
-      co_next(&audio_co);
+    co_next(&usb_co);
+    co_next(&audio_co);
+
+    for (int8_t i = 0; i >= 0; i--) if (req_flags & (1 << i)) {
+      mem_barrier();
+      uint64_t cur_time = ((uint64_t)*TMR_CHI << 32) | *TMR_CLO;
+      app_tick = cur_time - app_start_time;
+      routine_id = i;
+      co_next(&user_co[i]);
     }
 
-    mem_barrier();
-    uint64_t cur_time = ((uint64_t)*TMR_CHI << 32) | *TMR_CLO;
-    app_tick = cur_time - app_start_time;
-    //for (uint32_t i = 0; i < 4; i++)
-    //  co_next(&user_co[i]);
     if (flipped) {
-      co_next(&user_co[0]);
       flipped = false;
+      req_flags |= (1 << 0);
+    }
+
+    if (audio_pending) {
+      req_flags |= (1 << 1);
+    }
+
+    if (input_updated) {
+      input_updated = false;
+      req_flags |= (1 << 2);
+    }
+
+    if (last_comp != app_tick * 240 / 1000000) {
+      last_comp = app_tick * 240 / 1000000;
+      req_flags |= (1 << 3);
     }
   }
 
