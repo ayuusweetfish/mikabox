@@ -5,7 +5,7 @@
 
 #define SCR_W 800
 #define SCR_H 480
-#define BUF_COUNT 2
+#define BUF_COUNT 4
 
 extern uint8_t *fb_buf;
 extern uint32_t fb_pitch;

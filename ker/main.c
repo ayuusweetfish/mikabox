@@ -76,6 +76,7 @@ void timer2_callback(void *_unused)
   uspi_upd_timers();
 }
 
+extern bool is_in_abt;
 static bool flipped = false;
 static bool audio_pending = false;
 static bool input_updated = false;
@@ -89,7 +90,8 @@ void vsync_callback(void *_unused)
   fb_flip_buffer();
   frame_count++;
 */
-  charbuf_flush();
+  if (app_fb_buf != 0) return;
+  if (is_in_abt) charbuf_flush();
   fb_flip_buffer();
   flipped = true;
 }
@@ -367,6 +369,8 @@ void sys_main()
     co_next(&usb_co);
     co_next(&audio_co);
 
+    app_fb_buf = (uint32_t)fb_buf;
+
     for (int8_t i = 0; i >= 0; i--) if (req_flags & (1 << i)) {
       mem_barrier();
       uint64_t cur_time = ((uint64_t)*TMR_CHI << 32) | *TMR_CLO;
@@ -374,6 +378,8 @@ void sys_main()
       routine_id = i;
       co_next(&user_co[i]);
     }
+
+    app_fb_buf = 0;
 
     if (flipped) {
       flipped = false;

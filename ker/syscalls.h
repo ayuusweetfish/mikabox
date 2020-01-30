@@ -46,6 +46,8 @@ syscall_export(int num_players)
 syscall_export(uint64_t player_btns[MAX_PLAYERS])
 syscall_export(uint64_t player_axes[MAX_PLAYERS]) // Packed octal s8
 
+syscall_export(uint32_t app_fb_buf)
+
 #if SYSCALLS_DECL
 void syscalls_init();
 
@@ -255,7 +257,7 @@ init({
 def(GFX, 18, {
   v3d_tex *t = pool_elm(&texs, 0);
   if (t == NULL) return (uint32_t)-2;
-  *t = v3d_tex_screen((uint32_t)fb_buf);
+  *t = v3d_tex_screen(app_fb_buf);
   return 0;
 })
 
