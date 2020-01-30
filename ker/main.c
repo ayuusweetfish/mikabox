@@ -76,6 +76,8 @@ void timer2_callback(void *_unused)
   uspi_upd_timers();
 }
 
+static bool flipped = false;
+
 void vsync_callback(void *_unused)
 {
   *(volatile uint32_t *)(PERI_BASE + 0x600000) = 0;
@@ -87,6 +89,7 @@ void vsync_callback(void *_unused)
 */
   charbuf_flush();
   fb_flip_buffer();
+  flipped = true;
 }
 
 bool has_key = false;
@@ -364,7 +367,10 @@ void sys_main()
     app_tick = cur_time - app_start_time;
     //for (uint32_t i = 0; i < 4; i++)
     //  co_next(&user_co[i]);
-    co_next(&user_co[0]);
+    if (flipped) {
+      co_next(&user_co[0]);
+      flipped = false;
+    }
   }
 
   while (1) { }
