@@ -22,4 +22,13 @@ uint64_t syscall4(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t);
 #define syscall(...) ((uint32_t)syscall64(__VA_ARGS__))
 #pragma GCC diagnostic ignored "-Wunused-value"
 
+enum {
+  v3d_tex_fmt_rgb = 0,
+  v3d_tex_fmt_bgr,
+  v3d_tex_fmt_rgba,
+  v3d_tex_fmt_bgra,
+  v3d_tex_fmt_argb,
+  v3d_tex_fmt_abgr,
+};
+
 #endif

@@ -45,10 +45,31 @@ v3d_tex v3d_tex_create(uint16_t w, uint16_t h)
 
 void v3d_tex_update(v3d_tex *t, uint32_t buf, v3d_tex_fmt_t fmt)
 {
+  GLenum gl_fmt;
+  bool swap = false;
+  switch (fmt) {
+    case v3d_tex_fmt_rgb:  gl_fmt = GL_RGB; break;
+    case v3d_tex_fmt_bgr:  gl_fmt = GL_BGR; break;
+    case v3d_tex_fmt_rgba: gl_fmt = GL_RGBA; break;
+    case v3d_tex_fmt_bgra: gl_fmt = GL_BGRA; break;
+    case v3d_tex_fmt_argb: gl_fmt = GL_BGRA; swap = true; break;
+    case v3d_tex_fmt_abgr: gl_fmt = GL_RGBA; swap = true; break;
+    default: printf("unknown pixel format\n"); return;
+  }
+
+#if !defined(__BYTE_ORDER__) || __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+  glPixelStorei(GL_UNPACK_SWAP_BYTES, swap ? GL_TRUE : GL_FALSE);
+#if !defined(__BYTE_ORDER__)
+  #warn "__BYTE_ORDER__ undefined, assuming little endian"
+#endif
+#endif
+
+  GLenum gl_type = (swap ? GL_UNSIGNED_INT_8_8_8_8_REV : GL_UNSIGNED_BYTE);
+
   uint8_t *p = syscall_dup_mem(buf, t->w * t->h * 4);
   glBindTexture(GL_TEXTURE_2D, t->id);
   glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, t->w, t->h,
-    GL_RGBA, GL_UNSIGNED_BYTE, p);
+    gl_fmt, gl_type, p);
   free(p);
 }
 
@@ -355,6 +376,7 @@ void v3d_batch_close(v3d_batch *b)
 
 v3d_ctx v3d_ctx_create()
 {
+  return (v3d_ctx){};
 }
 
 void v3d_ctx_anew(v3d_ctx *c, v3d_tex target, uint32_t clear)
@@ -377,9 +399,9 @@ void v3d_ctx_use_batch(v3d_ctx *c, const v3d_batch *batch)
 
   // Activate textures
   for (int i = 0; i < batch->unifarr.num; i++) {
-    printf("%d %s %u\n", i,
+    /*printf("%d %s %u\n", i,
       batch->unifarr.data[i].is_tex ? "tex" : "norm",
-      batch->unifarr.data[i].u32);
+      batch->unifarr.data[i].u32);*/
     if (batch->unifarr.data[i].is_tex) {
       // TODO: Support multiple textures
       glActiveTexture(GL_TEXTURE0);

@@ -26,8 +26,9 @@ void draw()
 
   // Create vertex arrays, uniform arrays and shader
   int va1, ua1, sh1;
-  va1 = gfx_varr_create(6, 4);
-/*
+  va1 = gfx_varr_create(6, 3);
+  ua1 = gfx_uarr_create(0);
+  sh1 = gfx_shad_create("#C");
   int va2, ua2, sh2;
   va2 = gfx_varr_create(6, 4);
   ua2 = gfx_uarr_create(0);
@@ -42,13 +43,13 @@ void draw()
   tex3 = syscall(256 + 16, tw, th);
 
   int ia = gfx_iarr_create(3);
-*/
+
   // Create batch
   int bat1, bat2, bat3, bat3t;
-  //bat2 = gfx_bat_create(va2, ua2, sh2);
+  bat1 = gfx_bat_create(va1, ua1, sh1);
+  bat2 = gfx_bat_create(va2, ua2, sh2);
 
   // Close and reopen
-/*
   for (int i = 0; i < 20; i++) {
     gfx_varr_close(va2);
     gfx_uarr_close(ua2);
@@ -68,12 +69,12 @@ void draw()
   static uint8_t z[th][tw][4];
   for (int i = 0; i < th; i++)
     for (int j = 0; j < tw; j++) {
-      z[i][j][0] = 0xff;
-      z[i][j][1] = 0xff - i;
-      z[i][j][2] = 0xff - j;
-      z[i][j][3] = 0xdd;
+      z[i][j][1] = 0xdd;
+      z[i][j][2] = 0xdd - i;
+      z[i][j][3] = 0xdd - j;
+      z[i][j][0] = 0xdd;
     }
-  gfx_tex_update(tex3, z, 0);
+  gfx_tex_update(tex3, z, v3d_tex_fmt_argb);
   syscall(256 + 50, ua3, 0, tex3, (2 << 0) | (2 << 2));
   bat3 = gfx_bat_create(va3, ua3, sh3);
   bat3t = gfx_bat_create(va3, ua3, sh3t);
@@ -81,103 +82,81 @@ void draw()
   // Populate index buffer
   uint16_t idxs[3] = {0, 1, 2};
   gfx_iarr_put(ia, 0, idxs, 3);
-*/
 
-#if 1
   float attr[8];
+  attr[3] = 1.0;
+  attr[4] = 0.8;
   for (int i = 0; i <= 1; i++) {
-    attr[0] = (i == 0 ? 0.25 : 0.75) * 800;
-    attr[1] = (i == 0 ? 0.25 : 0.75) * 480;
-    attr[2] = 0.9 * 0.5;
-    attr[3] = 1.0 * 0.5;
-    attr[4] = 0.8 * 0.5;
-    attr[5] = 0.5;
+    attr[0] = (i == 0 ? 0.75 : 0.25) * 800;
+    attr[1] = (i == 0 ? 0.75 : 0.25) * 480;
+    attr[2] = 0.9;
     gfx_varr_put(va1, i * 3 + 0, &attr[0], 1);
     attr[0] = 0.75 * 800;
     attr[1] = 0.25 * 480;
-    attr[2] = 0.7 * 0.1;
-    attr[3] = 1.0 * 0.1;
-    attr[4] = 0.8 * 0.1;
-    attr[5] = 0.1;
+    attr[2] = 0.7;
     gfx_varr_put(va1, i * 3 + 1, &attr[0], 1);
     attr[0] = 0.25 * 800;
     attr[1] = 0.75 * 480;
     attr[2] = 0.5;
-    attr[3] = 1.0;
-    attr[4] = 0.8;
-    attr[5] = 1.0;
     gfx_varr_put(va1, i * 3 + 2, &attr[0], 1);
   }
-#else
-  typedef struct v3d_vert {
-    float x, y;
-    float varyings[];
-  } v3d_vert;
-  static v3d_vert v = { .varyings = {0, 0, 0, 0, 0, 0} };
 
-  va1 = gfx_varr_create(3, 4);
-  v.x = 10.0f; v.y = 10.0f;
-  v.varyings[0] = 0.5f; v.varyings[1] = 1.0f; v.varyings[2] = 1.0f; v.varyings[3] = 1.0f;
-  gfx_varr_put(va1, 0, &v, 1);
-  v.x = 10.0f; v.y = 470.0f;
-  v.varyings[0] = 0.5f; v.varyings[1] = 0.25f; v.varyings[2] = 0.5f; v.varyings[3] = 0.5f;
-  gfx_varr_put(va1, 1, &v, 1);
-  v.x = 600.0f; v.y = 245.0f;
-  v.varyings[0] = 0.5f; v.varyings[1] = 0.5f; v.varyings[2] = 0.25f; v.varyings[3] = 0.5f;
-  gfx_varr_put(va1, 2, &v, 1);
-#endif
-
-  ua1 = gfx_uarr_create(0);
-  sh1 = gfx_shad_create("#CA");
-  bat1 = gfx_bat_create(va1, ua1, sh1);
-
-/*
-  attr[2] = 1.0;
-  attr[3] = 0.5;
   for (int i = 0; i <= 1; i++) {
-    attr[0] = attr[1] = (i == 0 ? -0.5 : +0.5);
-    attr[4] = 0.9; attr[5] = 1.0;
+    attr[0] = (i == 0 ? 0.25 : 0.75) * 800;
+    attr[1] = (i == 0 ? 0.25 : 0.75) * 480;
+    attr[2] = 1.0;
+    attr[3] = 0.5;
+    attr[4] = 0.9;
+    attr[5] = 1.0;
     gfx_varr_put(va2, i * 3 + 0, &attr[0], 1);
-    attr[0] = 0.8; attr[1] = -0.2;
-    attr[4] = 0.7; attr[5] = 0.3;
+    attr[0] = 0.9 * 800;
+    attr[1] = 0.4 * 480;
+    attr[2] = 0.7 * 0.3;
+    attr[3] = 0.5 * 0.3;
+    attr[4] = 0.9 * 0.3;
+    attr[5] = 0.3;
     gfx_varr_put(va2, i * 3 + 1, &attr[0], 1);
-    attr[0] = -0.2; attr[1] = 0.8;
-    attr[4] = 0.5; attr[5] = 0.3;
+    attr[0] = 0.4 * 800;
+    attr[1] = 0.9 * 480;
+    attr[2] = 0.5 * 0.3;
+    attr[3] = 0.5 * 0.3;
+    attr[4] = 0.9 * 0.3;
+    attr[5] = 0.3;
     gfx_varr_put(va2, i * 3 + 2, &attr[0], 1);
   }
 
-  attr[5] = 1.0;
-  attr[6] = 1.0;
   for (int i = 0; i <= 1; i++) {
-    attr[0] = attr[1] = (i == 0 ? 0.6 : 0.9);
+    attr[0] = (i == 0 ? 0.8 : 0.95) * 800;
+    attr[1] = (i == 0 ? 0.8 : 0.95) * 480;
     attr[2] = attr[3] = (i == 0 ? -1 : +2);
-    attr[4] = 1.0; attr[7] = 1.0;
+    attr[4] = attr[5] = attr[6] = attr[7] = 1.0;
     gfx_varr_put(va3, i * 3 + 0, &attr[0], 1);
-    attr[0] = 0.6; attr[1] = 0.9;
+    attr[0] = 0.8 * 800;
+    attr[1] = 0.95 * 480;
     attr[2] = -1; attr[3] = 2;
     gfx_varr_put(va3, i * 3 + 1, &attr[0], 1);
-    attr[0] = 0.9; attr[1] = 0.6;
+    attr[0] = 0.95 * 800;
+    attr[1] = 0.8 * 480;
     attr[2] = 2; attr[3] = -1;
-    attr[4] = 0.5; attr[7] = 0.1;
+    attr[4] = 0.05;
+    attr[5] = attr[6] = 0.1;
+    attr[7] = 0.1;
     gfx_varr_put(va3, i * 3 + 2, &attr[0], 1);
   }
-*/
 
   while (1) {
     // Wait
-    gfx_ctx_wait(ctx);
+    syscall(256 + 5, ctx);
 
     // Reset
-    uint64_t t = mika_btns(0);
-    gfx_ctx_reset(ctx, gfx_tex_screen(),
+    uint64_t t = syscall64(4, 0);
+    syscall(256 + 1, ctx, syscall(256 + 18),
       t == 0 ? 0xffffffff : 0xffffddcc);
 
     // Use batch 1 and add call
     gfx_ctx_batch(ctx, bat1);
-    //gfx_ctx_call(ctx, 0, 3, t == 0 ? 0 : 3);
-    gfx_ctx_call(ctx, 0, 3, 0);
+    gfx_ctx_call(ctx, 0, 3, t == 0 ? 0 : 3);
 
-/*
     // Use batch 2 and add call
     gfx_ctx_batch(ctx, bat2);
     idxs[0] = (t == 0 ? 1 : 3);
@@ -185,10 +164,9 @@ void draw()
     gfx_ctx_call(ctx, 1, 3, ia);
 
     // Use batch 3 and add call
-    uint64_t tick = mika_tick();
+    uint64_t tick = syscall64(2);
     gfx_ctx_batch(ctx, tick % 1000000 < 500000 ? bat3 : bat3t);
     gfx_ctx_call(ctx, 0, 6, 0);
-*/
 
     // Issue and wait
     gfx_ctx_issue(ctx);
@@ -241,8 +219,8 @@ void main()
 
 /*
   int j = 0;
-  for (int k = 0; k < 10; k++) {
-    for (int i = 0; i < 1000000; i++) __asm__ __volatile__ ("");
+  while (1) {
+    for (int i = 0; i < 500000; i++) __asm__ __volatile__ ("");
     if (++j == 100) {
         mika_log(0, "Hello world!\n");
         j = 0;
@@ -290,13 +268,10 @@ void main()
   mika_log(0, "----");
   uint32_t d = fil_opendir("/");
   uint32_t ty;
-/*
   while ((ty = fil_readdir(d, buf)) != 0) {
     if (ty == 2) mika_log(0, "> dir");
     mika_log(0, buf);
   }
-*/
-  //mika_yield(1);
   fil_closedir(d);
   mika_log(0, "----");
 
@@ -307,6 +282,6 @@ void main()
 
   audio_blocksize = aud_blocksize();
 
-  mika_rout(draw, synth, event, update);
+  syscall(0, draw, synth, event, update);
   mika_yield(1);
 }
