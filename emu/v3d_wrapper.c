@@ -140,7 +140,10 @@ static const char *shader_source[][2] = {
     in vec3 chroma;
     out vec3 chroma_f;
     void main() {
-      gl_Position = vec4(screen_pos, 0.0, 1.0);
+      gl_Position = vec4(
+        (screen_pos.x - 400) / 400,
+        (240 - screen_pos.y) / 240,
+        0.0, 1.0);
       chroma_f = chroma;
     }
   ), GLSL(
@@ -156,7 +159,10 @@ static const char *shader_source[][2] = {
     in vec4 chroma;
     out vec4 chroma_f;
     void main() {
-      gl_Position = vec4(screen_pos, 0.0, 1.0);
+      gl_Position = vec4(
+        (screen_pos.x - 400) / 400,
+        (240 - screen_pos.y) / 240,
+        0.0, 1.0);
       chroma_f = chroma;
     }
   ), GLSL(
@@ -172,7 +178,10 @@ static const char *shader_source[][2] = {
     in vec2 tex_pos;
     out vec2 tex_pos_f;
     void main() {
-      gl_Position = vec4(screen_pos, 0.0, 1.0);
+      gl_Position = vec4(
+        (screen_pos.x - 400) / 400,
+        (240 - screen_pos.y) / 240,
+        0.0, 1.0);
       tex_pos_f = tex_pos;
     }
   ), GLSL(
@@ -192,7 +201,10 @@ static const char *shader_source[][2] = {
     out vec2 tex_pos_f;
     out vec4 chroma_f;
     void main() {
-      gl_Position = vec4(screen_pos, 0.0, 1.0);
+      gl_Position = vec4(
+        (screen_pos.x - 400) / 400,
+        (240 - screen_pos.y) / 240,
+        0.0, 1.0);
       tex_pos_f = tex_pos;
       chroma_f = chroma;
     }
