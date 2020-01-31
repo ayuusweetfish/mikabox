@@ -1,2 +1,3 @@
   cps   #0x10
-  bx    r0
+  mov   sp, r0
+  bx    r2

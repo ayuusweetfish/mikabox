@@ -23,9 +23,9 @@ co_jump:
   tst       r2, #2      // to CO_FLAG_USER
   ldmeqia   r1!, {r4-r11, sp, pc}
   // Enter user mode
-  ldmia     r1!, {r4-r11, sp, lr}
-  mov       r0, lr
-  b         _text_user_vaddr
+  ldmia     r1!, {r4-r11}
+  ldmia     r1!, {r0, r2}
+  b         _text_user_vaddr  // user.S
 
 // Saves all registers, including VFP ones and lr
 // ip: Address to struct reg_set

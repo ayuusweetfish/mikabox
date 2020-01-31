@@ -14,11 +14,13 @@ void co_jump(struct reg_set *save_regs, struct reg_set *load_regs, uint16_t flag
 
 void regs_load(struct reg_set *load_regs);
 
-void co_create(struct coroutine *co, void (*fn)(uint32_t))
+void co_create(struct coroutine *co,
+  void (*fn)(uint32_t), uint8_t flags, void *stack_end)
 {
   co->state = CO_STATE_NEW;
-  co->regs.sp = (uint32_t)&co->stack[0] + CO_STACK;
+  co->regs.sp = (uint32_t)stack_end;
   co->regs.pc = (uint32_t)fn;
+  co->flags = flags;
 }
 
 void co_start(struct coroutine *co, uint32_t arg)

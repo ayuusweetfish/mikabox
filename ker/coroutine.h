@@ -15,8 +15,6 @@ extern "C" {
 
 #include <stdint.h>
 
-#define CO_STACK  65536
-
 struct reg_set {
   // AAPCS32 2019Q1.1, Ch. 6.1.1/6.1.2
   // ARM1176JZF-S has VFP-v2
@@ -44,10 +42,10 @@ struct coroutine {
   #define CO_FLAG_FPU   (1 << 0)
   #define CO_FLAG_USER  (1 << 1)
   uint8_t flags;
-  uint8_t stack[CO_STACK] __attribute__((aligned(8)));
 } __attribute__((aligned(8)));
 
-void co_create(struct coroutine *co, void (*fn)(uint32_t));
+void co_create(struct coroutine *co,
+  void (*fn)(uint32_t), uint8_t flags, void *stack_end);
 void co_start(struct coroutine *co, uint32_t arg);
 void co_next(struct coroutine *co);
 void co_yield();

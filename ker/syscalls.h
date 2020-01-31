@@ -130,7 +130,6 @@ def(GEN, 0, {
 })
 
 def(GEN, 1, {
-  printf(">> %u %u\n", routine_id, r0);
   if (routine_id != -1 && r0 != 0)
     req_flags &= ~(1 << routine_id);
 })

@@ -132,6 +132,9 @@ static void gpad_upd_callback(unsigned index, const USPiGamePadState *state)
 }
 
 static struct coroutine usb_co, audio_co;
+static uint8_t usb_co_stack[65536] __attribute__ ((aligned(8)));
+static uint8_t audio_co_stack[65536] __attribute__ ((aligned(8)));
+
 static struct coroutine user_co[8];
 
 static void usb_loop(uint32_t _unused)
@@ -326,16 +329,15 @@ void sys_main()
 */
 
   // USB and audio threads
-  co_create(&usb_co, usb_loop);
-  co_create(&audio_co, audio_loop);
+  co_create(&usb_co, usb_loop, 0, usb_co_stack + sizeof usb_co_stack);
+  co_create(&audio_co, audio_loop, 0, audio_co_stack + sizeof audio_co_stack);
 
   // Load overworld program
   uint32_t entry = load_program("/a.out");
-  set_user_sp((void *)0x44000000);
 
   // Initialization routine
-  co_create(&user_co[0], (void *)entry);
-  user_co[0].flags = CO_FLAG_FPU | CO_FLAG_USER;
+  co_create(&user_co[0], (void *)entry,
+    CO_FLAG_FPU | CO_FLAG_USER, (void *)0x44000000);
 
   mem_barrier();
   uint64_t app_start_time = ((uint64_t)*TMR_CHI << 32) | *TMR_CLO;
@@ -357,8 +359,8 @@ void sys_main()
 
   // Initialize coroutines
   for (uint32_t i = 0; i < 4; i++) {
-    co_create(&user_co[i], (void *)routine_pc[i]);
-    user_co[i].flags = CO_FLAG_FPU | CO_FLAG_USER;
+    co_create(&user_co[i], (void *)routine_pc[i],
+      CO_FLAG_FPU | CO_FLAG_USER, (void *)(0x44000000 - 65536 * i));
   }
 
   uint64_t last_comp = 0;
@@ -372,7 +374,7 @@ void sys_main()
 
     app_fb_buf = (uint32_t)fb_buf;
 
-    for (int8_t i = 0; i >= 0; i--) if (req_flags & (1 << i)) {
+    for (int8_t i = 3; i >= 0; i--) if (req_flags & (1 << i)) {
       mem_barrier();
       uint64_t cur_time = ((uint64_t)*TMR_CHI << 32) | *TMR_CLO;
       app_tick = cur_time - app_start_time;
