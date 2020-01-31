@@ -6,6 +6,7 @@
 #include "irq.h"
 #include "prop_tag.h"
 #include "v3d.h"
+#include "audio.h"
 #include "coroutine.h"
 #include "swi.h"
 #include "syscalls.h"
@@ -78,7 +79,6 @@ void timer2_callback(void *_unused)
 
 extern bool is_in_abt;
 static bool flipped = false;
-static bool audio_pending = false;
 static bool input_updated = false;
 
 void vsync_callback(void *_unused)
@@ -162,8 +162,8 @@ static void usb_loop(uint32_t _unused)
 static void audio_loop(uint32_t _unused)
 {
   mem_barrier();
-  AMPiInitialize(44100, 1764);  // 20 ms latency/block size
-  AMPiSetChunkCallback(synth);
+  AMPiInitialize(44100, audio_blocksize() * 2);
+  AMPiSetChunkCallback(audio_callback);
   bool b = AMPiStart();
   printf(b ? "Yes\n" : "No\n");
 
@@ -395,7 +395,7 @@ void sys_main()
       req_flags |= (1 << 0);
     }
 
-    if (audio_pending) {
+    if (audio_pending()) {
       req_flags |= (1 << 1);
     }
 

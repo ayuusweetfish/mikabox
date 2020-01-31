@@ -35,6 +35,7 @@
 #define SYSCALL_GRP_OFFS_GEN  0
 #define SYSCALL_GRP_OFFS_GFX  256
 #define SYSCALL_GRP_OFFS_FIL  512
+#define SYSCALL_GRP_OFFS_AUD  768
 
 syscall_export(int8_t routine_id)
 syscall_export(uint32_t routine_pc[8])
@@ -58,6 +59,7 @@ void syscalls_init();
 #include "coroutine.h"
 #include "v3d.h"
 #include "fatfs/ff.h"
+#include "audio.h"
 #include "pool.h"
 #include <string.h>
 
@@ -545,6 +547,20 @@ def(FIL, 35, {
     syscall_log("f_mkdir() returns %d (%s)\n", (int)r, f_strerr(r));
     return 0;
   }
+})
+
+def(AUD, 0, {
+  return audio_blocksize();
+})
+
+def(AUD, 1, {
+  return audio_dropped();
+})
+
+def(AUD, 2, {
+  void *p = audio_write_pos();
+  if (p != NULL)
+    memcpy(p, (void *)r0, audio_blocksize() * 2 * sizeof(int16_t));
 })
 
 #undef syscall_export
