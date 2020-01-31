@@ -362,6 +362,7 @@ void sys_main()
   }
 
   uint64_t last_comp = 0;
+  uint64_t next_draw_req = (uint64_t)-1;
   req_flags = 0xf;
 
   // Main loop!
@@ -380,9 +381,15 @@ void sys_main()
     }
 
     app_fb_buf = 0;
+    uint64_t cur_time = ((uint64_t)*TMR_CHI << 32) | *TMR_CLO;
+    app_tick = cur_time - app_start_time;
 
     if (flipped) {
       flipped = false;
+      next_draw_req = app_tick + 12000;
+    }
+    if (next_draw_req < app_tick) {
+      next_draw_req = (uint64_t)-1;
       req_flags |= (1 << 0);
     }
 
