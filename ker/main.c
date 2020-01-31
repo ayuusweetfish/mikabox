@@ -101,17 +101,6 @@ static bool has_kbd_key = false, has_gpad_key = false;
 
 static int16_t wavetable[256];
 
-static unsigned synth(int16_t *buf, unsigned chunk_size)
-{
-  static uint8_t phase = 0;
-  for (unsigned i = 0; i < chunk_size; i += 2) {
-    int16_t sample = (has_key ? wavetable[phase] : 0);
-    buf[i] = buf[i + 1] = sample;
-    phase++;
-  }
-  return chunk_size;
-}
-
 static void kbd_upd_callback(uint8_t mod, const uint8_t k[6])
 {
   //printf("\r%02x %02x %02x %02x %02x %02x | mod = %02x",

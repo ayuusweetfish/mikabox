@@ -6,7 +6,7 @@
 static bool request_pending = true;
 static uint32_t dropped = 0;
 
-static int16_t b[2048];
+static int16_t buffer[2048];
 
 uint32_t audio_blocksize()
 {
@@ -32,13 +32,13 @@ void *audio_write_pos()
     return NULL;
   }
   request_pending = false;
-  return (void *)b;
+  return (void *)buffer;
 }
 
-unsigned audio_callback(int16_t *buf, unsigned chunk_size)
+unsigned audio_callback(int16_t **o_buf, unsigned chunk_size)
 {
   if (request_pending) dropped++;
   else request_pending = true;
-  memcpy(buf, b, sizeof(int16_t) * chunk_size);
+  *o_buf = buffer;
   return chunk_size;
 }
