@@ -5,8 +5,14 @@ CMAKE := cmake
 # Change to empty string for verbose output
 V := @
 
+ifdef DEBUG
+OPT_FLAGS := -g -Og
+else
+OPT_FLAGS := -O2
+endif
+
 BUILD_DIR := build
-C_OPTIONS := -std=c99 -Wall -O2
+C_OPTIONS := -std=c99 -Wall $(OPT_FLAGS)
 INCLUDES := -I. -I./common -I./unicorn/include -I./glew/include -I./glfw/include
 STATIC_LIBS := unicorn/libunicorn.a glew/lib/libGLEW.a glfw/build/src/libglfw3.a
 STATIC_LIB_TARGETS := $(patsubst %.a, %.a.target, $(STATIC_LIBS))
