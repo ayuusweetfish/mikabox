@@ -3,6 +3,7 @@
 #include "swi.h"
 #include "syscalls.h"
 #include "v3d_wrapper.h"
+#include "ff_wrapper.h"
 #include "audio_wrapper.h"
 #include "../ker/input.h"
 
@@ -29,6 +30,8 @@
 
 #define WIN_W 800
 #define WIN_H 480
+
+static const char *app_exec_path = NULL;
 
 int8_t routine_id;
 uint32_t routine_pc[8];
@@ -324,7 +327,7 @@ void emu()
   }
 
   // Parse and load ELF
-  FILE *fp = fopen("user/a.out", "r");
+  FILE *fp = fopen(app_exec_path, "r");
   if (fp == NULL) {
     printf("Unable to open file\n");
     return;
@@ -463,10 +466,34 @@ void emu()
   }
 }
 
-int main()
+int main(int argc, char *argv[])
 {
+  if (argc < 2) {
+    printf("usage: %s <executable> [<file system root>]\n", argv[0]);
+    exit(0);
+  }
+
+  app_exec_path = argv[1];
+  if (argc >= 3) {
+    size_t len = strlen(argv[2]);
+    if (len == 0 || argv[2][len - 1] != '/') {
+      char *s = (char *)malloc(len + 2);
+      strcpy(s, argv[2]);
+      s[len] = '/';
+      s[len + 1] = '\0';
+      fs_root = s;
+    } else {
+      fs_root = argv[2];
+    }
+  } else fs_root = "./";
+
+  printf("Starting emulation:\n");
+  printf("Executable:       %s\n", app_exec_path);
+  printf("File system root: %s\n", fs_root);
+
   setup_glfw();
   setup_audio();
   emu();
+
   return 0;
 }

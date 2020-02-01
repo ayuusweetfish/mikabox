@@ -11,12 +11,13 @@ void *syscall_dup_mem(uint32_t addr, uint32_t size);
 void *syscall_dup_str(uint32_t addr);
 void syscall_write_mem(uint32_t addr, uint32_t size, void *buf);
 
+const char *fs_root = NULL;
+
 static inline char *gen_path(uint32_t addr)
 {
   char *p = syscall_dup_str(addr);
-  const char *q = "build/";
-  char *r = malloc(strlen(p) + strlen(q) + 1);
-  strcpy(r, q);
+  char *r = malloc(strlen(p) + strlen(fs_root) + 1);
+  strcpy(r, fs_root);
   strcat(r, p);
   free(p);
   return r;

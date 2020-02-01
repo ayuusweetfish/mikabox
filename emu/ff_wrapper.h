@@ -6,6 +6,8 @@
 #include <stdint.h>
 #include <stdio.h>
 
+extern const char *fs_root;
+
 typedef int FRESULT;
 typedef char TCHAR;
 typedef uint32_t UINT;
