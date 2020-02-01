@@ -10,6 +10,7 @@
 #include "coroutine.h"
 #include "swi.h"
 #include "syscalls.h"
+#include "input.h"
 
 #include "printf/printf.h"
 #include "ampi.h"
@@ -102,27 +103,42 @@ void vsync_callback(void *_unused)
   flipped = true;
 }
 
-bool has_key = false;
-static bool has_kbd_key = false, has_gpad_key = false;
-
-static int16_t wavetable[256];
-
 static void kbd_upd_callback(uint8_t mod, const uint8_t k[6])
 {
   //printf("\r%02x %02x %02x %02x %02x %02x | mod = %02x",
   //  k[0], k[1], k[2], k[3], k[4], k[5], mod);
-  has_kbd_key = (k[0] || k[1] || k[2] || k[3] || k[4] || k[5]);
-  has_key = has_kbd_key | has_gpad_key;
-  player_btns[0] = has_key;
   input_updated = true;
 }
 
 static void gpad_upd_callback(unsigned index, const USPiGamePadState *state)
 {
   //printf("\r%d %08x", state->nbuttons, state->buttons);
-  has_gpad_key = (state->buttons & 0x800);
-  has_key = has_kbd_key | has_gpad_key;
-  player_btns[0] = has_key;
+  unsigned b = state->buttons;
+  unsigned dp = state->hats[0];
+  if (state->type == USBGamePadTypePS4) {
+    player_btns[0] =
+      BTN_BIT(SQR, b, 0) |
+      BTN_BIT(CRO, b, 1) |
+      BTN_BIT(CIR, b, 2) |
+      BTN_BIT(TRI, b, 3) |
+      BTN_BIT(L1, b, 4) |
+      BTN_BIT(R1, b, 5) |
+      BTN_BIT(L2, b, 6) |
+      BTN_BIT(R2, b, 7) |
+      BTN_BIT(L3, b, 10) |
+      BTN_BIT(R3, b, 11) |
+      BTN_BIT(START, b, 8) |
+      BTN_BIT(OPTN, b, 9) |
+      BTN_BIT(META, b, 12) |
+      BTN_BIT(AUX, b, 13);
+    uint32_t dp_btns = 0;
+    if (dp == 7 || dp <= 1) dp_btns |= BTN_U;
+    if (dp >= 1 && dp <= 3) dp_btns |= BTN_R;
+    if (dp >= 3 && dp <= 5) dp_btns |= BTN_D;
+    if (dp >= 5 && dp <= 7) dp_btns |= BTN_L;
+    player_btns[0] |= dp_btns;
+    printf("%u %08x\n", index, player_btns[0]);
+  }
   input_updated = true;
 }
 
@@ -299,10 +315,6 @@ void sys_main()
   mem_barrier();
   while (!((*RNG_STATUS) >> 24)) __asm__ __volatile__ ("");
   printf("Initialized HRNG\n");
-
-  for (uint32_t i = 0; i < 256; i++) {
-    wavetable[i] = (int16_t)(sin((double)i / 128 * M_PI * 2) * 32767);
-  }
 
   mem_barrier();
   v3d_init();
