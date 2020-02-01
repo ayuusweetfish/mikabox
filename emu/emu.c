@@ -4,6 +4,7 @@
 #include "syscalls.h"
 #include "v3d_wrapper.h"
 #include "audio_wrapper.h"
+#include "../ker/input.h"
 
 #define GLEW_STATIC
 #include "GL/glew.h"
@@ -133,34 +134,54 @@ static void update_input()
   // TODO: Multiple gamepads
   num_players = 1;
   player_btns[0] =
-    (glfwGetKey(window, GLFW_KEY_UP) << 0) |
-    (glfwGetKey(window, GLFW_KEY_DOWN) << 1) |
-    (glfwGetKey(window, GLFW_KEY_LEFT) << 2) |
-    (glfwGetKey(window, GLFW_KEY_RIGHT) << 3) |
-    (glfwGetKey(window, GLFW_KEY_C) << 4) |
-    (glfwGetKey(window, GLFW_KEY_X) << 5) |
-    (glfwGetKey(window, GLFW_KEY_Z) << 6) |
-    (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) << 7) |
-    (glfwGetKey(window, GLFW_KEY_W) << 0) |     // Alternative set of keys
-    (glfwGetKey(window, GLFW_KEY_S) << 1) |
-    (glfwGetKey(window, GLFW_KEY_A) << 2) |
-    (glfwGetKey(window, GLFW_KEY_D) << 3) |
-    (glfwGetKey(window, GLFW_KEY_K) << 4) |
-    (glfwGetKey(window, GLFW_KEY_L) << 5) |
-    (glfwGetKey(window, GLFW_KEY_J) << 6) |
-    (glfwGetKey(window, GLFW_KEY_I) << 7);
+    BTN_BIT(U, glfwGetKey(window, GLFW_KEY_UP), 0) |
+    BTN_BIT(D, glfwGetKey(window, GLFW_KEY_DOWN), 0) |
+    BTN_BIT(L, glfwGetKey(window, GLFW_KEY_LEFT), 0) |
+    BTN_BIT(R, glfwGetKey(window, GLFW_KEY_RIGHT), 0) |
+    BTN_BIT(A, glfwGetKey(window, GLFW_KEY_C), 0) |
+    BTN_BIT(B, glfwGetKey(window, GLFW_KEY_X), 0) |
+    BTN_BIT(X, glfwGetKey(window, GLFW_KEY_Z), 0) |
+    BTN_BIT(Y, glfwGetKey(window, GLFW_KEY_LEFT_SHIFT), 0) |
+    BTN_BIT(U, glfwGetKey(window, GLFW_KEY_W), 0) | // Alternative set of keys
+    BTN_BIT(D, glfwGetKey(window, GLFW_KEY_S), 0) |
+    BTN_BIT(L, glfwGetKey(window, GLFW_KEY_A), 0) |
+    BTN_BIT(R, glfwGetKey(window, GLFW_KEY_D), 0) |
+    BTN_BIT(A, glfwGetKey(window, GLFW_KEY_K), 0) |
+    BTN_BIT(B, glfwGetKey(window, GLFW_KEY_L), 0) |
+    BTN_BIT(X, glfwGetKey(window, GLFW_KEY_J), 0) |
+    BTN_BIT(Y, glfwGetKey(window, GLFW_KEY_I), 0) |
+    BTN_BIT(L1, glfwGetKey(window, GLFW_KEY_Q), 0) |
+    BTN_BIT(R1, glfwGetKey(window, GLFW_KEY_TAB), 0) |
+    BTN_BIT(L2, glfwGetKey(window, GLFW_KEY_P), 0) |
+    BTN_BIT(R2, glfwGetKey(window, GLFW_KEY_LEFT_BRACKET), 0) |
+    BTN_BIT(L3, glfwGetKey(window, GLFW_KEY_V), 0) |
+    BTN_BIT(R3, glfwGetKey(window, GLFW_KEY_M), 0) |
+    BTN_BIT(START, glfwGetKey(window, GLFW_KEY_ENTER), 0) |
+    BTN_BIT(OPTN, glfwGetKey(window, GLFW_KEY_APOSTROPHE), 0) |
+    BTN_BIT(META, glfwGetKey(window, GLFW_KEY_SPACE), 0) |
+    BTN_BIT(AUX, glfwGetKey(window, GLFW_KEY_SLASH), 0);
+
   if (glfwJoystickIsGamepad(GLFW_JOYSTICK_1)) {
     GLFWgamepadstate state;
     if (glfwGetGamepadState(GLFW_JOYSTICK_1, &state))
       player_btns[0] |=
-        (state.buttons[GLFW_GAMEPAD_BUTTON_DPAD_UP] << 0) |
-        (state.buttons[GLFW_GAMEPAD_BUTTON_DPAD_DOWN] << 1) |
-        (state.buttons[GLFW_GAMEPAD_BUTTON_DPAD_LEFT] << 2) |
-        (state.buttons[GLFW_GAMEPAD_BUTTON_DPAD_RIGHT] << 3) |
-        (state.buttons[GLFW_GAMEPAD_BUTTON_A] << 4) |
-        (state.buttons[GLFW_GAMEPAD_BUTTON_B] << 5) |
-        (state.buttons[GLFW_GAMEPAD_BUTTON_X] << 6) |
-        (state.buttons[GLFW_GAMEPAD_BUTTON_Y] << 7);
+        BTN_BIT(U, state.buttons[GLFW_GAMEPAD_BUTTON_DPAD_UP], 0) |
+        BTN_BIT(D, state.buttons[GLFW_GAMEPAD_BUTTON_DPAD_DOWN], 0) |
+        BTN_BIT(L, state.buttons[GLFW_GAMEPAD_BUTTON_DPAD_LEFT], 0) |
+        BTN_BIT(R, state.buttons[GLFW_GAMEPAD_BUTTON_DPAD_RIGHT], 0) |
+        BTN_BIT(A, state.buttons[GLFW_GAMEPAD_BUTTON_A], 0) |
+        BTN_BIT(B, state.buttons[GLFW_GAMEPAD_BUTTON_B], 0) |
+        BTN_BIT(X, state.buttons[GLFW_GAMEPAD_BUTTON_X], 0) |
+        BTN_BIT(Y, state.buttons[GLFW_GAMEPAD_BUTTON_Y], 0) |
+        BTN_BIT(L1, state.buttons[GLFW_GAMEPAD_BUTTON_LEFT_BUMPER], 0) |
+        BTN_BIT(R1, state.buttons[GLFW_GAMEPAD_BUTTON_RIGHT_BUMPER], 0) |
+        BTN_BIT(L2, state.axes[GLFW_GAMEPAD_AXIS_LEFT_TRIGGER] > 1e-5, 0) |
+        BTN_BIT(R2, state.axes[GLFW_GAMEPAD_AXIS_RIGHT_TRIGGER] > 1e-5, 0) |
+        BTN_BIT(L3, state.buttons[GLFW_GAMEPAD_BUTTON_LEFT_THUMB], 0) |
+        BTN_BIT(R3, state.buttons[GLFW_GAMEPAD_BUTTON_RIGHT_THUMB], 0) |
+        BTN_BIT(START, state.buttons[GLFW_GAMEPAD_BUTTON_BACK], 0) |
+        BTN_BIT(START, state.buttons[GLFW_GAMEPAD_BUTTON_START], 0) |
+        BTN_BIT(OPTN, state.buttons[GLFW_GAMEPAD_BUTTON_GUIDE], 0);
   }
 }
 

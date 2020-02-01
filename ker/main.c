@@ -137,7 +137,7 @@ static void gpad_upd_callback(unsigned index, const USPiGamePadState *state)
     if (dp >= 3 && dp <= 5) dp_btns |= BTN_D;
     if (dp >= 5 && dp <= 7) dp_btns |= BTN_L;
     player_btns[0] |= dp_btns;
-    printf("%u %08x\n", index, player_btns[0]);
+    //printf("%u %08x\n", index, player_btns[0]);
   }
   input_updated = true;
 }
@@ -355,12 +355,10 @@ void sys_main()
     co_next(&usb_co);
     co_next(&audio_co);
 
-/*
     mem_barrier();
     uint64_t cur_time = ((uint64_t)*TMR_CHI << 32) | *TMR_CLO;
     app_tick = cur_time - app_start_time;
     co_next(&user_co[0]);
-*/
   }
 
   printf("Overworld initialized!\n");

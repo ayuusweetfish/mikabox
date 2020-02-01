@@ -25,6 +25,6 @@
 #define BTN_SQR   BTN_X
 #define BTN_TRI   BTN_Y
 
-#define BTN_BIT(_name, _val, _bit)  ((_val & (1 << (_bit))) ? BTN_##_name : 0)
+#define BTN_BIT(_name, _val, _bit)  (((_val) & (1 << (_bit))) ? BTN_##_name : 0)
 
 #endif

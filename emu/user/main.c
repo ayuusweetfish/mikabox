@@ -179,9 +179,10 @@ void synth()
   while (1) {
     static int16_t p[8192];
     static uint32_t q = 0;
+    float freq = 440.0f * powf(2.0f, __builtin_popcount(buttons) / 12.0f);
     for (int i = 0; i < audio_blocksize; i++) {
       p[i * 2] = p[i * 2 + 1] =
-        (int16_t)(sinf(q / 44100.0f * (buttons ? 660 : 440) * 2 * acosf(-1)) * 16384.0);
+        (int16_t)(sinf(q / 44100.0f * freq * 2 * acosf(-1)) * 16384.0);
       q++;
     }
     aud_write(p);
