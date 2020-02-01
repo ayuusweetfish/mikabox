@@ -16,6 +16,7 @@ BUILD_DIR := build
 C_OPTIONS := -std=c99 -Wall -O2
 INCLUDES := -I. -I./common -I./AMPi/ampi -I./uspi/include -I./deps
 STATIC_LIBS := AMPi/ampi/libampi.a uspi/lib/libuspi.a
+STATIC_LIB_TARGETS := $(patsubst %.a, %.a.target, $(STATIC_LIBS))
 LIBS := -lm $(STATIC_LIBS)
 
 SRCS := $(wildcard *.[Sc]) $(wildcard common/*.c) $(wildcard deps/*/*.c)
@@ -37,10 +38,10 @@ LDFLAGS := $(ARCH_FLAGS) -nostartfiles $(LIBS)
 
 all: $(KERNEL_IMG)  # Default target
 
-libs: $(STATIC_LIBS)
+libs: $(STATIC_LIB_TARGETS)
 
-$(STATIC_LIBS): %.a:
-	@ printf "  %-7s %s\n" MAKE $@
+$(STATIC_LIB_TARGETS): %.a.target:
+	@ printf "  %-7s %s\n" MAKE $(basename $@)
 	$(V) $(MAKE) -C $(dir $@)
 
 EXTRA_OBJS :=
@@ -93,7 +94,7 @@ $(BUILD_DIR)/%.o: %.c
 	$(V) mkdir -p $(BUILD_DIR)/$(dir $<)
 	$(V) $(CC) -c $< -o $@ $(CFLAGS)
 
-$(KERNEL_ELF): $(OBJS) $(EXTRA_OBJS) link.ld
+$(KERNEL_ELF): $(OBJS) $(EXTRA_OBJS) $(STATIC_LIBS) link.ld
 	@ printf "  %-7s %s\n" LD $@
 	$(V) $(CC) -Wl,-T,link.ld $(OBJS) $(EXTRA_OBJS) -o $@ $(LDFLAGS)
 
@@ -104,4 +105,4 @@ $(KERNEL_IMG): $(KERNEL_ELF)
 clean:
 	rm -rf $(BUILD_DIR) $(EXTRA_CLEAN)
 
-.PHONY: clean all libs $(STATIC_LIBS)
+.PHONY: clean all libs $(STATIC_LIB_TARGETS)

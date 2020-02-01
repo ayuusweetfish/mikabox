@@ -82,7 +82,7 @@ int GetMACAddress(unsigned char Buffer[6])
 void DebugHexdump(const void *pBuffer, unsigned nBufLen, const char *pSource)
 {
   printf("%s: hex dump of %u byte%s\n",
-    pSource, nBufLen, nBufLen == 1 ? "" : "s");
+    pSource ? pSource : "undef", nBufLen, nBufLen == 1 ? "" : "s");
   for (size_t i = 0; i < nBufLen; i += 16) {
     printf("%p: ", pBuffer + i);
     for (size_t j = 0; j < 16; j++)

@@ -81,6 +81,12 @@ extern bool is_in_abt;
 static bool flipped = false;
 static bool input_updated = false;
 
+static inline void enable_charbuf()
+{
+  charbuf_invalidate();
+  is_in_abt = true;
+}
+
 void vsync_callback(void *_unused)
 {
   *(volatile uint32_t *)(PERI_BASE + 0x600000) = 0;
@@ -332,14 +338,17 @@ void sys_main()
   uint64_t app_start_time = ((uint64_t)*TMR_CHI << 32) | *TMR_CLO;
   routine_id = -1;
 
+  enable_charbuf();
   while (routine_pc[0] == 0) {
     co_next(&usb_co);
     co_next(&audio_co);
 
+/*
     mem_barrier();
     uint64_t cur_time = ((uint64_t)*TMR_CHI << 32) | *TMR_CLO;
     app_tick = cur_time - app_start_time;
     co_next(&user_co[0]);
+*/
   }
 
   printf("Overworld initialized!\n");

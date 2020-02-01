@@ -9,6 +9,7 @@ BUILD_DIR := build
 C_OPTIONS := -std=c99 -Wall -O2
 INCLUDES := -I. -I./common -I./unicorn/include -I./glew/include -I./glfw/include
 STATIC_LIBS := unicorn/libunicorn.a glew/lib/libGLEW.a glfw/build/src/libglfw3.a
+STATIC_LIB_TARGETS := $(patsubst %.a, %.a.target, $(STATIC_LIBS))
 LIBS := -lm $(STATIC_LIBS)
 
 SRCS := $(wildcard *.c) $(wildcard common/*.c)
@@ -23,7 +24,7 @@ CFLAGS := $(C_OPTIONS) $(INCLUDES)
 
 all: $(EMU_EXEC)
 
-libs: $(STATIC_LIBS)
+libs: $(STATIC_LIB_TARGETS)
 
 unicorn/libunicorn.a:
 	@ printf "  %-7s %s\n" MAKE $@
@@ -49,11 +50,11 @@ $(BUILD_DIR)/%.o: %.c
 	$(V) mkdir -p $(BUILD_DIR)/$(dir $<)
 	$(V) $(CC) -c $< -o $@ $(CFLAGS)
 
-$(EMU_EXEC): $(OBJS)
+$(EMU_EXEC): $(OBJS) $(STATIC_LIBS)
 	@ printf "  %-7s %s\n" LD $@
-	$(V) $(CC) $^ $(STATIC_LIBS) -o $@ -framework Cocoa -framework OpenGL -framework IOKit
+	$(V) $(CC) $^ -o $@ -framework Cocoa -framework OpenGL -framework IOKit
 
 clean:
 	rm -rf $(BUILD_DIR)
 
-.PHONY: clean all libs $(STATIC_LIBS)
+.PHONY: clean all libs $(STATIC_LIB_TARGETS)
