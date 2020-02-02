@@ -8,7 +8,7 @@ V := @
 BUILD_DIR := build
 ARCH_FLAGS := -mfpu=vfp -mfloat-abi=hard -march=armv6k -mtune=arm1176jzf-s
 CFLAGS := $(ARCH_FLAGS) -std=c99 -O2
-LDFLAGS := $(ARCH_FLAGS) -nostartfiles
+LDFLAGS := $(ARCH_FLAGS) -nostartfiles -lm
 
 SRCS := $(wildcard **.[Sc])
 
