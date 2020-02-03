@@ -22,7 +22,7 @@ index adf6edd..9a0be32 100644
  }
  
 -#define TIMEOUT_STEP 2    // microseconds
-+#define TIMEOUT_STEP 10000  // microseconds
++#define TIMEOUT_STEP 1000   // microseconds
  static void *_timeout_fn(void *arg)
  {
      struct uc_struct *uc = arg;

@@ -32,12 +32,12 @@ all: $(EMU_EXEC)
 
 libs: $(STATIC_LIB_TARGETS)
 
-unicorn/libunicorn.a:
+unicorn/libunicorn.a.target:
 	@ printf "  %-7s %s\n" MAKE $@
 	$(V) cd unicorn && git apply --check ../unicorn.diff && git apply ../unicorn.diff || true
 	$(V) $(MAKE) -C $(dir $@) UNICORN_DEBUG=no UNICORN_ARCHS=arm UNICORN_STATIC=yes UNICORN_SHARED=no
 
-glew/lib/libGLEW.a:
+glew/lib/libGLEW.a.target:
 	@ printf "  %-7s %s\n" MAKE $@
 	$(V) $(MAKE) -C glew glew.lib.static
 
