@@ -137,7 +137,7 @@ void tetris_init()
 
 static inline uint32_t mrand()
 {
-  static uint32_t seed = 20191029;
+  static uint32_t seed = 20200203;
   return (seed = ((seed * 1103515245) + 12345) & 0x7fffffff);
 }
 

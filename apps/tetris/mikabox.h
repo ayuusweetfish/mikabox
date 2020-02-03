@@ -40,6 +40,23 @@ enum {
   v3d_tex_fmt_abgr,
 };
 
+#define v3d_wrap_s_repeat   (0 << 0)
+#define v3d_wrap_s_clamp    (1 << 0)
+#define v3d_wrap_s_mirror   (2 << 0)
+#define v3d_wrap_s_border   (3 << 0)
+#define v3d_wrap_t_repeat   (0 << 2)
+#define v3d_wrap_t_clamp    (1 << 2)
+#define v3d_wrap_t_mirror   (2 << 2)
+#define v3d_wrap_t_border   (3 << 2)
+#define v3d_minfilt_linear  (0 << 4)
+#define v3d_minfilt_nearest (1 << 4)
+#define v3d_minfilt_n_mip_n (2 << 4)
+#define v3d_minfilt_n_mip_l (3 << 4)
+#define v3d_minfilt_l_mip_n (4 << 4)
+#define v3d_minfilt_l_mip_l (5 << 4)
+#define v3d_magfilt_linear  (0 << 7)
+#define v3d_magfilt_nearest (1 << 7)
+
 #define FA_READ           0x01
 #define FA_WRITE          0x02
 #define FA_OPEN_EXISTING  0x00

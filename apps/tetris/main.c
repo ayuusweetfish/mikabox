@@ -11,9 +11,47 @@ void crt_init()
   while (begin < end) *begin++ = 0;
 }
 
+void init_mikan();
+void update_mikan();
+void *draw_mikan();
+
 void draw()
 {
+  int ctx = gfx_ctx_create();
+  int tex = gfx_tex_create(400, 240);
+
+  int va = gfx_varr_create(6, 2);
+  int ua = gfx_uarr_create(2);
+  int sh = gfx_shad_create("#T");
+  int bat = gfx_bat_create(va, ua, sh);
+
+  for (int i = 0; i <= 1; i++) {
+    float attr[4];
+    attr[0] = i * 800; attr[1] = i * 480;
+    attr[2] = i; attr[3] = i;
+    gfx_varr_put(va, i * 3 + 0, attr, 1);
+    attr[0] = 800; attr[1] = 0;
+    attr[2] = 1; attr[3] = 0;
+    gfx_varr_put(va, i * 3 + 1, attr, 1);
+    attr[0] = 0; attr[1] = 480;
+    attr[2] = 0; attr[3] = 1;
+    gfx_varr_put(va, i * 3 + 2, attr, 1);
+  }
+
+  gfx_uarr_puttex(ua, 0, tex, v3d_minfilt_nearest | v3d_magfilt_nearest);
+
   while (1) {
+    void *buf = draw_mikan();
+    gfx_tex_update(tex, buf, v3d_tex_fmt_bgr);
+
+    gfx_ctx_reset(ctx, gfx_tex_screen(), 0xff000000);
+
+    gfx_ctx_batch(ctx, bat);
+    gfx_ctx_call(ctx, 0, 6, 0);
+
+    gfx_ctx_issue(ctx);
+    gfx_ctx_wait(ctx);
+
     mika_yield(1);
   }
 }
@@ -27,19 +65,23 @@ void event()
   while (1) {
     last_btns = cur_btns;
     cur_btns = mika_btns(0);
+  /*
     if (btnp(BTN_A)) synth_note(0, 440, 10, 0, 0.2, true);
     if (btnp(BTN_B)) synth_note(0, 440, 1, 0, 0.1, false);
     if (btnp(BTN_X)) synth_note(2, 110, 1, 0, 0.4, false);
     if (btnp(BTN_Y)) synth_note(3, 440, 0.1, 0, 0.4, false);
+  */
     mika_yield(1);
   }
 }
 
 void update()
 {
-  int i = 0;
+  init_mikan();
+  int last_frame = mika_tick() * 60 / 1000000;
   while (1) {
-    //mika_printf("%4u %llu\n", ++i, mika_tick());
+    int cur_frame = mika_tick() * 60 / 1000000;
+    for (; last_frame < cur_frame; last_frame++) update_mikan();
     mika_yield(1);
   }
 }
