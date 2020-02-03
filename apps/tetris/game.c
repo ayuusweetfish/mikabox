@@ -22,7 +22,7 @@
 #define CHAR_H  14
 static uint8_t font_data[CHAR_W * CHAR_H * 16 * 6];
 
-static uint8_t buf[240][400][3];
+static uint8_t buf[256][416][3];
 
 #define SCR_MENU  0
 #define SCR_GAME  1

@@ -350,7 +350,7 @@ void sys_main()
   uint64_t app_start_time = ((uint64_t)*TMR_CHI << 32) | *TMR_CLO;
   routine_id = -1;
 
-  enable_charbuf();
+  //enable_charbuf();
   while (routine_pc[0] == 0) {
     co_next(&usb_co);
     co_next(&audio_co);

@@ -18,7 +18,9 @@ void *draw_mikan();
 void draw()
 {
   int ctx = gfx_ctx_create();
-  int tex = gfx_tex_create(400, 240);
+  int tex = gfx_tex_create(416, 256);
+  float tw = 400.0f / 416;
+  float th = 240.0f / 256;
 
   int va = gfx_varr_create(6, 2);
   int ua = gfx_uarr_create(2);
@@ -28,13 +30,13 @@ void draw()
   for (int i = 0; i <= 1; i++) {
     float attr[4];
     attr[0] = i * 800; attr[1] = i * 480;
-    attr[2] = i; attr[3] = i;
+    attr[2] = i * tw; attr[3] = i * th;
     gfx_varr_put(va, i * 3 + 0, attr, 1);
     attr[0] = 800; attr[1] = 0;
-    attr[2] = 1; attr[3] = 0;
+    attr[2] = tw; attr[3] = 0;
     gfx_varr_put(va, i * 3 + 1, attr, 1);
     attr[0] = 0; attr[1] = 480;
-    attr[2] = 0; attr[3] = 1;
+    attr[2] = 0; attr[3] = th;
     gfx_varr_put(va, i * 3 + 2, attr, 1);
   }
 
