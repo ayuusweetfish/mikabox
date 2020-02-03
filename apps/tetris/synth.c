@@ -1,4 +1,5 @@
 #include "mikabox.h"
+#include <ctype.h>
 #include <math.h>
 #include <stdbool.h>
 #include <stdlib.h>
@@ -34,9 +35,10 @@ void synth_note(int channel, float frequency,
   phase[channel] = -round(delay * 44100);
 }
 
-static void dododo()
+static void dododo(short buf[][2], int block)
 {
-  memset(buf, 0, sizeof buf);
+  //mika_printf("> %d\n", block);
+  memset(buf, 0, block * sizeof buf[0]);
   for (int ch = 0; ch < 4; ch++) if (phase[ch] < len[ch]) {
     int start = (phase[ch] < 0 ? -phase[ch] : 0);
     int end = len[ch] - phase[ch];
@@ -80,9 +82,126 @@ static void dododo()
   for (int i = 0; i < block; i++) buf[i][1] = buf[i][0];
 }
 
+// Sequence data
+
+static inline unsigned read_int(char **_p)
+{
+  char *p = *_p;
+  unsigned ret = 0;
+  while (*p != '\0' && (*p < '0' || *p > '9')) *p++;
+  while (*p >= '0' && *p <= '9') ret = ret * 10 + *(p++) - '0';
+  *_p = p;
+  return ret;
+}
+
+static inline void skip_nondigit(char **_p)
+{
+  char *p = *_p;
+  while (*p != '\0' && (*p < '0' || *p > '9')) *p++;
+  *_p = p;
+}
+
+static int seq_total, seq_count;  // Length in samples, number of notes
+static int seq_index, seq_sample; // Current index and sample
+
+static struct note {
+  unsigned t, ch, env;
+  float freq, len, vol;
+} notes[4096];
+
+// Advance sequencer by a given number of samples
+
+static inline int seq_advance(int samples)
+{
+  int i = seq_index;
+  int start = seq_sample, end = seq_sample + samples;
+  int done = 0;
+  mika_printf("%d %d %d\n", start, end, notes[i].t);
+
+  // Fails for very very short sequences (less than a block in total)
+  // but who needs such ones anyway?
+  while (1) {
+    int delay;
+
+    if (notes[i].t >= start && notes[i].t < end)
+      delay = notes[i].t - start;
+    else if (notes[i].t + seq_total >= start && notes[i].t + seq_total < end)
+      delay = notes[i].t + seq_total - start;
+    else break;
+
+    // Previous time
+    dododo(buf + done, delay);
+    done += delay;
+
+    // Onset
+    synth_note(notes[i].ch, notes[i].freq,
+      notes[i].len, 0, notes[i].vol, notes[i].env);
+
+    start = notes[i].t;
+    i = (i + 1 == seq_count ? 0 : i + 1);
+  }
+
+  dododo(buf + done, samples - done);
+  seq_index = i;
+  seq_sample = end % seq_total;
+}
+
+static inline void seq_read()
+{
+  int f = fil_open("korobeiniki.txt", FA_READ);
+  char buf[524288];
+  int len = fil_size(f);
+  if (len > sizeof buf) {
+    mika_printf("File too long (%u bytes)\n", len);
+    goto done;
+  }
+  if (fil_read(f, buf, len) < len) {
+    mika_printf("File read incomplete\n");
+    goto done;
+  }
+
+  // Parse data
+  // <milliseconds for each tick>
+  // <length in ticks>
+  // Each note following:
+  //   <time in ticks> <channel> <envelope on/off (1/0)>
+  //   <MIDI note number> <length in ticks> <volume in percent>
+  char *p = &buf[0];
+  float secs_per_tick = read_int(&p) * 1e-6f;
+  float samples_per_tick = secs_per_tick * 44100;
+  seq_total = round(read_int(&p) * samples_per_tick);
+
+  int count = 0;
+  do {
+    notes[count].t = round(read_int(&p) * samples_per_tick);
+    notes[count].ch = read_int(&p);
+    notes[count].env = read_int(&p);
+    int pitch = read_int(&p);
+    notes[count].freq = 440.0 * powf(2, (pitch - 69) / 12.0f);
+    notes[count].len = read_int(&p) * secs_per_tick;
+    notes[count].vol = read_int(&p) * 0.01f;
+    count++;
+    skip_nondigit(&p);
+  } while (*p != '\0');
+
+  seq_count = count;
+  seq_index = seq_sample = 0;
+
+  mika_printf("length: %u s\n", seq_total / 44100);
+  mika_printf("note count: %d\n", count);
+
+done:
+  fil_close(f);
+  return;
+}
+
+// Synth routine
+
 void synth()
 {
   srand((unsigned)mika_rand());
+
+  seq_read();
 
   block = aud_blocksize();
   mika_printf("Audio block size %d\n", block);
@@ -91,13 +210,17 @@ void synth()
     while (1) mika_yield(1);
   }
 
+  int wait_update = 0;
+
   while (1) {
     int drop = aud_dropped();
     if (drop) {
       mika_printf("%d frame%s of audio dropped",
         drop, drop == 1 ? "" : "s");
     }
-    dododo();
+
+    seq_advance(block);
+
     aud_write(buf);
     mika_yield(1);
   }

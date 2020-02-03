@@ -368,7 +368,7 @@ void sys_main()
   // Initialize coroutines
   for (uint32_t i = 0; i < 4; i++) {
     co_create(&user_co[i], (void *)routine_pc[i],
-      CO_FLAG_FPU | CO_FLAG_USER, (void *)(0x44000000 - 65536 * i));
+      CO_FLAG_FPU | CO_FLAG_USER, (void *)(0x44000000 - 0x100000 * i));
   }
 
   uint64_t last_comp = 0;
