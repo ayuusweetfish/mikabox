@@ -10,7 +10,7 @@
 #define frac(_x)  ((_x) - floorf(_x))
 
 #define ENV_A (2e-3f * 44100) // 2 ms = 88.2 samples
-#define ENV_K (0.3f * 44100)  // Decays to 1/e every 0.3 s
+#define ENV_K (0.32f * 44100) // Decays to 1/e every 0.32 s
 
 // A crude sound emulator for retro consoles
 
@@ -37,7 +37,7 @@ void synth_note(int channel, float frequency,
 
 static void dododo(short buf[][2], int block)
 {
-  //mika_printf("> %d\n", block);
+  if (block == 0) return;
   memset(buf, 0, block * sizeof buf[0]);
   for (int ch = 0; ch < 4; ch++) if (phase[ch] < len[ch]) {
     int start = (phase[ch] < 0 ? -phase[ch] : 0);
@@ -116,18 +116,19 @@ static inline int seq_advance(int samples)
   int i = seq_index;
   int start = seq_sample, end = seq_sample + samples;
   int done = 0;
-  mika_printf("%d %d %d\n", start, end, notes[i].t);
 
   // Fails for very very short sequences (less than a block in total)
   // but who needs such ones anyway?
   while (1) {
     int delay;
 
-    if (notes[i].t >= start && notes[i].t < end)
+    if (notes[i].t >= start && notes[i].t < end) {
       delay = notes[i].t - start;
-    else if (notes[i].t + seq_total >= start && notes[i].t + seq_total < end)
+      start = notes[i].t;
+    } else if (notes[i].t + seq_total >= start && notes[i].t + seq_total < end) {
       delay = notes[i].t + seq_total - start;
-    else break;
+      start = notes[i].t + seq_total;
+    } else break;
 
     // Previous time
     dododo(buf + done, delay);
@@ -137,7 +138,6 @@ static inline int seq_advance(int samples)
     synth_note(notes[i].ch, notes[i].freq,
       notes[i].len, 0, notes[i].vol, notes[i].env);
 
-    start = notes[i].t;
     i = (i + 1 == seq_count ? 0 : i + 1);
   }
 
