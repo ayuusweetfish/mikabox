@@ -1,11 +1,25 @@
 #include "mmu.h"
 
-uint32_t mmu_table[4096] __attribute__((aligned(1 << 14)));
-
-void mmu_table_section(uint32_t *table, uint32_t vaddr, uint32_t paddr, uint32_t flags)
+void mmu_section(uint32_t *table, uint32_t vaddr, uint32_t paddr, uint32_t flags)
 {
   uint32_t *table_addr = (uint32_t *)((uint8_t *)table + (vaddr >> 18));
   uint32_t table_val = paddr | flags | 2; // 2 = section
+  *table_addr = table_val;
+}
+
+void mmu_course_table(uint32_t *table, uint32_t vaddr, uint32_t *course_table, uint32_t flags)
+{
+  uint32_t *table_addr = (uint32_t *)((uint8_t *)table + (vaddr >> 18));
+  uint32_t table_val = (uint32_t)course_table | flags | 1;  // 1 = course page table
+  *table_addr = table_val;
+}
+
+void mmu_small_page(uint32_t *course_table, uint32_t vaddr, uint32_t paddr, uint32_t flags)
+{
+  // Section size is 2**20 bytes, page size is 2**12 bytes, entry size is 2**2 bytes
+  // Offset is vaddr * (2**-12) * (2**2) = vaddr * (2**-10)
+  uint32_t *table_addr = (uint32_t *)((uint8_t *)course_table + (vaddr >> 10));
+  uint32_t table_val = paddr | flags | 2; // 2 = extended small page
   *table_addr = table_val;
 }
 

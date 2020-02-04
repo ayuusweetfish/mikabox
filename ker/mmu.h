@@ -4,9 +4,15 @@
 #include <stddef.h>
 #include <stdint.h>
 
-extern uint32_t mmu_table[4096];
+// table should be aligned to 2**14
+// course_table should be aligned to 2**10
 
-void mmu_table_section(uint32_t *table, uint32_t vaddr, uint32_t paddr, uint32_t flags);
+// Flags for section/course table: B4-27
+// Flags for small page: B4-31
+
+void mmu_section(uint32_t *table, uint32_t vaddr, uint32_t paddr, uint32_t flags);
+void mmu_course_table(uint32_t *table, uint32_t vaddr, uint32_t *course_table, uint32_t flags);
+void mmu_small_page(uint32_t *course_table, uint32_t vaddr, uint32_t paddr, uint32_t flags);
 void mmu_enable(uint32_t *table_base);
 void mmu_flush();
 

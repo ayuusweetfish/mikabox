@@ -6,9 +6,9 @@ SECTIONS
 
   /DISCARD/ : { *(.ARM.* .debug_frame) }
 
-  .text ALIGN(1048576) : { *(.text .text.*) }
-  .rodata ALIGN(1048576) : { *(.rodata .rodata.*) }
-  .data ALIGN(1048576) : { *(.data .data.*) }
+  .text ALIGN(4096) : { *(.text .text.*) }
+  .rodata ALIGN(4096) : { *(.rodata .rodata.*) }
+  .data ALIGN(4096) : { *(.data .data.*) }
   . = ALIGN(0x8);
   _bss_begin = .;
   .bss : { *(.bss) }

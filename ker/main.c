@@ -37,6 +37,9 @@ extern unsigned char _bss_ord_end;
 extern unsigned char _kernel_end;
 extern unsigned char _text_user_vaddr;
 
+uint32_t mmu_table[4096] __attribute__ ((aligned(1 << 14)));
+uint32_t mmu_user_course[64][256] __attribute__ ((aligned(1 << 10)));
+
 struct framebuffer {
   uint32_t pwidth;
   uint32_t pheight;
@@ -199,11 +202,11 @@ static void file_get(void *user, void *dest, uint32_t offs, uint32_t len)
 
 static void *mem_map(elf_word vaddr, elf_word memsz, elf_word flags)
 {
-  uint32_t page_start = vaddr >> 20;
-  uint32_t page_end = ((vaddr + memsz - 1) >> 20);
+  uint32_t page_start = vaddr >> 12;
+  uint32_t page_end = ((vaddr + memsz - 1) >> 12);
   for (uint32_t page = page_start; page <= page_end; page++) {
-    uint32_t addr = page << 20;
-    mmu_table_section(mmu_table, addr, addr - 0x40000000 + (32 << 20), (1 << 5) | (3 << 10) | (8 | 4));
+    uint32_t addr = (page << 12) - 0x40000000;
+    mmu_small_page(&mmu_user_course[0][0], addr, addr + (32 << 20), (8 | 4) | (3 << 4));
   }
 
   mmu_flush();
@@ -243,18 +246,20 @@ void sys_main()
 
   // Everything: sys RW, user N; cached up to 64 MiB
   for (uint32_t i = 0; i < 4096; i++)
-    mmu_table_section(mmu_table, i << 20, i << 20, (i < 64 ? (8 | 4) : 0) | (1 << 5) | (1 << 10));
+    mmu_section(mmu_table, i << 20, i << 20, (i < 64 ? (8 | 4) : 0) | (1 << 5) | (1 << 10));
   // .bss.ord: sys RW, user N
   for (uint32_t i = bss_ord_page_begin; i <= bss_ord_page_end; i++)
-    mmu_table_section(mmu_table, i << 20, i << 20, (1 << 5) | (1 << 10));
+    mmu_section(mmu_table, i << 20, i << 20, (1 << 5) | (1 << 10));
   // MMIO: sys RW, user N
   for (uint32_t i = 0x20000000; i <= 0x24000000; i += 0x100000)
-    mmu_table_section(mmu_table, i, i, (1 << 5) | (1 << 10));
+    mmu_section(mmu_table, i, i, (1 << 5) | (1 << 10));
   // .text.user: sys RW, user R
-  mmu_table_section(mmu_table, text_user_page << 20, text_user_page << 20, (1 << 5) | (2 << 10));
+  mmu_section(mmu_table, text_user_page << 20, text_user_page << 20, (1 << 5) | (2 << 10));
   // User region: sys RW, user RW
   for (uint32_t i = 0x40000000; i < 0x44000000; i += 0x100000)
-    mmu_table_section(mmu_table, i, i - 0x40000000 + (32 << 20), (1 << 5) | (3 << 10) | (8 | 4));
+    mmu_course_table(mmu_table, i, mmu_user_course[(i - 0x40000000) >> 20], (1 << 5));
+  for (uint32_t i = 0; i < 0x4000000; i += 0x1000)  // Needed for stack space
+    mmu_small_page(&mmu_user_course[0][0], i, i + (32 << 20), (8 | 4) | (3 << 4));
 
   mmu_enable(mmu_table);
   // Client for domain 1, manager for domain 0
@@ -301,7 +306,14 @@ void sys_main()
 
   irq_set_callback(48, vsync_callback, NULL);
 
-  //while (1) standby();
+/*
+  volatile uint32_t *p = (uint32_t *)0x40123abc;
+  volatile uint32_t *q = (uint32_t *)((32 << 20) + 0x123abc);
+  *p = 0xbaadaa;
+  printf("%08x %08x\n", *p, *q);
+  enable_charbuf();
+  while (1) standby();
+*/
 
   sdInit();
   int32_t i = sdInitCard();

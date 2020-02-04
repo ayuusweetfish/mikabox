@@ -10,7 +10,7 @@ __attribute__ ((interrupt("ABORT")))
 void _dabt_stub()
 {
   register uint32_t lr_reg __asm__ ("lr");
-  uint32_t lr = lr_reg;
+  uint32_t lr = lr_reg - 4;
 
   is_in_abt = true;
   charbuf_invalidate();
@@ -23,7 +23,7 @@ __attribute__ ((interrupt("ABORT")))
 void _pfabt_stub()
 {
   register uint32_t lr_reg __asm__ ("lr");
-  uint32_t lr = lr_reg;
+  uint32_t lr = lr_reg - 4;
 
   is_in_abt = true;
   charbuf_invalidate();
