@@ -25,7 +25,7 @@
 #define MEM_SIZE_U  0x18000000  // 384 MiB
 #define MEM_END_U   (MEM_START_U + MEM_SIZE_U)
 
-#define PAGE_SIZE   0x100000
+#define PAGE_SIZE   0x1000      // 4 KiB
 #define STACK_SIZE  0x100000    // 1 MiB
 
 #define WIN_W 800
