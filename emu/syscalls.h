@@ -31,6 +31,7 @@
 #define SYSCALL_GRP_OFFS_GFX  256
 #define SYSCALL_GRP_OFFS_FIL  512
 #define SYSCALL_GRP_OFFS_AUD  768
+#define SYSCALL_GRP_OFFS_OVW 3840
 
 #if SYSCALLS_DECL
 void syscalls_init();
@@ -42,6 +43,7 @@ void syscalls_init();
 #include "audio_wrapper.h"
 #include "../ker/pool.h"
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #define DIR DIR_
@@ -81,11 +83,11 @@ init({
 })
 
 def(GEN, 0, {
-  if (routine_id != -1) {
+  if (routine_id >= 0) {
     syscall_log("Routines can only be changed in initialization routine\n");
     return 0;
   }
-  int bank = (routine_pc[0] == 0 ? 0 : 4);
+  int bank = (routine_id == -1 ? 0 : 4);
   routine_pc[bank + 0] = r0;
   routine_pc[bank + 1] = r1;
   routine_pc[bank + 2] = r2;
@@ -527,6 +529,28 @@ def(AUD, 1, {
 def(AUD, 2, {
   void *p = audio_write_pos();
   syscall_read_mem(r0, audio_blocksize() * 2 * sizeof(int16_t), p);
+})
+
+def(OVW, 0, {
+  if (request_exec != NULL) free(request_exec);
+  request_exec = syscall_dup_str(r0);
+})
+
+def(OVW, 1, {
+})
+
+def(OVW, 2, {
+  return (uint32_t)program_paused;
+})
+
+def(OVW, 3, {
+  program_paused = false;
+})
+
+def(OVW, 16, {
+})
+
+def(OVW, 17, {
 })
 
 #undef def

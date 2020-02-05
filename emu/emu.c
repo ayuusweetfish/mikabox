@@ -21,9 +21,9 @@
 #define MEM_START_O 0x40000000
 #define MEM_SIZE_O  0x01000000  // 16 MiB
 #define MEM_END_O   (MEM_START_O + MEM_SIZE_O)
-#define MEM_START_U 0x80000000
-#define MEM_SIZE_U  0x18000000  // 384 MiB
-#define MEM_END_U   (MEM_START_U + MEM_SIZE_U)
+#define MEM_START_A 0x80000000
+#define MEM_SIZE_A  0x18000000  // 384 MiB
+#define MEM_END_A   (MEM_START_A + MEM_SIZE_A)
 
 #define PAGE_SIZE   0x1000      // 4 KiB
 #define STACK_SIZE  0x100000    // 1 MiB
@@ -31,11 +31,15 @@
 #define WIN_W 800
 #define WIN_H 480
 
-static const char *app_exec_path = NULL;
+static const char *cmd_app_path = NULL;
 
 int8_t routine_id;
 uint32_t routine_pc[8];
 uc_context *routine_ctx[8];
+
+char *request_exec = NULL;
+char *program_name = NULL;
+bool program_paused = false;
 
 uint64_t app_tick;
 uint32_t req_flags;
@@ -255,6 +259,60 @@ static void handler_unmapped(
     (uint32_t)address, mem_type_str(type), (uint32_t)value);
 }
 
+static void init_application(const char *path, bool overworld)
+{
+  uc_err err;
+
+  // Parse and load ELF
+  FILE *fp = fopen(path, "r");
+  if (fp == NULL) {
+    printf("Unable to open file\n");
+    return;
+  }
+  elf_addr entry;
+  uint8_t elfret = elf_load(fp_get, alloc, fp, &entry);
+  fclose(fp);
+  if (elfret != 0) {
+    printf("elf_load() returned error %u\n", elfret);
+    return;
+  }
+
+  routine_id = (overworld ? -1 : -2);
+  memset(routine_pc, 0, sizeof routine_pc);
+
+  // Initialize stack pointer
+  uint32_t initial_sp = (overworld ? MEM_END_O : MEM_END_A);
+  uint32_t initial_lr = 0x0;
+  uc_reg_write(uc, UC_ARM_REG_SP, &initial_sp);
+  uc_reg_write(uc, UC_ARM_REG_LR, &initial_lr);
+
+  // Execute initialization routine
+  initialize_tick();
+  update_tick();
+  update_input();
+
+  printf("Entry 0x%08x\n", entry);
+  if ((err = uc_emu_start(uc, entry, 0, 1000000, 0)) != UC_ERR_OK) {
+    printf("uc_emu_start() returned error %u (%s)\n", err, uc_strerror(err));
+    return;
+  }
+
+  int bank = (overworld ? 0 : 4);
+  printf("Routine addresses: 0x%08x 0x%08x 0x%08x 0x%08x\n",
+    routine_pc[bank + 0], routine_pc[bank + 1], routine_pc[bank + 2], routine_pc[bank + 3]);
+
+  for (int i = 0; i < 4; i++) {
+    uc_context_alloc(uc, &routine_ctx[bank + i]);
+    uint32_t sp = initial_sp - i * STACK_SIZE;
+    uint32_t lr = 0;
+    uint32_t pc = routine_pc[bank + i];
+    uc_reg_write(uc, UC_ARM_REG_SP, &sp);
+    uc_reg_write(uc, UC_ARM_REG_LR, &lr);
+    uc_reg_write(uc, UC_ARM_REG_PC, &pc);
+    uc_context_save(uc, routine_ctx[bank + i]);
+  }
+}
+
 static void step_context(uc_context *ctx)
 {
   uc_err err;
@@ -307,6 +365,11 @@ void emu()
     printf("uc_mem_map() returned error %u (%s)\n", err, uc_strerror(err));
     return;
   }
+  if ((err = uc_mem_map(
+      uc, MEM_START_A, MEM_SIZE_A, UC_PROT_READ | UC_PROT_WRITE)) != UC_ERR_OK) {
+    printf("uc_mem_map() returned error %u (%s)\n", err, uc_strerror(err));
+    return;
+  }
 
   // Enable VFP
   // ref. ../sys/startup.S
@@ -326,20 +389,6 @@ void emu()
     return;
   }
 
-  // Parse and load ELF
-  FILE *fp = fopen(app_exec_path, "r");
-  if (fp == NULL) {
-    printf("Unable to open file\n");
-    return;
-  }
-  elf_addr entry;
-  uint8_t elfret = elf_load(fp_get, alloc, fp, &entry);
-  fclose(fp);
-  if (elfret != 0) {
-    printf("elf_load() returned error %u\n", elfret);
-    return;
-  }
-
   // Add hooks
   uc_hook hook_mem, hook_syscall;
   uc_hook_add(uc, &hook_mem, UC_HOOK_MEM_INVALID, handler_unmapped, NULL, 1, 0);
@@ -350,49 +399,12 @@ void emu()
 
   // Initialize syscalls
   syscalls_init();
-  routine_id = -1;
-  memset(routine_pc, 0, sizeof routine_pc);
-
-  // Initialize stack pointer
-  uint32_t initial_sp = MEM_END_O;
-  uint32_t initial_lr = 0x0;
-  uc_reg_write(uc, UC_ARM_REG_SP, &initial_sp);
-  uc_reg_write(uc, UC_ARM_REG_LR, &initial_lr);
-
-  // Execute initialization routine
-  initialize_tick();
-  update_tick();
-  update_input();
-
-  printf("Entry 0x%08x\n", entry);
-  if ((err = uc_emu_start(uc, entry, 0, 1000000, 0)) != UC_ERR_OK) {
-    printf("uc_emu_start() returned error %u (%s)\n", err, uc_strerror(err));
-    return;
-  }
-
-  printf("Routine addresses: 0x%08x 0x%08x 0x%08x 0x%08x\n",
-    routine_pc[0], routine_pc[1], routine_pc[2], routine_pc[3]);
-
-  for (int i = 0; i < 4; i++) {
-    uc_context_alloc(uc, &routine_ctx[i]);
-    uint32_t sp = MEM_END_O - i * STACK_SIZE;
-    uint32_t lr = 0;
-    uint32_t pc = routine_pc[i];
-    uc_reg_write(uc, UC_ARM_REG_SP, &sp);
-    uc_reg_write(uc, UC_ARM_REG_LR, &lr);
-    uc_reg_write(uc, UC_ARM_REG_PC, &pc);
-    uc_context_save(uc, routine_ctx[i]);
-  }
 
   // Execute loop
   uint64_t last_poll = 0, last_comp = 0;
   req_flags = 0xf;
   __atomic_test_and_set(&render_sem, __ATOMIC_RELAXED);
   __atomic_test_and_set(&vsync_sem, __ATOMIC_RELAXED);
-
-  uint64_t req_mask = 0;
-  for (int i = 0; i < 4; i++)
-    if (routine_pc[i] != 0) req_mask |= (1 << i);
 
   pthread_t vsync_thread;
   int err_i;
@@ -405,20 +417,38 @@ void emu()
     return;
   }
 
+  init_application(cmd_app_path, true);
+
+  uint64_t req_mask = 0xf;
+
   while (1) {
+    int bank = (program_name == NULL ? 0 : 4);
+
     if ((req_flags & req_mask) == 0) {
       usleep(500);
     } else for (int i = 3; i >= 0; i--) {
-      if (routine_pc[i] != 0 && (req_flags & (1 << i))) {
+      if (routine_pc[bank + i] != 0 && (req_flags & (1 << i))) {
         update_tick();
         routine_id = i;
-        step_context(routine_ctx[i]);
+        step_context(routine_ctx[bank + i]);
 
         if (i == 0 && !(req_flags & (1 << i))) {
           // Signal that rendering commands have been issued
           __atomic_clear(&render_sem, __ATOMIC_RELAXED);
         }
       }
+    }
+
+    // Process requests
+    if (request_exec != NULL) {
+      char *full_path;
+      asprintf(&full_path, "%s%s", fs_root, request_exec);
+      printf("execute: %s\n", full_path);
+      init_application(full_path, false);
+      free(request_exec);
+      free(full_path);
+      request_exec = NULL;
+      program_name = "Some Program";
     }
 
     update_tick();
@@ -473,7 +503,7 @@ int main(int argc, char *argv[])
     exit(0);
   }
 
-  app_exec_path = argv[1];
+  cmd_app_path = argv[1];
   if (argc >= 3) {
     size_t len = strlen(argv[2]);
     if (len == 0 || argv[2][len - 1] != '/') {
@@ -488,7 +518,7 @@ int main(int argc, char *argv[])
   } else fs_root = "./";
 
   printf("Starting emulation:\n");
-  printf("Executable:       %s\n", app_exec_path);
+  printf("Executable:       %s\n", cmd_app_path);
   printf("File system root: %s\n", fs_root);
 
   setup_glfw();
