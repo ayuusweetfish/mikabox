@@ -15,6 +15,10 @@ static inline bool btnp(uint64_t b)
 {
   return !(last_btns & b) && (cur_btns & b);
 }
+static inline bool btnr(uint64_t b)
+{
+  return (last_btns & b) && !(cur_btns & b);
+}
 
 // synth
 

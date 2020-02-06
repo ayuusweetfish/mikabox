@@ -31,7 +31,7 @@ void event()
     cur_btns = mika_btns(0);
     if (btnp(BTN_A)) synth_note(0, 440, 10, 0, 0.2, true);
     if (btnp(BTN_B)) { ovw_stop(); ovw_start("b.out"); }
-    if (btnp(BTN_X)) ovw_resume();
+    if (btnr(BTN_X)) ovw_resume();
     if (btnp(BTN_Y)) synth_note(3, 440, 0.1, 0, 0.4, false);
     mika_yield(1);
   }

@@ -37,9 +37,10 @@ int8_t routine_id;
 uint32_t routine_pc[8];
 uc_context *routine_ctx[8];
 
-char *request_exec = NULL;
 char *program_name = NULL;
 bool program_paused = false;
+char *request_exec = NULL;
+bool request_resume = false;
 
 uint64_t app_tick;
 uint32_t req_flags;
@@ -113,8 +114,12 @@ static void setup_audio()
 }
 
 // Time and events
-static tick_t start_time;
 static double usec_rate;
+
+static struct app_timer {
+  uint64_t base;
+  tick_t start;
+} timer_g = { 0 }, timer_o = { 0 }, timer_a = { 0 };
 
 int num_players;
 uint64_t player_btns[MAX_PLAYERS];
@@ -122,20 +127,29 @@ uint64_t player_axes[MAX_PLAYERS];
 
 static uint64_t player_btns_last[MAX_PLAYERS];
 
-void initialize_tick()
+void app_timer_start(struct app_timer *t)
 {
-  timer_lib_initialize();
-  start_time = timer_current();
-  app_tick = 0;
-
-  tick_t tps = timer_ticks_per_second();
-  usec_rate = 1e6 / tps;
+  t->start = timer_current();
 }
 
-void update_tick()
+uint64_t app_timer_update(struct app_timer *t)
 {
-  tick_t diff = timer_current() - start_time;
-  app_tick = (tick_t)(diff * usec_rate);
+  tick_t diff = timer_current() - t->start;
+  return (tick_t)(diff * usec_rate) + t->base;
+}
+
+void app_timer_pause(struct app_timer *t)
+{
+  t->base = app_timer_update(t);
+}
+
+void setup_timer()
+{
+  timer_lib_initialize();
+  tick_t tps = timer_ticks_per_second();
+  usec_rate = 1e6 / tps;
+
+  app_timer_start(&timer_g);
 }
 
 static void update_input()
@@ -315,8 +329,9 @@ static void init_application(const char *path, bool overworld)
   uc_reg_write(uc, UC_ARM_REG_LR, &initial_lr);
 
   // Execute initialization routine
-  initialize_tick();
-  update_tick();
+  struct app_timer *t = overworld ? &timer_o : &timer_a;
+  t->base = 0;
+  app_timer_start(t);
   update_input();
 
   printf("Entry 0x%08x\n", entry);
@@ -348,8 +363,6 @@ static void step_context(uc_context *ctx)
   uc_context_restore(uc, ctx);
   uint32_t pc;
   uc_reg_read(uc, UC_ARM_REG_PC, &pc);
-
-  update_tick();
 
   // XXX: uc_emu_continue()?
   if ((err = uc_emu_start(uc, pc, 0, 100000, 0)) != UC_ERR_OK) {
@@ -438,18 +451,28 @@ void emu()
   uint64_t req_mask = 0xf;
 
   while (1) {
-    // Pausing
     if (!(player_btns_last[0] & BTN_START) && (player_btns[0] & BTN_START)) {
+      // Pause
       program_paused = true;
+      app_timer_pause(&timer_a);
+      app_timer_start(&timer_o);
+    } else if (program_name != NULL && request_resume) {
+      // Resume
+      request_resume = false;
+      program_paused = false;
+      app_timer_pause(&timer_o);
+      app_timer_start(&timer_a);
     }
 
     int bank = ((program_name == NULL || program_paused) ? 0 : 4);
+    struct app_timer *timer = (bank == 0 ? &timer_o : &timer_a);
 
     if ((req_flags & req_mask) == 0) {
       usleep(500);
     } else for (int i = 3; i >= 0; i--) {
       if (routine_pc[bank + i] != 0 && (req_flags & (1 << i))) {
-        update_tick();
+        app_tick = app_timer_update(timer);
+
         routine_id = bank + i;
         step_context(routine_ctx[bank + i]);
 
@@ -471,9 +494,12 @@ void emu()
       request_exec = NULL;
       program_name = "Some Program";
       program_paused = false;
+      app_timer_pause(&timer_o);
+      app_timer_start(&timer_a);
     }
 
-    update_tick();
+    app_timer_update(timer);
+    uint64_t global_tick = app_timer_update(&timer_g);
 
     if (!__atomic_test_and_set(&vsync_sem, __ATOMIC_RELAXED))
       req_flags |= (1 << 0);
@@ -481,40 +507,18 @@ void emu()
     if (audio_pending())
       req_flags |= (1 << 1);
 
-    if (app_tick - last_poll >= 3000) {
+    if (global_tick - last_poll >= 3000) {
       glfwPollEvents();
       if (glfwWindowShouldClose(window)) break;
       update_input();
-      last_poll = app_tick - app_tick % 3000;
+      last_poll = global_tick - global_tick % 3000;
       req_flags |= (1 << 2);
     }
 
-    if (last_comp != app_tick * 240 / 1000000) {
-      last_comp = app_tick * 240 / 1000000;
+    if (last_comp != global_tick * 240 / 1000000) {
+      last_comp = global_tick * 240 / 1000000;
       req_flags |= (1 << 3);
     }
-
-  /*
-    for (int i = 3; i >= 0; i--) if (routine_pc[i] != 0) {
-      if (i == 0 && app_tick - last_bufswp < 12000) continue;
-      if (i == 1 && !audio_pending()) continue;
-      step_context(routine_ctx[i]);
-
-      if (i == 0) {
-        render();
-        update_tick();
-        last_bufswp = app_tick;
-      }
-    }
-
-    update_tick();
-    if (app_tick - last_poll >= 3000) {
-      last_poll = app_tick;
-      glfwPollEvents();
-      if (glfwWindowShouldClose(window)) break;
-      update_input();
-    }
-  */
   }
 }
 
@@ -545,6 +549,7 @@ int main(int argc, char *argv[])
 
   setup_glfw();
   setup_audio();
+  setup_timer();
   emu();
 
   return 0;

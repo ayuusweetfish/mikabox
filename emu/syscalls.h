@@ -582,8 +582,7 @@ def(OVW, 2, {
 })
 
 def(OVW, 3, {
-  if (program_name != NULL)
-    program_paused = false;
+  request_resume = true;
 })
 
 def(OVW, 16, {
