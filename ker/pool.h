@@ -3,6 +3,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include <string.h>
 
 #define pool_type(__type, __count) struct { \
   size_t sz, cnt; \
@@ -62,5 +63,16 @@ static inline void *pool_elm(void *p, size_t idx)
   return (idx < pool_cnt(p) && (used[idx / 32] & (1 << (idx % 32)))) ?
     pool_elm_direct(p, idx) : NULL;
 }
+
+static inline void pool_clear(void *p)
+{
+  size_t cnt = pool_cnt(p);
+  uint32_t *used = pool_used(p);
+  memset(used, 0, sizeof(uint32_t) * ((cnt + 31) / 32));
+}
+
+#define pool_each(__p, __elm) \
+  (size_t __i = 0, __s = pool_sz(__p); __i < __s; __i++) \
+    if ((__elm = pool_elm(__p, __i)) != NULL)
 
 #endif

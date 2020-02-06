@@ -120,6 +120,8 @@ int num_players;
 uint64_t player_btns[MAX_PLAYERS];
 uint64_t player_axes[MAX_PLAYERS];
 
+static uint64_t player_btns_last[MAX_PLAYERS];
+
 void initialize_tick()
 {
   timer_lib_initialize();
@@ -139,6 +141,8 @@ void update_tick()
 static void update_input()
 {
   // TODO: Multiple gamepads
+  memcpy(player_btns_last, player_btns, sizeof player_btns);
+
   num_players = 1;
   player_btns[0] =
     BTN_BIT(U, glfwGetKey(window, GLFW_KEY_UP), 0) |
@@ -201,9 +205,14 @@ static inline uint32_t align(uint32_t addr, uint32_t align)
   return (addr + align - 1) & ~(align - 1);
 }
 
+static void *app_allocated[] = { NULL };
+static int app_alloc_count = 0;
+
 static void *alloc(elf_word vaddr, elf_word memsz, elf_word flags)
 {
   void *p = malloc(memsz);
+  // Application memory
+  if (vaddr >= 0x80000000) app_allocated[app_alloc_count++] = p;
 
   uint32_t perms = 0;
   if (flags & 4) perms |= UC_PROT_READ;
@@ -263,6 +272,24 @@ static void init_application(const char *path, bool overworld)
 {
   uc_err err;
 
+  // Unmap memory
+  uint32_t mem_start = (overworld ? MEM_START_O : MEM_START_A);
+  uint32_t mem_size = (overworld ? MEM_SIZE_O : MEM_SIZE_A);
+  if ((err = uc_mem_unmap(uc, mem_start, mem_size)) != UC_ERR_OK &&
+      err != UC_ERR_NOMEM)
+  {
+    printf("uc_mem_unmap() returned error %u (%s)\n", err, uc_strerror(err));
+    return;
+  }
+  for (int i = 0; i < app_alloc_count; i++) free(app_allocated[i]);
+  app_alloc_count = 0;
+  // Remap memory
+  if ((err = uc_mem_map(
+      uc, mem_start, mem_size, UC_PROT_READ | UC_PROT_WRITE)) != UC_ERR_OK) {
+    printf("uc_mem_map() returned error %u (%s)\n", err, uc_strerror(err));
+    return;
+  }
+
   // Parse and load ELF
   FILE *fp = fopen(path, "r");
   if (fp == NULL) {
@@ -277,8 +304,9 @@ static void init_application(const char *path, bool overworld)
     return;
   }
 
+  int bank = (overworld ? 0 : 4);
   routine_id = (overworld ? -1 : -2);
-  memset(routine_pc, 0, sizeof routine_pc);
+  for (int i = 0; i < 4; i++) routine_pc[bank + i] = 0;
 
   // Initialize stack pointer
   uint32_t initial_sp = (overworld ? MEM_END_O : MEM_END_A);
@@ -297,12 +325,12 @@ static void init_application(const char *path, bool overworld)
     return;
   }
 
-  int bank = (overworld ? 0 : 4);
   printf("Routine addresses: 0x%08x 0x%08x 0x%08x 0x%08x\n",
     routine_pc[bank + 0], routine_pc[bank + 1], routine_pc[bank + 2], routine_pc[bank + 3]);
 
   for (int i = 0; i < 4; i++) {
-    uc_context_alloc(uc, &routine_ctx[bank + i]);
+    if (routine_ctx[bank + i] == NULL)
+      uc_context_alloc(uc, &routine_ctx[bank + i]);
     uint32_t sp = initial_sp - i * STACK_SIZE;
     uint32_t lr = 0;
     uint32_t pc = routine_pc[bank + i];
@@ -359,18 +387,6 @@ void emu()
     return;
   }
 
-  // Map memory
-  if ((err = uc_mem_map(
-      uc, MEM_START_O, MEM_SIZE_O, UC_PROT_READ | UC_PROT_WRITE)) != UC_ERR_OK) {
-    printf("uc_mem_map() returned error %u (%s)\n", err, uc_strerror(err));
-    return;
-  }
-  if ((err = uc_mem_map(
-      uc, MEM_START_A, MEM_SIZE_A, UC_PROT_READ | UC_PROT_WRITE)) != UC_ERR_OK) {
-    printf("uc_mem_map() returned error %u (%s)\n", err, uc_strerror(err));
-    return;
-  }
-
   // Enable VFP
   // ref. ../sys/startup.S
   uint32_t val;
@@ -422,14 +438,19 @@ void emu()
   uint64_t req_mask = 0xf;
 
   while (1) {
-    int bank = (program_name == NULL ? 0 : 4);
+    // Pausing
+    if (!(player_btns_last[0] & BTN_START) && (player_btns[0] & BTN_START)) {
+      program_paused = true;
+    }
+
+    int bank = ((program_name == NULL || program_paused) ? 0 : 4);
 
     if ((req_flags & req_mask) == 0) {
       usleep(500);
     } else for (int i = 3; i >= 0; i--) {
       if (routine_pc[bank + i] != 0 && (req_flags & (1 << i))) {
         update_tick();
-        routine_id = i;
+        routine_id = bank + i;
         step_context(routine_ctx[bank + i]);
 
         if (i == 0 && !(req_flags & (1 << i))) {
@@ -449,6 +470,7 @@ void emu()
       free(full_path);
       request_exec = NULL;
       program_name = "Some Program";
+      program_paused = false;
     }
 
     update_tick();

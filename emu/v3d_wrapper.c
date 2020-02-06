@@ -25,7 +25,6 @@ void v3d_init()
 v3d_tex v3d_tex_screen(uint32_t buf)
 {
   v3d_tex t = { .w = 800, .h = 480 };
-  glGenTextures(1, &t.id);
   return t;
 }
 
