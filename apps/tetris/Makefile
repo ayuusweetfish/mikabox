@@ -39,6 +39,6 @@ clean:
 	rm -rf $(BUILD_DIR)
 
 run: $(APP)
-	../../emu/build/emu $<
+	../../emu/build/emu -a $< .
 
 .PHONY: all clean run

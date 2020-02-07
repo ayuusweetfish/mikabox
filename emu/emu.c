@@ -553,15 +553,15 @@ bool parse_args(int argc, char *argv[])
   cmd_app_path = argv[ind++];
 
   if (ind < argc) {
-    size_t len = strlen(argv[2]);
-    if (len == 0 || argv[2][len - 1] != '/') {
+    size_t len = strlen(argv[ind]);
+    if (len == 0 || argv[ind][len - 1] != '/') {
       char *s = (char *)malloc(len + 2);
-      strcpy(s, argv[2]);
+      strcpy(s, argv[ind]);
       s[len] = '/';
       s[len + 1] = '\0';
       fs_root = s;
     } else {
-      fs_root = argv[2];
+      fs_root = argv[ind];
     }
   } else {
     // Extract directory path from executable path
