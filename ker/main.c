@@ -86,6 +86,8 @@ extern bool is_in_abt;
 static bool flipped = false;
 static bool input_updated = false;
 
+static uint64_t player_btns_last[MAX_PLAYERS];
+
 static inline void enable_charbuf()
 {
   charbuf_invalidate();
@@ -116,6 +118,8 @@ static void kbd_upd_callback(uint8_t mod, const uint8_t k[6])
 
 static void gpad_upd_callback(unsigned index, const USPiGamePadState *state)
 {
+  //memcpy(player_btns_last, player_btns, sizeof player_btns);
+
   //printf("\r%d %08x", state->nbuttons, state->buttons);
   unsigned b = state->buttons;
   unsigned dp = state->hats[0];
@@ -427,6 +431,19 @@ void sys_main()
   while (1) {
     co_next(&usb_co);
     co_next(&audio_co);
+
+    if (!program_paused && !(player_btns_last[0] & BTN_START) && (player_btns[0] & BTN_START)) {
+      // Pause
+      program_paused = true;
+      app_timer_pause(&timer_a);
+      app_timer_start(&timer_o);
+    } else if (program_name != NULL && request_resume) {
+      // Resume
+      request_resume = false;
+      program_paused = false;
+      app_timer_pause(&timer_o);
+      app_timer_start(&timer_a);
+    }
 
     int bank = ((program_name[0] == '\0' || program_paused) ? 0 : 4);
     struct app_timer *timer = (bank == 0 ? &timer_o : &timer_a);
