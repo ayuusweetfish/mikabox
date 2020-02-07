@@ -14,6 +14,8 @@ uint32_t enable_vchiq(uint32_t p);
 void enable_qpu();
 bool set_power_state(uint32_t device, uint32_t state);
 void get_mac_addr(uint8_t *addr);
+uint64_t get_arm_memory();
+uint64_t get_gpu_memory();
 
 // Taken from https://github.com/raspberrypi/firmware/wiki/Mailbox-property-interface
 enum {

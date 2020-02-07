@@ -135,6 +135,24 @@ void get_mac_addr(uint8_t *addr)
   _copy(6, addr);
 }
 
+uint64_t get_arm_memory()
+{
+  _setup(8, 0x10005);
+  uint64_t r = 0;
+  _get(u32[0]); r = (uint64_t)ret << 32;
+  _get(u32[1]); r |= ret;
+  return r;
+}
+
+uint64_t get_gpu_memory()
+{
+  _setup(8, 0x10006);
+  uint64_t r = 0;
+  _get(u32[0]); r = (uint64_t)ret << 32;
+  _get(u32[1]); r |= ret;
+  return r;
+}
+
 uint32_t gpumem_alloc(uint32_t size, uint32_t align, uint32_t flags)
 {
   _setup(12, 0x3000c);

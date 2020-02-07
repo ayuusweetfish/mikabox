@@ -38,7 +38,8 @@ extern unsigned char _kernel_end;
 extern unsigned char _text_user_vaddr;
 
 uint32_t mmu_table[4096] __attribute__ ((aligned(1 << 14)));
-uint32_t mmu_user_course[64][256] __attribute__ ((aligned(1 << 10)));
+uint32_t mmu_course_o[64][256] __attribute__ ((aligned(1 << 10)));
+uint32_t mmu_course_a[64][256] __attribute__ ((aligned(1 << 10)));
 
 struct framebuffer {
   uint32_t pwidth;
@@ -100,7 +101,7 @@ void vsync_callback(void *_unused)
   fb_flip_buffer();
   frame_count++;
 */
-  if (app_fb_buf != 0) return;
+  if (!is_in_abt && app_fb_buf != 0) return;
   if (is_in_abt) charbuf_flush();
   fb_flip_buffer();
   flipped = true;
@@ -206,21 +207,45 @@ static void *mem_map(elf_word vaddr, elf_word memsz, elf_word flags)
   uint32_t page_end = ((vaddr + memsz - 1) >> 12);
   for (uint32_t page = page_start; page <= page_end; page++) {
     uint32_t addr = (page << 12) - 0x40000000;
-    mmu_small_page(&mmu_user_course[0][0], addr, addr + (32 << 20), (8 | 4) | (3 << 4));
+    mmu_small_page(&mmu_course_o[0][0], addr, addr + (32 << 20), (8 | 4) | (3 << 4));
   }
 
   mmu_flush();
   return (void *)vaddr;
 }
 
-uint32_t load_program(const char *path)
+static struct app_timer {
+  uint64_t base;
+  uint64_t start;
+} timer_g = { 0 }, timer_o = { 0 }, timer_a = { 0 };
+
+void app_timer_start(struct app_timer *t)
+{
+  mem_barrier();
+  uint64_t cur_time = ((uint64_t)*TMR_CHI << 32) | *TMR_CLO;
+  t->start = cur_time;
+}
+
+uint64_t app_timer_update(struct app_timer *t)
+{
+  mem_barrier();
+  uint64_t cur_time = ((uint64_t)*TMR_CHI << 32) | *TMR_CLO;
+  return cur_time - t->start + t->base;
+}
+
+void app_timer_pause(struct app_timer *t)
+{
+  t->base = app_timer_update(t);
+}
+
+bool load_program(const char *path, bool overworld)
 {
   FIL f;
   FRESULT r;
 
   if ((r = f_open(&f, path, FA_READ)) != FR_OK) {
     printf("f_open() returned error %d\n", (int)r);
-    return 0;
+    return false;
   }
 
   elf_addr entry;
@@ -229,9 +254,34 @@ uint32_t load_program(const char *path)
 
   if (elfret != 0) {
     printf("elf_load() returned error %u\n", (unsigned)elfret);
-    return 0;
+    return false;
   }
-  return entry;
+
+  uint32_t bank = (overworld ? 0 : 4);
+  uint32_t memory_end = (overworld ? 0x44000000 : 0x84000000);
+
+  // Initialization routine
+  co_create(&user_co[bank], (void *)entry,
+    CO_FLAG_FPU | CO_FLAG_USER, (void *)memory_end);
+
+  mem_barrier();
+  routine_id = (overworld ? -1 : -2);
+
+  while (routine_pc[bank] == 0) {
+    co_next(&usb_co);
+    co_next(&audio_co);
+
+    mem_barrier();
+    co_next(&user_co[bank]);
+  }
+
+  // Initialize coroutines
+  for (uint32_t i = 0; i < 4; i++) {
+    co_create(&user_co[bank + i], (void *)routine_pc[bank + i],
+      CO_FLAG_FPU | CO_FLAG_USER, (void *)(memory_end - 0x100000 * i));
+  }
+
+  return true;
 }
 
 void sys_main()
@@ -257,9 +307,14 @@ void sys_main()
   mmu_section(mmu_table, text_user_page << 20, text_user_page << 20, (1 << 5) | (2 << 10));
   // User region: sys RW, user RW
   for (uint32_t i = 0x40000000; i < 0x44000000; i += 0x100000)
-    mmu_course_table(mmu_table, i, mmu_user_course[(i - 0x40000000) >> 20], (1 << 5));
+    mmu_course_table(mmu_table, i, mmu_course_o[(i - 0x40000000) >> 20], (1 << 5));
   for (uint32_t i = 0; i < 0x4000000; i += 0x1000)  // Needed for stack space
-    mmu_small_page(&mmu_user_course[0][0], i, i + (32 << 20), (8 | 4) | (3 << 4));
+    mmu_small_page(&mmu_course_o[0][0], i, i + (32 << 20), (8 | 4) | (3 << 4));
+
+  for (uint32_t i = 0x80000000; i < 0x84000000; i += 0x100000)
+    mmu_course_table(mmu_table, i, mmu_course_a[(i - 0x80000000) >> 20], (1 << 5));
+  for (uint32_t i = 0; i < 0x4000000; i += 0x1000)  // Needed for stack space
+    mmu_small_page(&mmu_course_a[0][0], i, i + (128 << 20), (8 | 4) | (3 << 4));
 
   mmu_enable(mmu_table);
   // Client for domain 1, manager for domain 0
@@ -347,70 +402,67 @@ void sys_main()
   }
 */
 
+  app_timer_start(&timer_g);
+
   // USB and audio threads
   co_create(&usb_co, usb_loop, 0, usb_co_stack + sizeof usb_co_stack);
   co_create(&audio_co, audio_loop, 0, audio_co_stack + sizeof audio_co_stack);
 
   // Load overworld program
-  uint32_t entry = load_program("/a.out");
-
-  // Initialization routine
-  co_create(&user_co[0], (void *)entry,
-    CO_FLAG_FPU | CO_FLAG_USER, (void *)0x44000000);
-
-  mem_barrier();
-  uint64_t app_start_time = ((uint64_t)*TMR_CHI << 32) | *TMR_CLO;
-  routine_id = -1;
-
-  //enable_charbuf();
-  while (routine_pc[0] == 0) {
-    co_next(&usb_co);
-    co_next(&audio_co);
-
-    mem_barrier();
-    uint64_t cur_time = ((uint64_t)*TMR_CHI << 32) | *TMR_CLO;
-    app_tick = cur_time - app_start_time;
-    co_next(&user_co[0]);
-  }
+  bool load_result = load_program("/a.out", true);
 
   printf("Overworld initialized!\n");
   printf("routines: 0x%08x 0x%08x 0x%08x 0x%08x\n",
     routine_pc[0], routine_pc[1], routine_pc[2], routine_pc[3]);
-
-  // Initialize coroutines
-  for (uint32_t i = 0; i < 4; i++) {
-    co_create(&user_co[i], (void *)routine_pc[i],
-      CO_FLAG_FPU | CO_FLAG_USER, (void *)(0x44000000 - 0x100000 * i));
-  }
+  printf("Memory: %llx + %llx\n", get_arm_memory(), get_gpu_memory());
 
   uint64_t last_comp = 0;
   uint64_t next_draw_req = (uint64_t)-1;
   req_flags = 0xf;
+
+  //enable_charbuf();
+  app_timer_start(&timer_o);
 
   // Main loop!
   while (1) {
     co_next(&usb_co);
     co_next(&audio_co);
 
+    int bank = ((program_name[0] == '\0' || program_paused) ? 0 : 4);
+    struct app_timer *timer = (bank == 0 ? &timer_o : &timer_a);
+
     app_fb_buf = (uint32_t)fb_buf;
 
     for (int8_t i = 3; i >= 0; i--) if (req_flags & (1 << i)) {
       mem_barrier();
-      uint64_t cur_time = ((uint64_t)*TMR_CHI << 32) | *TMR_CLO;
-      app_tick = cur_time - app_start_time;
-      routine_id = i;
-      co_next(&user_co[i]);
+      routine_id = bank + i;
+      app_tick = app_timer_update(timer);
+      co_next(&user_co[bank + i]);
     }
 
     app_fb_buf = 0;
-    uint64_t cur_time = ((uint64_t)*TMR_CHI << 32) | *TMR_CLO;
-    app_tick = cur_time - app_start_time;
+    uint64_t global_tick = app_timer_update(&timer_g);
+    //printf("%8llu %8llu\n", global_tick, app_tick);
+
+    if (request_exec[0] != '\0') {
+      printf("execute: %s\n", request_exec);
+      load_program(request_exec, false);
+      printf("routines: 0x%08x 0x%08x 0x%08x 0x%08x\n",
+        routine_pc[4], routine_pc[5], routine_pc[6], routine_pc[7]);
+
+      request_exec[0] = '\0';
+      strncpy(program_name, "Some Program", sizeof(program_name) - 1);
+      program_name[sizeof(program_name) - 1] = '\0';
+      program_paused = false;
+      app_timer_pause(&timer_o);
+      app_timer_start(&timer_a);
+    }
 
     if (flipped) {
       flipped = false;
-      next_draw_req = app_tick + 12000;
+      next_draw_req = global_tick + 12000;
     }
-    if (next_draw_req < app_tick) {
+    if (next_draw_req < global_tick) {
       next_draw_req = (uint64_t)-1;
       req_flags |= (1 << 0);
     }
@@ -424,8 +476,8 @@ void sys_main()
       req_flags |= (1 << 2);
     }
 
-    if (last_comp != app_tick * 240 / 1000000) {
-      last_comp = app_tick * 240 / 1000000;
+    if (last_comp != global_tick * 240 / 1000000) {
+      last_comp = global_tick * 240 / 1000000;
       req_flags |= (1 << 3);
     }
   }

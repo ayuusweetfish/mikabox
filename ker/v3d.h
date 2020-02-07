@@ -24,6 +24,9 @@ void v3d_mem_indexcopy(v3d_mem *m, uint32_t pos, void *ptr, uint32_t count);
 
 #define v3d_close(__objptr) v3d_mem_close(&(__objptr)->mem)
 
+#define v3d_buf v3d_mem
+#define v3d_idxbuf_close v3d_mem_close
+
 // Texture
 
 typedef struct v3d_tex {
@@ -43,6 +46,7 @@ typedef enum v3d_tex_fmt_t {
 v3d_tex v3d_tex_screen(uint32_t buf);
 v3d_tex v3d_tex_create(uint16_t w, uint16_t h);
 void v3d_tex_update(v3d_tex *tex, uint8_t *buf, v3d_tex_fmt_t fmt);
+#define v3d_tex_close(_t) v3d_close((v3d_tex *)(_t))
 
 // Vertex and vertex array
 
@@ -62,6 +66,7 @@ void v3d_vertarr_put(
   v3d_vertarr *a, uint32_t start_index,
   const v3d_vert *verts, uint32_t num
 );
+#define v3d_vertarr_close(_a) v3d_close((v3d_vertarr *)(_a))
 
 // Uniform array
 
@@ -91,6 +96,8 @@ void v3d_unifarr_puttex(v3d_unifarr *a, uint32_t index, v3d_tex tex, uint8_t cfg
 #define v3d_magfilt_linear  (0 << 7)
 #define v3d_magfilt_nearest (1 << 7)
 
+#define v3d_unifarr_close(_a) v3d_close((v3d_unifarr *)(_a))
+
 // Shader
 
 typedef struct v3d_shader {
@@ -99,6 +106,7 @@ typedef struct v3d_shader {
 } v3d_shader;
 
 v3d_shader v3d_shader_create(const char *code);
+#define v3d_shader_close(_s) v3d_close((v3d_shader *)(_s))
 
 // Batch (vertex array + uniform array + shader)
 
@@ -111,6 +119,7 @@ v3d_batch v3d_batch_create(
   const v3d_unifarr unifarr,
   const v3d_shader shader
 );
+#define v3d_batch_close(_b) v3d_close((v3d_batch *)(_b))
 
 // Draw call (batch + vertex indices)
 
@@ -144,5 +153,6 @@ void v3d_ctx_use_batch(v3d_ctx *c, const v3d_batch *batch);
 void v3d_ctx_add_call(v3d_ctx *c, const v3d_call *call);
 void v3d_ctx_issue(v3d_ctx *c);
 void v3d_ctx_wait(v3d_ctx *c);
+#define v3d_ctx_close(_c) v3d_close((v3d_ctx *)(_c))
 
 #endif
