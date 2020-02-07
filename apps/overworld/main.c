@@ -33,7 +33,7 @@ void event()
     if (btnp(BTN_A)) synth_note(0, 440, 10, 0, 0.2, true);
     if (btnp(BTN_B)) { ovw_stop(); ovw_start("/b.out"); }
     if (btnr(BTN_X)) ovw_resume();
-    if (btnp(BTN_Y)) synth_note(3, 440, 0.1, 0, 0.4, false);
+    if (btnp(BTN_Y)) ovw_stop();
     mika_yield(1);
   }
 }

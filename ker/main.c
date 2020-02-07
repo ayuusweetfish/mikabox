@@ -437,7 +437,7 @@ void sys_main()
       program_paused = true;
       app_timer_pause(&timer_a);
       app_timer_start(&timer_o);
-    } else if (program_name != NULL && request_resume) {
+    } else if (program_name[0] != '\0' && request_resume) {
       // Resume
       request_resume = false;
       program_paused = false;

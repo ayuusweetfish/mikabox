@@ -144,6 +144,9 @@ void syscalls_close_app()
 
   size_t idx;
   pool_alloc(&texs_a, &idx);
+
+  program_name[0] = '\0';
+  program_paused = false;
 }
 
 #endif
