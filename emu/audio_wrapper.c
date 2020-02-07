@@ -1,4 +1,5 @@
 #include "audio_wrapper.h"
+#include "emu.h"
 #include <math.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -72,7 +73,7 @@ void audio_callback(ma_device *device, int16_t *output, const int16_t *_input, m
       bufid = (bufid + 1) % N_BUFS;
       ptr = 0;
       if (request_pending) {
-        dropped++;
+        if (!(headless && program_paused)) dropped++;
         memset(buf[bufid], 0, sizeof(int16_t) * 2 * block_size);
       } else {
         request_pending = true;

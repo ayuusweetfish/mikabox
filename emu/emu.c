@@ -17,6 +17,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
 
 #define MEM_START_O 0x40000000
 #define MEM_SIZE_O  0x01000000  // 16 MiB
@@ -31,6 +32,7 @@
 #define WIN_W 800
 #define WIN_H 480
 
+bool headless = false;
 static const char *cmd_app_path = NULL;
 
 int8_t routine_id;
@@ -155,8 +157,6 @@ void setup_timer()
 static void update_input()
 {
   // TODO: Multiple gamepads
-  memcpy(player_btns_last, player_btns, sizeof player_btns);
-
   num_players = 1;
   player_btns[0] =
     BTN_BIT(U, glfwGetKey(window, GLFW_KEY_UP), 0) |
@@ -446,23 +446,36 @@ void emu()
     return;
   }
 
-  init_application(cmd_app_path, true);
+  if (headless) {
+    init_application(cmd_app_path, false);
+    program_name = "Some Program";
+  } else {
+    init_application(cmd_app_path, true);
+  }
 
   uint64_t req_mask = 0xf;
 
   while (1) {
     if (!(player_btns_last[0] & BTN_START) && (player_btns[0] & BTN_START)) {
-      // Pause
-      program_paused = true;
-      app_timer_pause(&timer_a);
-      app_timer_start(&timer_o);
-    } else if (program_name != NULL && request_resume) {
+      if (!program_paused) {
+        // Pause
+        program_paused = true;
+        app_timer_pause(&timer_a);
+        app_timer_start(&timer_o);
+      } else if (headless) {
+        // Resume
+        request_resume = true;
+      }
+    }
+    if (program_name != NULL && request_resume) {
       // Resume
       request_resume = false;
       program_paused = false;
       app_timer_pause(&timer_o);
       app_timer_start(&timer_a);
     }
+
+    memcpy(player_btns_last, player_btns, sizeof player_btns);
 
     int bank = ((program_name == NULL || program_paused) ? 0 : 4);
     struct app_timer *timer = (bank == 0 ? &timer_o : &timer_a);
@@ -522,15 +535,24 @@ void emu()
   }
 }
 
-int main(int argc, char *argv[])
+bool parse_args(int argc, char *argv[])
 {
-  if (argc < 2) {
-    printf("usage: %s <executable> [<file system root>]\n", argv[0]);
-    exit(0);
+  headless = false;
+  cmd_app_path = NULL;
+  fs_root = NULL;
+
+  int ind = 1;
+
+  if (ind >= argc) return false;
+  if (strcmp(argv[ind], "-a") == 0) {
+    headless = true;
+    ind++;
   }
 
-  cmd_app_path = argv[1];
-  if (argc >= 3) {
+  if (ind >= argc) return false;
+  cmd_app_path = argv[ind++];
+
+  if (ind < argc) {
     size_t len = strlen(argv[2]);
     if (len == 0 || argv[2][len - 1] != '/') {
       char *s = (char *)malloc(len + 2);
@@ -541,7 +563,31 @@ int main(int argc, char *argv[])
     } else {
       fs_root = argv[2];
     }
-  } else fs_root = "./";
+  } else {
+    // Extract directory path from executable path
+    int pos = -1;
+    for (int i = 0; cmd_app_path[i] != '\0'; i++)
+      if (cmd_app_path[i] == '/') pos = i;
+    if (pos == -1) {
+      fs_root = "./";
+    } else {
+      char *s = (char *)malloc(pos + 2);
+      memcpy(s, cmd_app_path, pos + 1);
+      s[pos + 1] = '\0';
+      fs_root = s;
+    }
+  }
+
+  return true;
+}
+
+int main(int argc, char *argv[])
+{
+  if (!parse_args(argc, argv)) {
+    printf("usage: %s [-a] <executable> [<file system root>]\n", argv[0]);
+    printf("  -a    Headless: run application without overworld\n");
+    return 0;
+  }
 
   printf("Starting emulation:\n");
   printf("Executable:       %s\n", cmd_app_path);

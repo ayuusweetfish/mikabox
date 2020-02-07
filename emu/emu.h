@@ -5,6 +5,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+extern bool headless;
+
 extern int8_t routine_id;
 extern uint32_t routine_pc[8];
 
