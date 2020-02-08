@@ -52,6 +52,12 @@ static void wren_write(WrenVM *vm, const char *text)
   }
 }
 
+static void wren_error(WrenVM *vm, WrenErrorType type,
+  const char *module, int line, const char *message)
+{
+  printf("%s:%d: %s\n", module, line, message);
+}
+
 void main()
 {
   crt_init();
@@ -61,6 +67,7 @@ void main()
   WrenConfiguration config;
   wrenInitConfiguration(&config);
   config.writeFn = &wren_write;
+  config.errorFn = *wren_error;
 
   WrenVM *vm = wrenNewVM(&config);
 
