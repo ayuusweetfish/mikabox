@@ -30,12 +30,19 @@ void *realloc(void *ptr, size_t size)
   static uint32_t a[1 << 20];
   static uint32_t c = 0;
 
-  void *ret = &a[c];
-  c += (size + 3) / 4;
+  uint32_t osize = (ptr == 0 ? 0 : *((uint32_t *)ptr - 1));
+  if (size < osize) return ptr;
+
+  a[c] = size;
+  void *ret = &a[c + 1];
+  c += (size + 3) / 4 + 1;
+  c += (c & 1);
   //char s[256];
-  //snprintf(s, 256, "%010p %3zd - %p / %p\n", ptr, size, ret, (char *)a + sizeof a);
+  //snprintf(s, 256, "%010p %3u - %p %3zd / %p\n",
+  //  ptr, osize, ret, size, (char *)a + sizeof a);
   //mika_log(0, s);
-  if (ptr != 0) memcpy(ret, ptr, size);
+  if (ptr != 0) memcpy(ret, ptr, osize);
+  memset(ret + osize, 0, size - osize);
   return ret;
 }
 void free(void *ptr)

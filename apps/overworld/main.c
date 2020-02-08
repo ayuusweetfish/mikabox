@@ -44,7 +44,8 @@ static void wren_write(WrenVM *vm, const char *text)
   static int ptr = 0;
 
   for (const char *p = text; *p != '\0'; p++) {
-    if (*p == '\n' || ptr == sizeof buf) {
+    if (*p == '\n' || ptr == sizeof(buf) - 1) {
+      buf[ptr] = '\0';
       mika_log(1, buf);
       ptr = 0;
     }

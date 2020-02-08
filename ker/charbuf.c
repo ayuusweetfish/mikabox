@@ -101,7 +101,7 @@ void _putchar(char character)
   }
 }
 
-void charbuf_flush()
+void _charbuf_flush()
 {
   uint32_t blend[256];
   for (uint32_t i = 0; i < 256; i++) {
@@ -141,6 +141,13 @@ void charbuf_flush()
       put_pixel(x0 + x, y0 + y, blend[pix]);
     }
   }
+}
+
+void charbuf_flush()
+{
+  __asm__ __volatile__ ("vpush {d0-d7}" ::: "sp");
+  _charbuf_flush();
+  __asm__ __volatile__ ("vpop {d0-d7}" ::: "sp");
 }
 
 void charbuf_invalidate()

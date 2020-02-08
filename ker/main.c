@@ -412,6 +412,9 @@ void sys_main()
   co_create(&usb_co, usb_loop, 0, usb_co_stack + sizeof usb_co_stack);
   co_create(&audio_co, audio_loop, 0, audio_co_stack + sizeof audio_co_stack);
 
+  enable_charbuf();
+  MsDelay(2500);
+
   // Load overworld program
   bool load_result = load_program("/a.out", true);
 
@@ -424,7 +427,6 @@ void sys_main()
   uint64_t next_draw_req = (uint64_t)-1;
   req_flags = 0xf;
 
-  enable_charbuf();
   while (1) { }
   app_timer_start(&timer_o);
 
