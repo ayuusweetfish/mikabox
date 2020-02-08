@@ -7,10 +7,14 @@ V := @
 
 BUILD_DIR := build
 ARCH_FLAGS := -mfpu=vfp -mfloat-abi=hard -march=armv6k -mtune=arm1176jzf-s
-CFLAGS := $(ARCH_FLAGS) -std=c99 -O2
-LDFLAGS := $(ARCH_FLAGS) -nostartfiles -lm -Wl,-z,max-page-size=4096
 
-SRCS := $(wildcard **.[Sc])
+INCLUDES := -I./wren/src/include
+DEFINES := -DWREN_OPT_META=0 -DWREN_OPT_RANDOM=0
+SRCS := $(wildcard **.[Sc]) $(wildcard wren/src/vm/**.c)
+#SRCS := $(wildcard **.[Sc]) $(wildcard printf/**.c) $(wildcard wren/src/vm/**.c)
+
+CFLAGS := $(ARCH_FLAGS) -std=c99 -O2 $(DEFINES) $(INCLUDES) -fno-builtin-printf
+LDFLAGS := $(ARCH_FLAGS) -nostartfiles -lm -Wl,-z,max-page-size=4096
 
 OBJS := $(patsubst %.c, %.o, $(SRCS))
 OBJS := $(patsubst %.S, %.o, $(OBJS))
@@ -39,6 +43,6 @@ clean:
 	rm -rf $(BUILD_DIR)
 
 run: $(APP)
-	../../emu/build/emu $<
+	../../emu/build/emu $< .
 
 .PHONY: all clean run

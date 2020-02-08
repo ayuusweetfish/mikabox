@@ -278,8 +278,10 @@ static void handler_unmapped(
     printf("Done!\n");
     return;
   }
-  printf("Invalid memory access 0x%08x (type = %s, value = 0x%08x)\n",
-    (uint32_t)address, mem_type_str(type), (uint32_t)value);
+  uint32_t pc;
+  uc_reg_read(uc, UC_ARM_REG_PC, &pc);
+  printf("Invalid memory access 0x%08x (type = %s, value = 0x%08x, PC = 0x%08x)\n",
+    (uint32_t)address, mem_type_str(type), (uint32_t)value, pc);
 }
 
 static void init_application(const char *path, bool overworld)

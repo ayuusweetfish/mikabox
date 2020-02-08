@@ -280,4 +280,6 @@ static inline void mika_printf(const char *format, ...)
   mika_log(0, s);
 }
 
+#define printf mika_printf
+
 #endif

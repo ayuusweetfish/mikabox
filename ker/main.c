@@ -424,7 +424,8 @@ void sys_main()
   uint64_t next_draw_req = (uint64_t)-1;
   req_flags = 0xf;
 
-  //enable_charbuf();
+  enable_charbuf();
+  while (1) { }
   app_timer_start(&timer_o);
 
   // Main loop!

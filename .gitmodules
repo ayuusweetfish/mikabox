@@ -25,3 +25,6 @@
 [submodule "emu/miniaudio"]
 	path = emu/miniaudio
 	url = https://github.com/dr-soft/miniaudio.git
+[submodule "apps/overworld/wren"]
+	path = apps/overworld/wren
+	url = https://github.com/wren-lang/wren.git

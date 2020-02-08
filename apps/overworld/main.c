@@ -1,6 +1,5 @@
-#include "main.h"
 #include "mikabox.h"
-#include <math.h>
+#include "wren.h"
 
 extern unsigned char _bss_begin;
 extern unsigned char _bss_end;
@@ -13,27 +12,21 @@ void crt_init()
 
 void draw()
 {
-  int ctx = gfx_ctx_create();
   while (1) {
-    gfx_ctx_reset(ctx, gfx_tex_screen(), 0xffb0c0ff);
-    gfx_ctx_issue(ctx);
     mika_yield(1);
   }
 }
 
-uint64_t last_btns;
-uint64_t cur_btns;
+void synth()
+{
+  while (1) {
+    mika_yield(1);
+  }
+}
 
 void event()
 {
-  last_btns = cur_btns = 0;
   while (1) {
-    last_btns = cur_btns;
-    cur_btns = mika_btns(0);
-    if (btnp(BTN_A)) synth_note(0, 440, 10, 0, 0.2, true);
-    if (btnp(BTN_B)) { ovw_stop(); ovw_start("/b.out"); }
-    if (btnr(BTN_X)) ovw_resume();
-    if (btnp(BTN_Y)) ovw_stop();
     mika_yield(1);
   }
 }
@@ -45,9 +38,53 @@ void update()
   }
 }
 
+static void wren_write(WrenVM *vm, const char *text)
+{
+  static char buf[256];
+  static int ptr = 0;
+
+  for (const char *p = text; *p != '\0'; p++) {
+    if (*p == '\n' || ptr == sizeof buf) {
+      mika_log(1, buf);
+      ptr = 0;
+    }
+    if (*p != '\n') buf[ptr++] = *p;
+  }
+}
+
 void main()
 {
   crt_init();
+
+  mika_log(0, "Hello world!\n");
+
+  WrenConfiguration config;
+  wrenInitConfiguration(&config);
+  config.writeFn = &wren_write;
+
+  WrenVM *vm = wrenNewVM(&config);
+
+  char src[1048576];
+  int f = fil_open("main.wren", FA_READ);
+  int len = fil_size(f);
+  if (len >= sizeof src) {
+    mika_printf("File too long (%u bytes)\n", len);
+    goto done;
+  }
+  if (fil_read(f, src, len) < len) {
+    mika_printf("File read incomplete\n");
+    goto done;
+  }
+  src[len] = '\0';
+
+done:
+  fil_close(f);
+
+  WrenInterpretResult result = wrenInterpret(
+    vm, "mikabox_app_module", src);
+  mika_printf("result: %d\n", (int)result);
+
+  wrenFreeVM(vm);
 
   syscall(0, draw, synth, event, update);
   mika_yield(1);
