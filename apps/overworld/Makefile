@@ -14,7 +14,7 @@ SRCS := $(wildcard **.[Sc]) $(wildcard wren/src/vm/**.c)
 #SRCS := $(wildcard **.[Sc]) $(wildcard printf/**.c) $(wildcard wren/src/vm/**.c)
 
 CFLAGS := $(ARCH_FLAGS) -std=c99 -O2 $(DEFINES) $(INCLUDES) -fno-builtin-printf -fno-builtin-malloc -fno-builtin-realloc
-LDFLAGS := $(ARCH_FLAGS) -nostartfiles -lm -Wl,-z,max-page-size=4096 -Wl,-wrap,_malloc_r -Wl,-wrap,_free_r -Wl,--gc-sections
+LDFLAGS := $(ARCH_FLAGS) -nostartfiles -lm -Wl,-z,max-page-size=4096 -Wl,--gc-sections
 
 OBJS := $(patsubst %.c, %.o, $(SRCS))
 OBJS := $(patsubst %.S, %.o, $(OBJS))
