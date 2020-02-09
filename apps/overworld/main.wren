@@ -1,18 +1,18 @@
 class App {
   construct new() {
-    System.print("hello")
-  }
-
-  init() {
     System.print("world")
   }
 
   update() {
+    var i = 0
     while (true) {
-      System.print("hahaha")
+      i = i + 1
+      System.print("hahaha %(i)")
       Fiber.yield(true)
     }
   }
 }
 
-System.print("heya")
+System.print("hello")
+
+var update = Fiber.new {|a| a.update()}

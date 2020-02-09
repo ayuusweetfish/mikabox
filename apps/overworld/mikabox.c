@@ -9,9 +9,10 @@ int printf(const char *format, ...)
   char s[256];
   va_list arg;
   va_start(arg, format);
-  vsnprintf(s, sizeof s, format, arg);
+  int ret = vsnprintf(s, sizeof s, format, arg);
   va_end(arg);
   mika_log(0, s);
+  return ret;
 }
 
 clock_t clock()

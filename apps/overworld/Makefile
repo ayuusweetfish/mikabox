@@ -12,7 +12,7 @@ INCLUDES := -I./wren/src/include
 DEFINES := -DWREN_OPT_META=0 -DWREN_OPT_RANDOM=0
 SRCS := $(wildcard **.c) $(wildcard wren/src/vm/**.c)
 
-CFLAGS := $(ARCH_FLAGS) -std=c99 -O2 $(DEFINES) $(INCLUDES) -fno-builtin-printf -fno-builtin-malloc -fno-builtin-realloc
+CFLAGS := $(ARCH_FLAGS) -std=c99 -Wall -Wno-main -O2 $(DEFINES) $(INCLUDES) -fno-builtin-printf
 LDFLAGS := $(ARCH_FLAGS) -nostartfiles -lm -Wl,-z,max-page-size=4096 -Wl,--gc-sections
 
 OBJS := $(patsubst %.c, %.o, $(SRCS))
