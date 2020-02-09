@@ -32,12 +32,3 @@ syscall4:
   ldr   r7, [sp, #8]
   swi   #0
   pop   {r7, pc}
-
-.global _sbrk
-_sbrk:
-  mov   r0, #0
-  ldr   r1, =_unimplemented
-  mov   r2, #7
-  b     syscall2
-
-_unimplemented: .ascii  "_sbrk() unimplemented"

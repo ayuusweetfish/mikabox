@@ -1,5 +1,6 @@
 #include <stdarg.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <time.h>
 #include "mikabox.h"
@@ -24,7 +25,8 @@ int printf(const char *format, ...)
 // void strncmp() { }
 // void strtod() { }
 // void strtoll() { }
-clock_t clock() { return 0; }
+clock_t clock() { return CLOCKS_PER_SEC / 3; }
+extern uint8_t _initial_brk;
 void *realloc(void *ptr, size_t size)
 {
   static uint32_t a[1 << 20];
@@ -45,7 +47,11 @@ void *realloc(void *ptr, size_t size)
   memset(ret + osize, 0, size - osize);
   return ret;
 }
-void free(void *ptr)
+void *__wrap__malloc_r(void *_unused, size_t size)
+{
+  return realloc(0, size);
+}
+void __wrap__free_r(void *_unused, void *ptr)
 {
 }
 // void __aeabi_l2d() { }

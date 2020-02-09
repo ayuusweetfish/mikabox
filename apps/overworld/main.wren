@@ -1,6 +1,8 @@
 System.print("hello")
 System.print("world")
 
+var t1 = System.clock
+
 var ans = [
   "                                         .................::::::x;+ x           ",
   "                                        ....::.......:::..:::  xx               ",
@@ -69,3 +71,8 @@ for (yPixel in 0...24) {
 
   System.print("|")
 }
+
+var t2 = System.clock
+
+System.print(t1)
+System.print(t2)

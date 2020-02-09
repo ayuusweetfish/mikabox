@@ -13,4 +13,7 @@ SECTIONS
   _bss_begin = .;
   .bss : { *(.bss) }
   _bss_end = .;
+
+  . = ALIGN(4096);
+  _initial_brk = .;
 }

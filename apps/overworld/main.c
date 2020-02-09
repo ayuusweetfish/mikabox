@@ -65,6 +65,14 @@ void main()
 
   mika_log(0, "Hello world!\n");
 
+/*  int *a = malloc(64);
+  mika_printf("%p\n", a);
+  int *c = malloc(64);
+  mika_printf("%p\n", c);
+  int *b = realloc(a, 65536);
+  mika_printf("%p\n", b);
+  while (1) { }*/
+
   WrenConfiguration config;
   wrenInitConfiguration(&config);
   config.writeFn = &wren_write;
