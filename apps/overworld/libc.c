@@ -25,11 +25,11 @@ int printf(const char *format, ...)
 // void strncmp() { }
 // void strtod() { }
 // void strtoll() { }
-clock_t clock() { return CLOCKS_PER_SEC / 3; }
+clock_t clock() { return mika_wall() * CLOCKS_PER_SEC / 1000000; }
 extern uint8_t _initial_brk;
 void *realloc(void *ptr, size_t size)
 {
-  static uint32_t a[1 << 20];
+  static uint32_t a[1 << 20] __attribute__ ((aligned(8)));
   static uint32_t c = 0;
 
   uint32_t osize = (ptr == 0 ? 0 : *((uint32_t *)ptr - 1));

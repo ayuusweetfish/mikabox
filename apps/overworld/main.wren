@@ -74,5 +74,10 @@ for (yPixel in 0...24) {
 
 var t2 = System.clock
 
+var x = 0
+for (i in 0...1000000) { x = x + i }
+System.print(x)
+
 System.print(t1)
 System.print(t2)
+System.print(System.clock)

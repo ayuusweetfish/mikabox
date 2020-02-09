@@ -116,7 +116,7 @@ static void setup_audio()
 }
 
 // Time and events
-static double usec_rate;
+double usec_rate;
 
 static struct app_timer {
   uint64_t base;

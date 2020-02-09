@@ -219,6 +219,11 @@ def(GEN, 43, {
   printf("from syscall! %u\n", r0);
 })
 
+def(GEN, 128, {
+  uint64_t cur_time = ((uint64_t)*TMR_CHI << 32) | *TMR_CLO;
+  return cur_time;
+})
+
 def(GFX, 0, {
   size_t idx;
   v3d_ctx *c = pool_alloc(dual_sel(ctxs), &idx);

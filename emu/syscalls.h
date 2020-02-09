@@ -177,6 +177,11 @@ def(GEN, 7, {
   if (last != '\n') putchar('\n');
 })
 
+def(GEN, 128, {
+  extern double usec_rate;
+  return (uint64_t)(timer_current() * usec_rate);
+})
+
 def(GFX, 0, {
   size_t idx;
   v3d_ctx *c = pool_alloc(dual_sel(ctxs), &idx);

@@ -4,6 +4,9 @@
 extern unsigned char _bss_begin;
 extern unsigned char _bss_end;
 
+static WrenVM *vm;
+static char src[1048576];
+
 void crt_init()
 {
   unsigned char *begin = &_bss_begin, *end = &_bss_end;
@@ -78,9 +81,8 @@ void main()
   config.writeFn = &wren_write;
   config.errorFn = *wren_error;
 
-  WrenVM *vm = wrenNewVM(&config);
+  vm = wrenNewVM(&config);
 
-  char src[1048576];
   int f = fil_open("main.wren", FA_READ);
   int len = fil_size(f);
   if (len >= sizeof src) {
@@ -99,8 +101,6 @@ done:
   WrenInterpretResult result = wrenInterpret(
     vm, "mikabox_app_module", src);
   mika_printf("result: %d\n", (int)result);
-
-  wrenFreeVM(vm);
 
   syscall(0, draw, synth, event, update);
   mika_yield(1);
