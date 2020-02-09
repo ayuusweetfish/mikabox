@@ -215,11 +215,11 @@ def(GEN, 7, {
   if (last != '\n') _putchar('\n');
 })
 
-def(GEN, 43, {
-  printf("from syscall! %u\n", r0);
+def(GEN, 128, {
+  printf("Syscall with args: %u %u %u %u\n", r0, r1, r2, r3);
 })
 
-def(GEN, 128, {
+def(GEN, 129, {
   uint64_t cur_time = ((uint64_t)*TMR_CHI << 32) | *TMR_CLO;
   return cur_time;
 })

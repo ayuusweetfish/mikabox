@@ -1,17 +1,7 @@
 #include "mikabox.h"
 #include "wren.h"
 
-extern unsigned char _bss_begin;
-extern unsigned char _bss_end;
-
 static WrenVM *vm;
-static char src[1048576];
-
-void crt_init()
-{
-  unsigned char *begin = &_bss_begin, *end = &_bss_end;
-  while (begin < end) *begin++ = 0;
-}
 
 void draw()
 {
@@ -64,9 +54,7 @@ static void wren_error(WrenVM *vm, WrenErrorType type,
 
 void main()
 {
-  crt_init();
-
-  mika_log(0, "Hello world!\n");
+  syscall(128, 1, 2, 3, 4);
 
   WrenConfiguration config;
   wrenInitConfiguration(&config);
@@ -77,22 +65,24 @@ void main()
 
   int f = fil_open("main.wren", FA_READ);
   int len = fil_size(f);
-  if (len >= sizeof src) {
-    mika_printf("File too long (%u bytes)\n", len);
-    goto done;
+  char *src = malloc(len);
+  if (src == NULL) {
+    printf("Cannot allocate enough memory\n");
+    fil_close(f); while (1) { }
   }
   if (fil_read(f, src, len) < len) {
-    mika_printf("File read incomplete\n");
-    goto done;
+    printf("File read incomplete\n");
+    fil_close(f); while (1) { }
   }
   src[len] = '\0';
 
-done:
   fil_close(f);
 
   WrenInterpretResult result = wrenInterpret(
     vm, "mikabox_app_module", src);
-  mika_printf("result: %d\n", (int)result);
+  printf("result: %d\n", (int)result);
+
+  free(src);
 
   syscall(0, draw, synth, event, update);
   mika_yield(1);

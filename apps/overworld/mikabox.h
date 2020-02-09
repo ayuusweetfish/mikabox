@@ -149,7 +149,8 @@ def(5, l axes, i player)
 def(6, l rand)
 def(7, _ log, i level, cp str)
 
-def(128, l wall)
+def(128, _ test)
+def(129, l wall)
 
 #undef _group
 #define _group gfx

@@ -10,8 +10,7 @@ ARCH_FLAGS := -mfpu=vfp -mfloat-abi=hard -march=armv6k -mtune=arm1176jzf-s
 
 INCLUDES := -I./wren/src/include
 DEFINES := -DWREN_OPT_META=0 -DWREN_OPT_RANDOM=0
-SRCS := $(wildcard **.[Sc]) $(wildcard wren/src/vm/**.c)
-#SRCS := $(wildcard **.[Sc]) $(wildcard printf/**.c) $(wildcard wren/src/vm/**.c)
+SRCS := $(wildcard **.c) $(wildcard wren/src/vm/**.c)
 
 CFLAGS := $(ARCH_FLAGS) -std=c99 -O2 $(DEFINES) $(INCLUDES) -fno-builtin-printf -fno-builtin-malloc -fno-builtin-realloc
 LDFLAGS := $(ARCH_FLAGS) -nostartfiles -lm -Wl,-z,max-page-size=4096 -Wl,--gc-sections
@@ -24,11 +23,6 @@ OBJS := $(addprefix $(BUILD_DIR)/, $(OBJS))
 APP := $(BUILD_DIR)/a.out
 
 all: $(APP)
-
-$(BUILD_DIR)/%.o: %.S
-	@ printf "  %-7s %-16s %s\n" AS $(notdir $<) "$(C_OPTIONS)"
-	$(V) mkdir -p $(BUILD_DIR)/$(dir $<)
-	$(V) $(CC) -c $< -o $@ $(CFLAGS)
 
 $(BUILD_DIR)/%.o: %.c
 	@ printf "  %-7s %-16s %s\n" CC $(notdir $<) "$(C_OPTIONS)"

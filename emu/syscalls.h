@@ -178,6 +178,10 @@ def(GEN, 7, {
 })
 
 def(GEN, 128, {
+  printf("Syscall with args: %u %u %u %u\n", r0, r1, r2, r3);
+})
+
+def(GEN, 129, {
   extern double usec_rate;
   return (uint64_t)(timer_current() * usec_rate);
 })

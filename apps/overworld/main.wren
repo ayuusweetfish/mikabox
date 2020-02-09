@@ -1,83 +1,18 @@
-System.print("hello")
-System.print("world")
-
-var t1 = System.clock
-
-var ans = [
-  "                                         .................::::::x;+ x           ",
-  "                                        ....::.......:::..:::  xx               ",
-  "                                        ......:;:;;:;;x;;X::;;=                 ",
-  "               .                       ...........::&+x    x=                   ",
-  "               .......                ............:::+                          ",
-  "               ...;........         ...............:::;;+&                      ",
-  "               ....:;.........................;:.::=;;;                         ",
-  "               ....::;.............;............:+xx                            ",
-  "                .......:...........+............:::;+                           ",
-  "                ........:;::..:...::+:..:;:...:::+                              ",
-  "                ......:::+;:;:;:;::+ ;::X&::;:::;; $                            ",
-  "               ..........:::;+ $=+ =    X   ;:::;;$                             ",
-  "  ..............:......:::::;X                $;;+&                             ",
-  "...:.............::.:..::;=                     =X                              ",
-  "..................:;;::X;;                       X                              ",
-  "....:.:...:....::::;;=    $                                                     ",
-  "                                                                                ",
-  "....:.:...:....::::;;=    $                                                     ",
-  "..................:;;::X;;                       X                              ",
-  "...:.............::.:..::;=                     =X                              ",
-  "  ..............:......:::::;X                $;;+&                             ",
-  "               ..........:::;+ $=+ =    X   ;:::;;$                             ",
-  "                ......:::+;:;:;:;::+ ;::X&::;:::;; $                            ",
-  "                ........:;::..:...::+:..:;:...:::+                              ",
-]
-
-// examples/mandelbrot.wren
-
-var yMin = -0.2
-var yMax = 0.1
-var xMin = -1.5
-var xMax = -1.1
-
-for (yPixel in 0...24) {
-  var y = (yPixel / 24) * (yMax - yMin) + yMin
-  for (xPixel in 8...80) {
-    var x = (xPixel / 79) * (xMax - xMin) + xMin
-    var pixel = " "
-    var x0 = x
-    var y0 = y
-    for (iter in 0...80) {
-      var x1 = (x0 * x0) - (y0 * y0)
-      var y1 = 2 * x0 * y0
-
-      // Add the seed.
-      x1 = x1 + x
-      y1 = y1 + y
-
-      x0 = x1
-      y0 = y1
-
-      // Stop if the point escaped.
-      var d = (x0 * x0) + (y0 * y0)
-      if (d > 4) {
-        pixel = " .:;+=xX$&"[(iter / 8).floor]
-        break
-      }
-    }
-
-    System.write(pixel)
-    if (pixel != ans[yPixel][xPixel]) {
-      System.write("\n ['%(pixel)', '%(ans[yPixel][xPixel])']")
-    }
+class App {
+  construct new() {
+    System.print("hello")
   }
 
-  System.print("|")
+  init() {
+    System.print("world")
+  }
+
+  update() {
+    while (true) {
+      System.print("hahaha")
+      Fiber.yield(true)
+    }
+  }
 }
 
-var t2 = System.clock
-
-var x = 0
-for (i in 0...1000000) { x = x + i }
-System.print(x)
-
-System.print(t1)
-System.print(t2)
-System.print(System.clock)
+System.print("heya")

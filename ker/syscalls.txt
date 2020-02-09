@@ -9,7 +9,8 @@ num #in #ou desc
 5   1   1   Get axes for a player
 6   0   1   Get a 64-bit random number
 7   2   0   Log
-128 0   1   Get wall clock (debug only)
+128 4   0   Syscall testing endpoint (debug only)
+129 0   1   Get wall clock (debug only)
 
 +256: Graphics
 0   0   1   Create context
