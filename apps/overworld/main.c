@@ -64,7 +64,7 @@ void main()
 
   int f = fil_open("main.wren", FA_READ);
   int len = fil_size(f);
-  char *src = malloc(len);
+  char *src = malloc(len + 1);
   if (src == NULL) {
     printf("Cannot allocate enough memory\n");
     fil_close(f); while (1) { }

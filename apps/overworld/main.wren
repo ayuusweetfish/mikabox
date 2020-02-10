@@ -83,8 +83,7 @@ class App {
     Mikabox.log(2, "hi")
     while (true) {
       i = i + 1
-      // Mikabox.log(3, "update %(Mikabox.btns(0))")
-      Mikabox.log(3, "update")
+      Mikabox.log(3, "update %(Mikabox.btns(0))")
       Fiber.yield(i % 3 == 0)
     }
   }
