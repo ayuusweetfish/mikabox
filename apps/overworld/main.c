@@ -2,36 +2,29 @@
 #include "wren.h"
 
 static WrenVM *vm;
-static WrenHandle *obj_app;
-static WrenHandle *fiber_update;
 
-void draw()
-{
-  while (1) {
-    mika_yield(1);
-  }
+#define wren_routine(_name) \
+void _name() \
+{ \
+  wrenEnsureSlots(vm, 2); \
+  wrenGetVariable(vm, "mikabox_app_module", #_name, 0); \
+  WrenHandle *fiber = wrenGetSlotHandle(vm, 0); \
+  WrenHandle *method = wrenMakeCallHandle(vm, "call()"); \
+ \
+  while (1) { \
+    wrenEnsureSlots(vm, 2); \
+    wrenSetSlotHandle(vm, 0, fiber); \
+    WrenInterpretResult result = wrenCall(vm, method); \
+    if (result != WREN_RESULT_SUCCESS) while (1) { } \
+    bool b = wrenGetSlotBool(vm, 0); \
+    mika_yield((int)b); \
+  } \
 }
 
-void synth()
-{
-  while (1) {
-    mika_yield(1);
-  }
-}
-
-void event()
-{
-  while (1) {
-    mika_yield(1);
-  }
-}
-
-void update()
-{
-  while (1) {
-    mika_yield(1);
-  }
-}
+wren_routine(draw)
+wren_routine(synth)
+wren_routine(event)
+wren_routine(update)
 
 static void wren_write(WrenVM *vm, const char *text)
 {
@@ -84,35 +77,6 @@ void main()
 
   // Trap on failure
   if (result != WREN_RESULT_SUCCESS) while (1) { }
-
-  wrenEnsureSlots(vm, 1);
-  wrenGetVariable(vm, "mikabox_app_module", "App", 0);
-  WrenHandle *class_app = wrenGetSlotHandle(vm, 0);
-  WrenHandle *method_new = wrenMakeCallHandle(vm, "new()");
-
-  wrenSetSlotHandle(vm, 0, class_app);
-  result = wrenCall(vm, method_new);
-  if (result != WREN_RESULT_SUCCESS) while (1) { }
-
-  obj_app = wrenGetSlotHandle(vm, 0);
-  wrenReleaseHandle(vm, class_app);
-  wrenReleaseHandle(vm, method_new);
-
-  /*result = wrenInterpret(vm, "mikabox_host_module",
-    "var update = Fiber.new {|a| a.update()}\n");
-  if (result != WREN_RESULT_SUCCESS) while (1) { }*/
-
-  wrenGetVariable(vm, "mikabox_app_module", "update", 0);
-  fiber_update = wrenGetSlotHandle(vm, 0);
-  WrenHandle *method_call = wrenMakeCallHandle(vm, "call(_)");
-
-  wrenEnsureSlots(vm, 2);
-  for (int i = 0; i < 10; i++) {
-    wrenSetSlotHandle(vm, 0, fiber_update);
-    wrenSetSlotHandle(vm, 1, obj_app);
-    result = wrenCall(vm, method_call);
-    if (result != WREN_RESULT_SUCCESS) while (1) { }
-  }
 
   syscall(0, draw, synth, event, update);
   mika_yield(1);
