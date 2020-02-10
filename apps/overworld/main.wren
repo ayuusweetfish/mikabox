@@ -1,3 +1,7 @@
+class Mikabox {
+  foreign static btns(player)
+}
+
 class App {
   construct new() {
     System.print("world")
@@ -19,7 +23,7 @@ class App {
     var i = 0
     while (true) {
       i = i + 1
-      System.print("update %(i)")
+      System.print("update %(Mikabox.btns(0))")
       Fiber.yield(i % 3 == 0)
     }
   }

@@ -1,0 +1,81 @@
+0, == mika ==
+
+0, _   rout, cptr c1, cptr c2, cptr c3, cptr c4
+1, _   yield, u32 clear
+2, u64 tick
+3, u32 party
+4, u64 btns, u32 player
+5, u64 axes, u32 player
+6, u64 rand
+7, _   log, u32 level, cptr str
+
+128, _   test
+129, u64 wall
+
+256, == gfx ==
+
+ 0, u32 ctx_create
+ 1, _   ctx_reset, u32 ctx, u32 target, u32 clear
+ 2, _   ctx_batch, u32 ctx, u32 bat
+ 3, _   ctx_call, u32 ctx, u32 is_indexed, u32 num_verts, u32 start_or_idxbuf
+ 4, _   ctx_issue, u32 ctx
+ 5, _   ctx_wait, u32 ctx
+15, _   ctx_close, u32 ctx
+
+16, u32 tex_create, u32 width, u32 height
+17, _   tex_update, u32 tex, cptr pixels, u32 format
+18, u32 tex_screen
+31, _   tex_close, u32 tex
+
+32, u32 varr_create, u32 num_verts, u32 num_varyings
+33, _   varr_put, u32 varr, u32 start, cptr verts, u32 num
+47, _   varr_close, u32 varr
+
+48, u32 uarr_create, u32 num_uniforms
+49, _   uarr_putu32, u32 uarr, u32 index, u32 value
+50, _   uarr_puttex, u32 uarr, u32 index, u32 tex, u32 config
+63, _   uarr_close, u32 uarr
+
+64, u32 shad_create, cptr code
+79, _   shad_close, u32 shad
+
+80, u32 bat_create, u32 varr, u32 uarr, u32 shad
+95, _   bat_close, u32 bat
+
+96, u32 iarr_create, u32 num
+97, u32 iarr_put, u32 iarr, u32 start, cptr idxs, u32 num
+111, u32 iarr_close, u32 iarr
+
+512, == fil ==
+
+ 0, u32 open, cptr path, u32 flags
+ 1, _   close, u32 f
+ 2, u32 read, u32 f, ptr buf, u32 len
+ 3, u32 write, u32 f, cptr buf, u32 len
+ 4, _   seek, u32 f, u32 pos
+ 5, _   trunc, u32 f
+ 6, _   flush, u32 f
+ 7, u32 tell, u32 f
+ 8, u32 eof, u32 f
+ 9, u32 size, u32 f
+10, u32 err, u32 f
+16, u32 opendir, cptr path
+17, _   closedir, u32 d
+18, u32 readdir, u32 d, ptr name
+32, u32 stat, cptr path
+33, _   unlink, cptr path
+34, _   rename, cptr path_old, cptr path_new
+35, _   mkdir, cptr path
+
+768, == aud ==
+
+0, u32 blocksize
+1, u32 dropped
+2, _   write, ptr buf
+
+3840, == ovw ==
+
+0, u32 start, cptr path
+1, _   stop
+2, u32 paused
+3, _   resume

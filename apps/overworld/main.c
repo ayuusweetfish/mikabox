@@ -1,5 +1,6 @@
 #include "mikabox.h"
 #include "wren.h"
+#include <string.h>
 
 static WrenVM *vm;
 
@@ -47,12 +48,33 @@ static void wren_error(WrenVM *vm, WrenErrorType type,
   printf("%s:%d: %s\n", module, line, message);
 }
 
+static void mikabox_wren_api_btns(WrenVM *vm)
+{
+  if (wrenGetSlotType(vm, 1) != WREN_TYPE_NUM)
+    printf("Argument 1 has incorrect type");
+  double arg1 = wrenGetSlotDouble(vm, 1);
+
+  double ret = (double)mika_btns((int)arg1);
+  wrenSetSlotDouble(vm, 0, ret);
+}
+
+static WrenForeignMethodFn wren_bind_method(WrenVM *vm, const char *module,
+  const char *class_name, bool is_static, const char *signature)
+{
+  if (is_static && strcmp(class_name, "Mikabox") == 0 &&
+      strcmp(signature, "btns(_)") == 0)
+    return mikabox_wren_api_btns;
+
+  return NULL;
+}
+
 void main()
 {
   WrenConfiguration config;
   wrenInitConfiguration(&config);
-  config.writeFn = &wren_write;
-  config.errorFn = *wren_error;
+  config.writeFn = wren_write;
+  config.errorFn = wren_error;
+  config.bindForeignMethodFn = wren_bind_method;
 
   vm = wrenNewVM(&config);
 
@@ -78,6 +100,6 @@ void main()
   // Trap on failure
   if (result != WREN_RESULT_SUCCESS) while (1) { }
 
-  syscall(0, draw, synth, event, update);
+  mika_rout(draw, synth, event, update);
   mika_yield(1);
 }
