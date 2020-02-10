@@ -82,16 +82,20 @@ $1 ~ /^ *[0-9]+ *$/ {
       printf("static void wren_%s(WrenVM *vm)\n", scope "_" name[0])
       printf("{\n")
       for (i = 1; i <= argc; i++) {
-        printf("  if (wrenGetSlotType(vm, %d) != WREN_TYPE_NUM)\n", i)
+        wren_type_1 = (type[i] ~ "ptr" ? "STRING" : "NUM")
+        wren_type_2 = (type[i] ~ "ptr" ? "String" : "Double")
+        c_type = (type[i] ~ "ptr" ? "const void *" : "double ")
+        printf("  if (wrenGetSlotType(vm, %d) != WREN_TYPE_%s)\n", i, wren_type_1)
         printf("    printf(\"Argument %d has incorrect type\");\n", i)
-        printf("  double %s = wrenGetSlotDouble(vm, %d);\n\n", name[i], i)
+        printf("  %s%s = wrenGetSlot%s(vm, %d);\n\n",
+          c_type, name[i], wren_type_2, i)
       }
       printf("  ")
       if (type[0] != "_") printf("double ret = (double)")
       printf("%s_%s(", scope, name[0])
       for (i = 1; i <= argc; i++) {
         if (i > 1) printf(", ")
-        printf("(%s)(uint32_t)%s", type_c[type[i]], name[i])
+        printf("(%s)%s", type_c[type[i]], name[i])
       }
       printf(");\n")
       if (type[0] != "_") printf("  wrenSetSlotDouble(vm, 0, ret);\n")
