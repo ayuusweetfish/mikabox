@@ -2,6 +2,25 @@
 #include "wren.h"
 #include <string.h>
 
+static char *read_file(const char *path)
+{
+  int f = fil_open(path, FA_READ);
+  int len = fil_size(f);
+  char *buf = malloc(len + 1);
+  if (buf == NULL) {
+    printf("Cannot allocate enough memory\n");
+    fil_close(f); return NULL;
+  }
+  if (fil_read(f, buf, len) < len) {
+    printf("File read incomplete\n");
+    fil_close(f); return NULL;
+  }
+  buf[len] = '\0';
+
+  fil_close(f);
+  return buf;
+}
+
 static WrenVM *vm;
 
 #define wren_routine(_name) \
@@ -48,6 +67,28 @@ static void wren_error(WrenVM *vm, WrenErrorType type,
   printf("%s:%d: %s\n", module, line, message);
 }
 
+extern const char *wren_mikabox_def;
+
+static char *wren_load_module(WrenVM *vm, const char *name)
+{
+  // asprintf and strdup are non-standard
+
+  if (strcmp(name, "mikabox") == 0) {
+    size_t length = strlen(wren_mikabox_def);
+    char *copy = malloc(length + 1);
+    memcpy(copy, wren_mikabox_def, length + 1);
+    return copy;
+  }
+
+  size_t length = strlen(name);
+  char *path = malloc(length + 7);
+  sprintf(path, "/%s.wren", name);
+  char *buf = read_file(path);
+
+  free(path);
+  return buf;
+}
+
 // wren_bind.c
 WrenForeignMethodFn wren_bind_method(WrenVM *vm, const char *module,
   const char *class_name, bool is_static, const char *signature);
@@ -58,24 +99,13 @@ void main()
   wrenInitConfiguration(&config);
   config.writeFn = wren_write;
   config.errorFn = wren_error;
+  config.loadModuleFn = wren_load_module;
   config.bindForeignMethodFn = wren_bind_method;
 
   vm = wrenNewVM(&config);
 
-  int f = fil_open("main.wren", FA_READ);
-  int len = fil_size(f);
-  char *src = malloc(len + 1);
-  if (src == NULL) {
-    printf("Cannot allocate enough memory\n");
-    fil_close(f); while (1) { }
-  }
-  if (fil_read(f, src, len) < len) {
-    printf("File read incomplete\n");
-    fil_close(f); while (1) { }
-  }
-  src[len] = '\0';
-
-  fil_close(f);
+  char *src = read_file("/main.wren");
+  if (src == NULL) while (1) { }
 
   WrenInterpretResult result = wrenInterpret(
     vm, "mikabox_app_module", src);
