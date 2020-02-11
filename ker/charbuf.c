@@ -145,9 +145,19 @@ void _charbuf_flush()
 
 void charbuf_flush()
 {
-  __asm__ __volatile__ ("vpush {d0-d7}" ::: "sp");
+  __asm__ __volatile__ (
+    "vpush {d0-d7}\n"
+    "fmrx  r0, fpexc\n"
+    "fmrx  r1, fpscr\n"
+    "push  {r0-r1}\n"
+    ::: "sp");
   _charbuf_flush();
-  __asm__ __volatile__ ("vpop {d0-d7}" ::: "sp");
+  __asm__ __volatile__ (
+    "pop   {r0-r1}\n"
+    "fmxr  fpexc, r0\n"
+    "fmxr  fpscr, r1\n"
+    "vpop  {d0-d7}\n"
+    ::: "sp");
 }
 
 void charbuf_invalidate()

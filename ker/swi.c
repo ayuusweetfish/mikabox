@@ -21,7 +21,7 @@ uint64_t swi_handler(uint32_t r0, uint32_t r1, uint32_t r2, uint32_t r3)
 
   syscall_fn_t fn = fn_table[num & 4095];
 
-  uint32_t ret = 0;
+  uint64_t ret = 0;
   if (fn != NULL) ret = (*fn)(r0, r1, r2, r3);
   //if (ret != 0 && num != 1 && num != 4 && (num < 256 + 1 || num > 256 + 5) && num != 256 + 18)
   //  printf("call %u: returned %u\n", num, ret);

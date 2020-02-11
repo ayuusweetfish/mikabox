@@ -1,19 +1,18 @@
 System.print("uwu")
 
+var F
+
 class App {
-  a {
-    return _a
-  }
+  static f { F }
+  static f=(value) { F = value }
 }
 
 var synth = Fiber.new {
-  while (true) Fiber.yield(true)
+  while (true) {
+    Fiber.yield(true)
+  }
 }
 
 var event = Fiber.new {
-  while (true) Fiber.yield(true)
-}
-
-var update = Fiber.new {
   while (true) Fiber.yield(true)
 }

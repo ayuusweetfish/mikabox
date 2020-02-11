@@ -26,7 +26,7 @@ void *_sbrk(intptr_t increment)
   static intptr_t brkdiff = 0;
   void *ret = &_initial_brk + brkdiff;
   if ((brkdiff += increment) < 0) brkdiff = 0;
-  printf("%p (%d)\n", ret, (int)brkdiff);
+  //printf("%p (%d)\n", ret, (int)brkdiff);
   return ret;
 }
 

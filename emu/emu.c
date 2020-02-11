@@ -385,7 +385,7 @@ void *vsync_fn(void *_unused)
   while (1) {
     if (!__atomic_test_and_set(&render_sem, __ATOMIC_RELAXED)) {
       glfwSwapBuffers(window);
-      usleep(8000);
+      usleep(2000);
       __atomic_clear(&vsync_sem, __ATOMIC_RELAXED);
     }
     usleep(1000);

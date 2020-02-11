@@ -201,9 +201,10 @@ def(GEN, 5, {
 
 def(GEN, 6, {
   mem_barrier();
-  uint32_t data = *RNG_DATA;
+  uint32_t dlo = *RNG_DATA;
+  uint32_t dhi = *RNG_DATA;
   mem_barrier();
-  return (uint64_t)data | 0x100000000LL;
+  return ((uint64_t)dhi << 32) | dlo;
 })
 
 def(GEN, 7, {
