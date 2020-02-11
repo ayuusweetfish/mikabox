@@ -103,10 +103,10 @@ void vsync_callback(void *_unused)
   fb_flip_buffer();
   frame_count++;
 */
+  flipped = true;
   if (!is_in_abt && app_fb_buf != 0) return;
   if (is_in_abt) charbuf_flush();
   fb_flip_buffer();
-  flipped = true;
 }
 
 static void kbd_upd_callback(uint8_t mod, const uint8_t k[6])
@@ -451,16 +451,15 @@ void sys_main()
     int bank = ((program_name[0] == '\0' || program_paused) ? 0 : 4);
     struct app_timer *timer = (bank == 0 ? &timer_o : &timer_a);
 
-    app_fb_buf = (uint32_t)fb_buf;
-
     for (int8_t i = 3; i >= 0; i--) if (req_flags & (1 << i)) {
       mem_barrier();
       routine_id = bank + i;
       app_tick = app_timer_update(timer);
+      if (i == 0) app_fb_buf = (uint32_t)fb_buf;
       co_next(&user_co[bank + i]);
+      if (i == 0) app_fb_buf = 0;
     }
 
-    app_fb_buf = 0;
     uint64_t global_tick = app_timer_update(&timer_g);
     //printf("%8llu %8llu\n", global_tick, app_tick);
 
@@ -480,7 +479,7 @@ void sys_main()
 
     if (flipped) {
       flipped = false;
-      next_draw_req = global_tick + 12000;
+      next_draw_req = global_tick + 2000;
     }
     if (next_draw_req < global_tick) {
       next_draw_req = (uint64_t)-1;
