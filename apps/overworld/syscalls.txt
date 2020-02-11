@@ -28,7 +28,7 @@
 31, _   tex_close, u32 tex
 
 32, u32 varr_create, u32 num_verts, u32 num_varyings
-33, _   varr_put, u32 varr, u32 start, cptr verts, u32 num
+33, _   varr_put, u32 varr, u32 start, cptr verts f32, u32 num
 47, _   varr_close, u32 varr
 
 48, u32 uarr_create, u32 num_uniforms
@@ -43,7 +43,7 @@
 95, _   bat_close, u32 bat
 
 96, u32 iarr_create, u32 num
-97, u32 iarr_put, u32 iarr, u32 start, cptr idxs, u32 num
+97, u32 iarr_put, u32 iarr, u32 start, cptr idxs u16, u32 num
 111, u32 iarr_close, u32 iarr
 
 512, == fil ==

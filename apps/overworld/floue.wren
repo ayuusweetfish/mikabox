@@ -55,12 +55,27 @@ class Floue {
   }
 
   draw(ctx) {
-    var vs = List.filled(48, 0)
+    var vs = List.filled(49 * 6, 0)
 
     for (s in _spots) {
       // Draw a spotlight
-      for (i in 0...48) {
-        vs[i] = i
+      var x = s.x
+      var y = s.y
+      var r = s.r * 800
+      vs[0] = x * 800
+      vs[1] = y * 480
+      vs[2] = 0
+      vs[3] = 0
+      vs[4] = 0
+      vs[5] = 1
+      for (i in 1..48) {
+        var a = Num.pi * 2 / 48 * i
+        vs[i * 6 + 0] = x * 800 + r * a.cos
+        vs[i * 6 + 1] = y * 480 + r * a.sin
+        vs[i * 6 + 2] = 0
+        vs[i * 6 + 3] = 0
+        vs[i * 6 + 4] = 0
+        vs[i * 6 + 5] = 1
       }
     }
     Mikabox.gfxVarrPut(_varr, 0, vs, 48)

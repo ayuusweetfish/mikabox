@@ -5,8 +5,10 @@ BEGIN {
   FS = ","
 
   type_c["_"] = "void"
+  type_c["u16"] = "uint16_t"
   type_c["u32"] = "uint32_t"
   type_c["u64"] = "uint64_t"
+  type_c["f32"] = "float"
   type_c["ptr"] = "void *"
   type_c["cptr"] = "const void *"
 
@@ -54,9 +56,10 @@ $1 ~ /^ *[0-9]+ *$/ {
     name[0] = def[2]
 
     for (i = 3; i <= NF; i++)
-      if (split($i, arg, " ") == 2) {
+      if (split($i, arg, " ") >= 2) {
         type[i - 2] = arg[1]
         name[i - 2] = arg[2]
+        aux[i - 2] = arg[3]
       }
     argc = NF - 2
 
@@ -86,13 +89,26 @@ $1 ~ /^ *[0-9]+ *$/ {
       printf("static void wren_%s(WrenVM *vm)\n", scope "_" name[0])
       printf("{\n")
       for (i = 1; i <= argc; i++) {
-        wren_type_1 = (type[i] ~ "ptr" ? "STRING" : "NUM")
-        wren_type_2 = (type[i] ~ "ptr" ? "String" : "Double")
-        c_type = (type[i] ~ "ptr" ? "const void *" : "double ")
+        is_ptr = (type[i] ~ "ptr")
+        has_aux = is_ptr && (aux[i] != "")
+        wren_type_1 = (is_ptr ? (has_aux ? "LIST" : "STRING") : "NUM")
         printf("  if (wrenGetSlotType(vm, %d) != WREN_TYPE_%s)\n", i, wren_type_1)
         printf("    printf(\"Argument %d has incorrect type\");\n", i)
-        printf("  %s%s = wrenGetSlot%s(vm, %d);\n\n",
-          c_type, name[i], wren_type_2, i)
+        if (has_aux) {
+          elm_type = type_c[aux[i]]
+          printf("  wrenEnsureSlots(vm, %d);\n", argc + 1)
+          printf("  int n%d = wrenGetListCount(vm, %d);\n", i, i)
+          printf("  %s *%s = malloc(sizeof(%s) * n%d);\n", elm_type, name[i], elm_type, i)
+          printf("  for (int i = 0; i < n%d; i++) {\n", i)
+          printf("    wrenGetListElement(vm, %d, i, %d);\n", i, argc + 1)
+          printf("    %s[i] = (%s)wrenGetSlotDouble(vm, %d);\n", name[i], elm_type, argc + 1)
+          printf("  }\n\n")
+        } else {
+          wren_type_2 = (is_ptr ? "String" : "Double")
+          c_type = (is_ptr ? "const void *" : "double ")
+          printf("  %s%s = wrenGetSlot%s(vm, %d);\n\n",
+            c_type, name[i], wren_type_2, i)
+        }
       }
       printf("  ")
       if (type[0] != "_") printf("double ret = (double)")
