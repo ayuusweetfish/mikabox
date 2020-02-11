@@ -119,6 +119,10 @@ $1 ~ /^ *[0-9]+ *$/ {
       }
       printf(");\n")
       if (type[0] != "_") printf("  wrenSetSlotDouble(vm, 0, ret);\n")
+      for (i = 1; i <= argc; i++)
+        if (type[i] ~ "ptr" && aux[i]) {
+          printf("  free(%s);\n", name[i])
+        }
       printf("}\n\n")
     } else if (output == "wren2") {
       printf("    if (strcmp(signature, \"%s(",

@@ -101,7 +101,7 @@ void main()
   config.errorFn = wren_error;
   config.loadModuleFn = wren_load_module;
   config.bindForeignMethodFn = wren_bind_method;
-  config.initialHeapSize = 1048576;
+  config.initialHeapSize = 4 << 20;
 
   vm = wrenNewVM(&config);
 
