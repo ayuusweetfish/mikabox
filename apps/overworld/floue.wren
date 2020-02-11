@@ -108,7 +108,14 @@ class Floue {
       Mikabox.gfxVarrPut(_varr, i * 49, vs, 49)
     }
 
+    /*Mikabox.gfxVarrPut(_varr, 0, [
+      300, 700, 1, 0, 1, 1,
+      100, 200, 1, 0, 1, 1,
+      500, 200, 1, 1, 1, 1
+    ], 3)*/
+
     Mikabox.gfxCtxBatch(ctx, _bat)
     Mikabox.gfxCtxCall(ctx, 1, _n * 48 * 3, _iarr)
+    //Mikabox.gfxCtxCall(ctx, 1, 3, _iarr)
   }
 }

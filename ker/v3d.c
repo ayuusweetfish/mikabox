@@ -295,8 +295,8 @@ void v3d_vertarr_put(
 
   for (uint32_t i = 0; i < num; i++) {
     const v3d_vert *vert = (const v3d_vert *)q;
-    _putu16(&p, (uint16_t)(vert->x * 16 + 0.5f));
-    _putu16(&p, (uint16_t)(vert->y * 16 + 0.5f));
+    _putu16(&p, (int16_t)(vert->x * 16 + 0.5f));
+    _putu16(&p, (int16_t)(vert->y * 16 + 0.5f));
     _putf32(&p, 1.0f);
     _putf32(&p, 1.0f);
     for (uint32_t j = 0; j < num_varyings; j++)
