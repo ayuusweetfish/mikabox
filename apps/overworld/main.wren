@@ -1,38 +1,18 @@
 import "mikabox" for Mikabox
-import "uwu"
+import "uwu" for App, synth, event, update
+import "floue" for Floue
 
-class App {
-  construct new() {
-    System.print("world")
-  }
+var draw = Fiber.new {
+  var ctx = Mikabox.gfxCtxCreate()
+  var f = Floue.new(1)
+  while (true) {
+    Mikabox.gfxCtxWait(ctx)
+    Mikabox.gfxCtxReset(ctx, Mikabox.gfxTexScreen(), 0xffffffdd)
 
-  draw() {
-    while (true) Fiber.yield(true)
-  }
+    f.tick(0.016)
+    f.draw(ctx)
 
-  synth() {
-    while (true) Fiber.yield(true)
-  }
-
-  event() {
-    while (true) Fiber.yield(true)
-  }
-
-  update() {
-    var i = 0
-    Mikabox.log(2, "hi")
-    while (true) {
-      i = i + 1
-      Mikabox.log(3, "update %(Mikabox.btns(0))")
-      Fiber.yield(i % 3 == 0)
-    }
+    Mikabox.gfxCtxIssue(ctx)
+    Fiber.yield(true)
   }
 }
-
-System.print("hello")
-
-var app = App.new()
-var draw = Fiber.new {app.draw()}
-var synth = Fiber.new {app.synth()}
-var event = Fiber.new {app.event()}
-var update = Fiber.new {app.update()}
