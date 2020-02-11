@@ -39,15 +39,31 @@ class FloueSpotlight {
 
 class Floue {
   construct new(n) {
+    _n = n
+
     _spots = []
     for (i in 0...n) {
-      _spots.add(FloueSpotlight.new(0.5, 0.5, 0.1, 0xffffffff))
+      _spots.add(FloueSpotlight.new(Rand.call(0, 1), Rand.call(0, 1), 0.1, 0xffffffff))
     }
 
-    _varr = Mikabox.gfxVarrCreate(48, 4)
+    _varr = Mikabox.gfxVarrCreate(n * 49, 4)
     _uarr = Mikabox.gfxUarrCreate(0)
     _shad = Mikabox.gfxShadCreate("#CA")
     _bat = Mikabox.gfxBatCreate(_varr, _uarr, _shad)
+
+    _iarr = Mikabox.gfxIarrCreate(n * 48 * 3)
+
+    var idxs = List.filled(n * 48 * 3, 0)
+    for (i in 0...n) {
+      var base = i * 48 * 3
+      var vbase = i * 49
+      for (j in 0..47) {
+        idxs[base + j * 3 + 0] = vbase + 0
+        idxs[base + j * 3 + 1] = vbase + j + 1
+        idxs[base + j * 3 + 2] = vbase + (j + 1) % 48 + 1
+      }
+    }
+    Mikabox.gfxIarrPut(_iarr, 0, idxs, n * 48 * 3)
   }
 
   tick(dt) {
@@ -57,7 +73,8 @@ class Floue {
   draw(ctx) {
     var vs = List.filled(49 * 6, 0)
 
-    for (s in _spots) {
+    for (i in 0..._n) {
+      var s = _spots[i]
       // Draw a spotlight
       var x = s.x
       var y = s.y
@@ -65,22 +82,22 @@ class Floue {
       vs[0] = x * 800
       vs[1] = y * 480
       vs[2] = 0
-      vs[3] = 0
-      vs[4] = 0
+      vs[3] = i
+      vs[4] = i
       vs[5] = 1
-      for (i in 1..48) {
-        var a = Num.pi * 2 / 48 * i
-        vs[i * 6 + 0] = x * 800 + r * a.cos
-        vs[i * 6 + 1] = y * 480 + r * a.sin
-        vs[i * 6 + 2] = 0
-        vs[i * 6 + 3] = 0
-        vs[i * 6 + 4] = 0
-        vs[i * 6 + 5] = 1
+      for (j in 1..48) {
+        var a = Num.pi * 2 / 48 * j
+        vs[j * 6 + 0] = x * 800 + r * a.cos
+        vs[j * 6 + 1] = y * 480 + r * a.sin
+        vs[j * 6 + 2] = 0
+        vs[j * 6 + 3] = i
+        vs[j * 6 + 4] = i
+        vs[j * 6 + 5] = 1
       }
+      Mikabox.gfxVarrPut(_varr, i * 49, vs, 49)
     }
-    Mikabox.gfxVarrPut(_varr, 0, vs, 48)
 
     Mikabox.gfxCtxBatch(ctx, _bat)
-    Mikabox.gfxCtxCall(ctx, 0, 48, 0)
+    Mikabox.gfxCtxCall(ctx, 1, _n * 48 * 3, _iarr)
   }
 }
