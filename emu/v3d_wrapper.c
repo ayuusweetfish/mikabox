@@ -375,12 +375,27 @@ void v3d_batch_close(v3d_batch *b)
 
 v3d_ctx v3d_ctx_create()
 {
-  return (v3d_ctx){};
+  return (v3d_ctx){
+    .changes = malloc(8 * sizeof(struct v3d_ctx_change)),
+    .num_changes = 0,
+    .cap_changes = 8
+  };
+}
+
+static inline void v3d_ctx_add_change(v3d_ctx *c, struct v3d_ctx_change ch)
+{
+  if (c->num_changes >= c->cap_changes) {
+    c->cap_changes <<= 1;
+    c->changes = realloc(c->changes, c->cap_changes * sizeof(struct v3d_ctx_change));
+  }
+  c->changes[c->num_changes++] = ch;
 }
 
 void v3d_ctx_anew(v3d_ctx *c, v3d_tex target, uint32_t clear)
 {
   c->target = target;
+  c->clear = clear;
+  c->num_changes = 0;
 
   glClearColor(
     ((clear >> 16) & 0xff) / 255.0f,
@@ -392,69 +407,87 @@ void v3d_ctx_anew(v3d_ctx *c, v3d_tex target, uint32_t clear)
 
 void v3d_ctx_use_batch(v3d_ctx *c, const v3d_batch *batch)
 {
-  // Use vertex and shader states
-  glBindVertexArray(batch->vao_id);
-  glUseProgram(batch->prog_id);
-
-  // Activate textures
-  for (int i = 0; i < batch->unifarr.num; i++) {
-    /*printf("%d %s %u\n", i,
-      batch->unifarr.data[i].is_tex ? "tex" : "norm",
-      batch->unifarr.data[i].u32);*/
-    if (batch->unifarr.data[i].is_tex) {
-      // TODO: Support multiple textures
-      glActiveTexture(GL_TEXTURE0);
-      glBindTexture(GL_TEXTURE_2D, batch->unifarr.data[i].tex_id);
-      glUniform1i(glGetUniformLocation(batch->prog_id, "tex"), 0);
-      i++;
-      // TODO: Border colour for clamp-to-border warp mode
-      uint8_t cfg = batch->unifarr.data[i].tex_cfg;
-      GLint arg;
-      switch (cfg & 3) {
-        case 0: arg = GL_REPEAT; break;
-        case 1: arg = GL_CLAMP_TO_EDGE; break;
-        case 2: arg = GL_MIRRORED_REPEAT; break;
-        case 3: arg = GL_CLAMP_TO_BORDER; break;
-      }
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, arg);
-      switch ((cfg >> 2) & 3) {
-        case 0: arg = GL_REPEAT; break;
-        case 1: arg = GL_CLAMP_TO_EDGE; break;
-        case 2: arg = GL_MIRRORED_REPEAT; break;
-        case 3: arg = GL_CLAMP_TO_BORDER; break;
-      }
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, arg);
-      switch ((cfg >> 4) & 7) {
-        case 0: default: arg = GL_LINEAR; break;
-        case 1: arg = GL_NEAREST; break;
-        case 2: arg = GL_NEAREST_MIPMAP_NEAREST; break;
-        case 3: arg = GL_NEAREST_MIPMAP_LINEAR; break;
-        case 4: arg = GL_LINEAR_MIPMAP_NEAREST; break;
-        case 5: arg = GL_LINEAR_MIPMAP_LINEAR; break;
-      }
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, arg);
-      switch ((cfg >> 7) & 7) {
-        case 0: default: arg = GL_LINEAR; break;
-        case 1: arg = GL_NEAREST; break;
-      }
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, arg);
-    } else {
-    }
-  }
+  v3d_ctx_add_change(c, (struct v3d_ctx_change){
+    .is_batch = true,
+    .batch = *batch
+  });
 }
 
 void v3d_ctx_add_call(v3d_ctx *c, const v3d_call *call)
 {
-  if (call->is_indexed) {
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, call->indices.id);
-    glDrawElements(GL_TRIANGLES, call->num_verts, GL_UNSIGNED_SHORT, NULL);
-  } else {
-    glDrawArrays(GL_TRIANGLES, call->start_index, call->num_verts);
-  }
+  v3d_ctx_add_change(c, (struct v3d_ctx_change){
+    .is_batch = false,
+    .call = *call
+  });
 }
 
 void v3d_ctx_issue(v3d_ctx *c)
 {
+  for (int i = 0; i < c->num_changes; i++) {
+    if (c->changes[i].is_batch) {
+      // Batch
+      v3d_batch *batch = &c->changes[i].batch;
+
+      // Use vertex and shader states
+      glBindVertexArray(batch->vao_id);
+      glUseProgram(batch->prog_id);
+
+      // Activate textures
+      for (int i = 0; i < batch->unifarr.num; i++) {
+        /*printf("%d %s %u\n", i,
+          batch->unifarr.data[i].is_tex ? "tex" : "norm",
+          batch->unifarr.data[i].u32);*/
+        if (batch->unifarr.data[i].is_tex) {
+          // TODO: Support multiple textures
+          glActiveTexture(GL_TEXTURE0);
+          glBindTexture(GL_TEXTURE_2D, batch->unifarr.data[i].tex_id);
+          glUniform1i(glGetUniformLocation(batch->prog_id, "tex"), 0);
+          i++;
+          // TODO: Border colour for clamp-to-border warp mode
+          uint8_t cfg = batch->unifarr.data[i].tex_cfg;
+          GLint arg;
+          switch (cfg & 3) {
+            case 0: arg = GL_REPEAT; break;
+            case 1: arg = GL_CLAMP_TO_EDGE; break;
+            case 2: arg = GL_MIRRORED_REPEAT; break;
+            case 3: arg = GL_CLAMP_TO_BORDER; break;
+          }
+          glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, arg);
+          switch ((cfg >> 2) & 3) {
+            case 0: arg = GL_REPEAT; break;
+            case 1: arg = GL_CLAMP_TO_EDGE; break;
+            case 2: arg = GL_MIRRORED_REPEAT; break;
+            case 3: arg = GL_CLAMP_TO_BORDER; break;
+          }
+          glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, arg);
+          switch ((cfg >> 4) & 7) {
+            case 0: default: arg = GL_LINEAR; break;
+            case 1: arg = GL_NEAREST; break;
+            case 2: arg = GL_NEAREST_MIPMAP_NEAREST; break;
+            case 3: arg = GL_NEAREST_MIPMAP_LINEAR; break;
+            case 4: arg = GL_LINEAR_MIPMAP_NEAREST; break;
+            case 5: arg = GL_LINEAR_MIPMAP_LINEAR; break;
+          }
+          glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, arg);
+          switch ((cfg >> 7) & 7) {
+            case 0: default: arg = GL_LINEAR; break;
+            case 1: arg = GL_NEAREST; break;
+          }
+          glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, arg);
+        } else {
+        }
+      }
+    } else {
+      // Call
+      v3d_call *call = &c->changes[i].call;
+      if (call->is_indexed) {
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, call->indices.id);
+        glDrawElements(GL_TRIANGLES, call->num_verts, GL_UNSIGNED_SHORT, NULL);
+      } else {
+        glDrawArrays(GL_TRIANGLES, call->start_index, call->num_verts);
+      }
+    }
+  }
 }
 
 void v3d_ctx_wait(v3d_ctx *c)

@@ -138,6 +138,16 @@ typedef struct v3d_call {
 
 typedef struct v3d_ctx {
   v3d_tex target;
+  uint32_t clear;
+
+  struct v3d_ctx_change {
+    bool is_batch;
+    union {
+      v3d_batch batch;
+      v3d_call call;
+    };
+  } *changes;
+  int num_changes, cap_changes;
 } v3d_ctx;
 
 v3d_ctx v3d_ctx_create();
