@@ -396,13 +396,6 @@ void v3d_ctx_anew(v3d_ctx *c, v3d_tex target, uint32_t clear)
   c->target = target;
   c->clear = clear;
   c->num_changes = 0;
-
-  glClearColor(
-    ((clear >> 16) & 0xff) / 255.0f,
-    ((clear >>  8) & 0xff) / 255.0f,
-    ((clear >>  0) & 0xff) / 255.0f,
-    ((clear >> 24) & 0xff) / 255.0f);
-  glClear(GL_COLOR_BUFFER_BIT);
 }
 
 void v3d_ctx_use_batch(v3d_ctx *c, const v3d_batch *batch)
@@ -423,6 +416,13 @@ void v3d_ctx_add_call(v3d_ctx *c, const v3d_call *call)
 
 void v3d_ctx_issue(v3d_ctx *c)
 {
+  glClearColor(
+    ((c->clear >> 16) & 0xff) / 255.0f,
+    ((c->clear >>  8) & 0xff) / 255.0f,
+    ((c->clear >>  0) & 0xff) / 255.0f,
+    ((c->clear >> 24) & 0xff) / 255.0f);
+  glClear(GL_COLOR_BUFFER_BIT);
+
   for (int i = 0; i < c->num_changes; i++) {
     if (c->changes[i].is_batch) {
       // Batch
