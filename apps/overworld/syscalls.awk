@@ -55,12 +55,16 @@ $1 ~ /^ *[0-9]+ *$/ {
     type[0] = def[1]
     name[0] = def[2]
 
-    for (i = 3; i <= NF; i++)
-      if (split($i, arg, " ") >= 2) {
+    for (i = 3; i <= NF; i++) {
+      m = split($i, arg, " ")
+      if (m >= 2) {
         type[i - 2] = arg[1]
         name[i - 2] = arg[2]
         aux[i - 2] = arg[3]
+        for (j = 4; j <= m; j++)
+          aux[i - 2] = aux[i - 2] " " arg[j]
       }
+    }
     argc = NF - 2
 
     if (output == "c") {
@@ -88,21 +92,28 @@ $1 ~ /^ *[0-9]+ *$/ {
     } else if (output == "wren1") {
       printf("static void wren_%s(WrenVM *vm)\n", scope "_" name[0])
       printf("{\n")
+
+      # Take arguments from Wren
+      outbuf = 0
       for (i = 1; i <= argc; i++) {
         is_ptr = (type[i] ~ "ptr")
-        has_aux = is_ptr && (aux[i] != "")
-        wren_type_1 = (is_ptr ? (has_aux ? "LIST" : "STRING") : "NUM")
+        wren_type_1 = (is_ptr ? (aux[i] ? "LIST" : "STRING") : "NUM")
         printf("  if (wrenGetSlotType(vm, %d) != WREN_TYPE_%s)\n", i, wren_type_1)
         printf("    printf(\"Argument %d has incorrect type\");\n", i)
-        if (has_aux) {
-          elm_type = type_c[aux[i]]
-          printf("  wrenEnsureSlots(vm, %d);\n", argc + 1)
-          printf("  int n%d = wrenGetListCount(vm, %d);\n", i, i)
-          printf("  %s *%s = malloc(sizeof(%s) * n%d);\n", elm_type, name[i], elm_type, i)
-          printf("  for (int i = 0; i < n%d; i++) {\n", i)
-          printf("    wrenGetListElement(vm, %d, i, %d);\n", i, argc + 1)
-          printf("    %s[i] = (%s)wrenGetSlotDouble(vm, %d);\n", name[i], elm_type, argc + 1)
-          printf("  }\n\n")
+        if (is_ptr && aux[i]) {
+          if (aux[i] ~ "^out ") {
+            outbuf = i
+          } else {
+            elm_type = type_c[aux[i]]
+            printf("  wrenEnsureSlots(vm, %d);\n", argc + 1)
+            printf("  int n%d = wrenGetListCount(vm, %d);\n", i, i)
+            printf("  %s *%s = malloc(sizeof(%s) * n%d);\n", elm_type, name[i], elm_type, i)
+            printf("  for (int i = 0; i < n%d; i++) {\n", i)
+            printf("    wrenGetListElement(vm, %d, i, %d);\n", i, argc + 1)
+            printf("    %s[i] = (%s)wrenGetSlotDouble(vm, %d);\n", name[i], elm_type, argc + 1)
+            printf("  }\n")
+          }
+          printf("\n")
         } else {
           wren_type_2 = (is_ptr ? "String" : "Double")
           c_type = (is_ptr ? "const void *" : "double ")
@@ -110,6 +121,14 @@ $1 ~ /^ *[0-9]+ *$/ {
             c_type, name[i], wren_type_2, i)
         }
       }
+
+      # Handle output buffers
+      if (outbuf != 0) {
+        # Remove "out " prefix and use as memory size
+        printf("  char *%s = malloc((size_t)%s);\n", name[outbuf], substr(aux[outbuf], 5))
+      }
+
+      # The real call
       printf("  ")
       if (type[0] != "_") printf("double ret = (double)")
       printf("%s_%s(", scope, name[0])
@@ -118,7 +137,21 @@ $1 ~ /^ *[0-9]+ *$/ {
         printf("(%s)%s", type_c[type[i]], name[i])
       }
       printf(");\n")
+
+      # Pass the return value to Wren
+      # Output buffers are put inside a list at slot index `outbuf`
+      if (outbuf != 0) {
+        printf("\n")
+        size = substr(aux[outbuf], 5)
+        if (size ~ "^[0-9]+$")
+          printf("  wrenSetSlotString(vm, 0, %s);\n", name[outbuf])
+        else printf("  wrenSetSlotBytes(vm, 0, %s, (size_t)%s);\n", name[outbuf], size)
+        printf("  wrenInsertInList(vm, %d, -1, 0);\n", outbuf)
+      }
+      # Return value
       if (type[0] != "_") printf("  wrenSetSlotDouble(vm, 0, ret);\n")
+
+      # Free memory allocated
       for (i = 1; i <= argc; i++)
         if (type[i] ~ "ptr" && aux[i]) {
           printf("  free(%s);\n", name[i])

@@ -50,7 +50,7 @@
 
  0, u32 open, cptr path, u32 flags
  1, _   close, u32 f
- 2, u32 read, u32 f, ptr buf, u32 len
+ 2, u32 read, u32 f, ptr buf out len, u32 len
  3, u32 write, u32 f, cptr buf, u32 len
  4, _   seek, u32 f, u32 pos
  5, _   trunc, u32 f
@@ -61,7 +61,7 @@
 10, u32 err, u32 f
 16, u32 opendir, cptr path
 17, _   closedir, u32 d
-18, u32 readdir, u32 d, ptr name
+18, u32 readdir, u32 d, ptr name out 1024
 32, u32 stat, cptr path
 33, _   unlink, cptr path
 34, _   rename, cptr path_old, cptr path_new
