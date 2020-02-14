@@ -1,0 +1,4 @@
+baseURL = "http://example.org/"
+languageCode = "en"
+title = "Mikabox"
+pluralizeListTitles = false

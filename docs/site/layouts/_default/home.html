@@ -1,0 +1,14 @@
+{{ define "main" }}
+  {{ range .Pages }}
+    <article>
+      <h2><a href="{{ .Permalink }}">{{ .Title }}</a></h2>
+      {{ range .Pages }}
+        <a href="{{ .Permalink }}">{{ .Title }}</a>
+      {{ end }}
+    </article>
+  {{ end }}
+{{ end }}
+
+{{ define "catalogue" }}
+  ...
+{{ end }}
