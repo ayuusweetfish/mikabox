@@ -41,6 +41,9 @@ static uint8_t level;
 static uint32_t T;
 static uint32_t b0, b1;
 
+// The screen does not need to be redrawn
+static bool freeze = false;
+
 static void game_init();
 static void game_draw();
 static void overlay_init();
@@ -478,16 +481,20 @@ void update_mikan()
 {
   b1 = b0;
   b0 = mika_btns(0);
+  freeze = false;
   switch (screen) {
     case SCR_MENU: menu_update(); break;
     case SCR_GAME: game_update(); break;
-    case SCR_WIN: case SCR_LOSE: overlay_update(); break;
+    case SCR_WIN: case SCR_LOSE:
+      freeze = true; overlay_update(); break;
     default: break;
   }
 }
 
 void *draw_mikan()
 {
+  if (freeze) return (void *)buf;
+
   bg_draw();
   switch (screen) {
     case SCR_MENU: menu_draw(); break;

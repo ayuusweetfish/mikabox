@@ -52,9 +52,9 @@ void draw()
     gfx_ctx_call(ctx, 0, 6, 0);
 
     gfx_ctx_issue(ctx);
-    gfx_ctx_wait(ctx);
 
     mika_yield(1);
+    gfx_ctx_wait(ctx);
   }
 }
 
