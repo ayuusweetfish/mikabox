@@ -32,6 +32,11 @@ bool audio_pending()
   return request_pending;
 }
 
+void audio_clear_pending()
+{
+  request_pending = false;
+}
+
 uint32_t audio_dropped()
 {
   ma_mutex_lock(&audio_device.lock);

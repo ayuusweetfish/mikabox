@@ -367,7 +367,7 @@ static void step_context(uc_context *ctx)
   uc_reg_read(uc, UC_ARM_REG_PC, &pc);
 
   // XXX: uc_emu_continue()?
-  if ((err = uc_emu_start(uc, pc, 0, 100000, 0)) != UC_ERR_OK) {
+  if ((err = uc_emu_start(uc, pc, 0, 0, 0)) != UC_ERR_OK) {
     printf("uc_emu_start() returned error %u (%s)\n", err, uc_strerror(err));
     uc_reg_read(uc, UC_ARM_REG_PC, &pc);
     printf("PC = 0x%08x\n", pc);
@@ -490,6 +490,11 @@ void emu()
 
         routine_id = bank + i;
         step_context(routine_ctx[bank + i]);
+
+        if (i == 1 && !(req_flags & (1 << i))) {
+          // Signal that audio has been written or given up
+          audio_clear_pending();
+        }
 
         if (i == 0 && !(req_flags & (1 << i))) {
           // Signal that rendering commands have been issued
