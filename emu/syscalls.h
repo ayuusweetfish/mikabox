@@ -167,7 +167,7 @@ def(GEN, 6, {
 })
 
 def(GEN, 7, {
-  char last;
+  char last = '\0';
   char ch;
   for (int i = 0; i < 256; i++) {
     syscall_read_mem(r1++, 1, &ch);

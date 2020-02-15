@@ -251,7 +251,8 @@ static void fp_get(void *user, void *dest, uint32_t offs, uint32_t len)
 {
   FILE *fp = user;
   fseek(fp, offs, SEEK_SET);
-  fread(dest, len, 1, user);
+  if (fread(dest, len, 1, user) != 1)
+    printf("fread() did not read enough bytes\n");
 }
 
 static inline const char *mem_type_str(uc_mem_type t)

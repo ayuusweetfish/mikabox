@@ -18,6 +18,17 @@ STATIC_LIBS := unicorn/libunicorn.a glew/lib/libGLEW.a glfw/build/src/libglfw3.a
 STATIC_LIB_TARGETS := $(patsubst %.a, %.a.target, $(STATIC_LIBS))
 LIBS := -lm $(STATIC_LIBS)
 
+UNAME := $(shell uname)
+
+ifeq ($(UNAME), Darwin)
+  C_OPTIONS += -D_DARWIN_C_SOURCE
+  LDFLAGS := -framework Cocoa -framework OpenGL -framework IOKit
+endif
+ifeq ($(UNAME), Linux)
+  C_OPTIONS += -D_XOPEN_SOURCE=700 -D_BSD_SOURCE -D_GNU_SOURCE
+  LDFLAGS := -lGL -lX11 -lpthread -lm -ldl
+endif
+
 SRCS := $(wildcard *.c) $(wildcard common/*.c)
 SRCS += timer_lib/timer.c
 
@@ -41,10 +52,10 @@ glew/lib/libGLEW.a.target:
 	@ printf "  %-7s %s\n" MAKE $@
 	$(V) $(MAKE) -C glew glew.lib.static
 
-glfw/build/src/libglfw3.a:
+glfw/build/src/libglfw3.a.target:
 	@ printf "  %-7s %s\n" CMAKE $@
 	$(V) mkdir -p glfw/build
-	$(V) $(CMAKE) -B glfw/build glfw -DBUILD_SHARED_LIBS=OFF -DGLFW_BUILD_EXAMPLES=OFF -DGLFW_BUILD_TESTS=OFF -DGLFW_BUILD_DOCS=OFF
+	$(V) cd glfw/build && $(CMAKE) .. -DBUILD_SHARED_LIBS=OFF -DGLFW_BUILD_EXAMPLES=OFF -DGLFW_BUILD_TESTS=OFF -DGLFW_BUILD_DOCS=OFF
 	$(V) $(MAKE) -C glfw/build
 
 $(BUILD_DIR)/swi.o: syscalls.h
@@ -58,9 +69,14 @@ $(BUILD_DIR)/%.o: %.c
 
 $(EMU_EXEC): $(OBJS) $(STATIC_LIBS)
 	@ printf "  %-7s %s\n" LD $@
-	$(V) $(CC) $^ -o $@ -framework Cocoa -framework OpenGL -framework IOKit
+	$(V) $(CC) $^ -o $@ $(LDFLAGS)
 
 clean:
 	rm -rf $(BUILD_DIR)
+
+clean_libs:
+	cd unicorn && make clean && git checkout -- .
+	cd glew && make clean
+	rm -rf glfw/build
 
 .PHONY: clean all libs $(STATIC_LIB_TARGETS)

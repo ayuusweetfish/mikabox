@@ -116,7 +116,7 @@ FRESULT f_readdir (DIR_* dp, FILINFO* fno)
       strcmp(ent->d_name, "..") == 0) continue;
     // Set fname and fattrib (AM_DIR)
     fno->fattrib = ((ent->d_type == DT_DIR) ? AM_DIR : 0);
-    strlcpy(fno->fname, ent->d_name, sizeof fno->fname);
+    snprintf(fno->fname, sizeof fno->fname, "%s", ent->d_name);
     break;
   }
   return 0;
