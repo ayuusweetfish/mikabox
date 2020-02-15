@@ -13,8 +13,15 @@ var appsList = AppsList.new()
 
 var draw = Fiber.new {
   var ctx = Mikabox.gfxCtxCreate()
+  var t1 = Mikabox.tick()
 
   while (true) {
+    var t2 = Mikabox.tick()
+    var dt = (t2 - t1) / 1000000
+
+    App.f.tick(dt)
+    t1 = t2
+
     Mikabox.gfxCtxWait(ctx)
     Mikabox.gfxCtxReset(ctx, Mikabox.gfxTexScreen(),
       Mikabox.btns(0) == 0 ? 0xffffffdd : 0xffffddff)
@@ -27,15 +34,7 @@ var draw = Fiber.new {
 }
 
 var update = Fiber.new {
-  var t1 = Mikabox.tick()
   while (true) {
-    var t2 = Mikabox.tick()
-    var dt = (t2 - t1) / 1000000
-
-    App.f.tick(dt)
-    //System.print("%(t2) %(dt)")
-
-    t1 = t2
     Fiber.yield(true)
   }
 }

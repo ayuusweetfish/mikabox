@@ -32,7 +32,6 @@ void _name() \
   WrenHandle *method = wrenMakeCallHandle(vm, "call()"); \
  \
   while (1) { \
-    wrenEnsureSlots(vm, 2); \
     wrenSetSlotHandle(vm, 0, fiber); \
     WrenInterpretResult result = wrenCall(vm, method); \
     if (result != WREN_RESULT_SUCCESS) while (1) { } \

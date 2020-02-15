@@ -491,6 +491,8 @@ void emu()
         routine_id = bank + i;
         step_context(routine_ctx[bank + i]);
 
+        // if (i == 0) printf("%d %llu\n", i, app_timer_update(timer) - app_tick);
+
         if (i == 1 && !(req_flags & (1 << i))) {
           // Signal that audio has been written or given up
           audio_clear_pending();

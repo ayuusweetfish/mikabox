@@ -3,6 +3,7 @@ import "mikabox" for Mikabox
 var H = 480.0 / 800.0
 
 var Rand = Fn.new {|a, b| Mikabox.rand() / 18446744073709551616 * (b - a) + a }
+var Poly = 48
 
 class FloueSpotlight {
   // x, y - coordinate
@@ -54,24 +55,48 @@ class Floue {
       ))
     }
 
-    _varr = Mikabox.gfxVarrCreate(_n * 49, 4)
+    _varr = Mikabox.gfxVarrCreate(_n * (Poly + 1), 4)
     _uarr = Mikabox.gfxUarrCreate(0)
     _shad = Mikabox.gfxShadCreate("#CA")
     _bat = Mikabox.gfxBatCreate(_varr, _uarr, _shad)
 
-    _iarr = Mikabox.gfxIarrCreate(_n * 48 * 3)
+    _iarr = Mikabox.gfxIarrCreate(_n * Poly * 3)
 
-    var idxs = List.filled(_n * 48 * 3, 0)
+    var idxs = List.filled(_n * Poly * 3, 0)
     for (i in 0..._n) {
-      var base = i * 48 * 3
-      var vbase = i * 49
-      for (j in 0..47) {
+      var base = i * Poly * 3
+      var vbase = i * (Poly + 1)
+      for (j in 0..(Poly - 1)) {
         idxs[base + j * 3 + 0] = vbase + 0
         idxs[base + j * 3 + 1] = vbase + j + 1
-        idxs[base + j * 3 + 2] = vbase + (j + 1) % 48 + 1
+        idxs[base + j * 3 + 2] = vbase + (j + 1) % Poly + 1
       }
     }
-    Mikabox.gfxIarrPut(_iarr, 0, idxs, _n * 48 * 3)
+    Mikabox.gfxIarrPut(_iarr, 0, idxs, _n * Poly * 3)
+
+    _vs = List.filled(_n * (Poly + 1) * 6, 0)
+
+    for (i in 0..._n) {
+      var s = _spots[i]
+      var base = i * (Poly + 1) * 6
+      _vs[base + 2] = s.cr * 0.5
+      _vs[base + 3] = s.cg * 0.5
+      _vs[base + 4] = s.cb * 0.5
+      _vs[base + 5] = 0.5
+      for (j in 1..Poly) {
+        _vs[base + j * 6 + 2] = s.cr * 0.5
+        _vs[base + j * 6 + 3] = s.cg * 0.5
+        _vs[base + j * 6 + 4] = s.cb * 0.5
+        _vs[base + j * 6 + 5] = 0.5
+      }
+    }
+
+    _cosTable = []
+    _sinTable = []
+    for (i in 0..Poly) {
+      _cosTable.add((Num.pi * 2 / Poly * i).cos)
+      _sinTable.add((Num.pi * 2 / Poly * i).sin)
+    }
   }
 
   tick(dt) {
@@ -79,43 +104,23 @@ class Floue {
   }
 
   draw(ctx) {
-    var vs = List.filled(49 * 6, 0)
-
     for (i in 0..._n) {
       var s = _spots[i]
       // Draw a spotlight
+      var base = (Poly + 1) * 6 * i
       var x = s.x * 800
       var y = s.y * 800
       var r = s.r * 800
-      var cr = s.cr * 0.5
-      var cg = s.cg * 0.5
-      var cb = s.cb * 0.5
-      vs[0] = x
-      vs[1] = y
-      vs[2] = cr
-      vs[3] = cg
-      vs[4] = cb
-      vs[5] = 0.5
-      for (j in 1..48) {
-        var a = Num.pi * 2 / 48 * j
-        vs[j * 6 + 0] = x + r * a.cos
-        vs[j * 6 + 1] = y + r * a.sin
-        vs[j * 6 + 2] = cr
-        vs[j * 6 + 3] = cg
-        vs[j * 6 + 4] = cb
-        vs[j * 6 + 5] = 0.5
+      _vs[base + 0] = x
+      _vs[base + 1] = y
+      for (j in 1..Poly) {
+        _vs[base + j * 6 + 0] = x + r * _cosTable[j]
+        _vs[base + j * 6 + 1] = y + r * _sinTable[j]
       }
-      Mikabox.gfxVarrPut(_varr, i * 49, vs, 49)
     }
 
-    /*Mikabox.gfxVarrPut(_varr, 0, [
-      300, 700, 1, 0, 1, 1,
-      100, 200, 1, 0, 1, 1,
-      500, 200, 1, 1, 1, 1
-    ], 3)*/
-
+    Mikabox.gfxVarrPut(_varr, 0, _vs, _n * (Poly + 1))
     Mikabox.gfxCtxBatch(ctx, _bat)
-    Mikabox.gfxCtxCall(ctx, 1, _n * 48 * 3, _iarr)
-    //Mikabox.gfxCtxCall(ctx, 1, 3, _iarr)
+    Mikabox.gfxCtxCall(ctx, 1, _n * Poly * 3, _iarr)
   }
 }
