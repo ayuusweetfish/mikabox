@@ -219,7 +219,7 @@ static inline uint32_t align(uint32_t addr, uint32_t align)
   return (addr + align - 1) & ~(align - 1);
 }
 
-static void *app_allocated[] = { NULL };
+static void *app_allocated[64] = { NULL };
 static int app_alloc_count = 0;
 
 static void *alloc(elf_word vaddr, elf_word memsz, elf_word flags)
