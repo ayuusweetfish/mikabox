@@ -6,6 +6,7 @@
 
 uint32_t audio_blocksize();
 bool audio_pending();
+void audio_clear_pending();
 uint32_t audio_dropped();
 void *audio_write_pos();
 

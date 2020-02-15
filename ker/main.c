@@ -458,6 +458,9 @@ void sys_main()
       if (i == 0) app_fb_buf = (uint32_t)fb_buf;
       co_next(&user_co[bank + i]);
       if (i == 0) app_fb_buf = 0;
+
+      if (i == 1 && !(req_flags & (1 << i)))
+        audio_clear_pending();
     }
 
     uint64_t global_tick = app_timer_update(&timer_g);
