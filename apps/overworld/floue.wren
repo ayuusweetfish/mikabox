@@ -136,6 +136,9 @@ class Floue {
     }
 
     Mikabox.gfxVarrPut(_varr, 0, _vs, _n * (Poly + 1))
+  }
+
+  addCommands(ctx) {
     Mikabox.gfxCtxBatch(ctx, _bat)
     Mikabox.gfxCtxCall(ctx, 1, _n * Poly * 4.5, _iarr)
   }

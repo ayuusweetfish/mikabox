@@ -15,6 +15,9 @@ var draw = Fiber.new {
   var ctx = Mikabox.gfxCtxCreate()
   var t1 = Mikabox.tick()
 
+  Mikabox.gfxCtxReset(ctx)
+  App.f.addCommands(ctx)
+
   while (true) {
     var t2 = Mikabox.tick()
     var dt = (t2 - t1) / 1000000
@@ -23,7 +26,6 @@ var draw = Fiber.new {
     t1 = t2
 
     Mikabox.gfxCtxWait(ctx)
-    Mikabox.gfxCtxReset(ctx)
     Mikabox.gfxCtxConfig(ctx,
       Mikabox.gfxTexScreen(),
       Mikabox.btns(0) == 0 ? 0xffffffdd : 0xffffddff)
