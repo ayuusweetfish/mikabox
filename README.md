@@ -27,7 +27,7 @@ make
 
 ```
 cd emu
-make lib
+make libs
 make
 ```
 
