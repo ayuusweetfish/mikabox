@@ -391,11 +391,15 @@ static inline void v3d_ctx_add_change(v3d_ctx *c, struct v3d_ctx_change ch)
   c->changes[c->num_changes++] = ch;
 }
 
-void v3d_ctx_anew(v3d_ctx *c, v3d_tex target, uint32_t clear)
+void v3d_ctx_anew(v3d_ctx *c)
+{
+  c->num_changes = 0;
+}
+
+void v3d_ctx_config(v3d_ctx *c, v3d_tex target, uint32_t clear)
 {
   c->target = target;
   c->clear = clear;
-  c->num_changes = 0;
 }
 
 void v3d_ctx_use_batch(v3d_ctx *c, const v3d_batch *batch)
@@ -492,9 +496,10 @@ void v3d_ctx_issue(v3d_ctx *c)
 
 void v3d_ctx_wait(v3d_ctx *c)
 {
-  glFlush();
+  if (c->num_changes > 0) glFlush();
 }
 
 void v3d_ctx_close(v3d_ctx *c)
 {
+  free(c->changes);
 }

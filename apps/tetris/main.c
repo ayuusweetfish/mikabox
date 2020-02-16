@@ -42,14 +42,15 @@ void draw()
 
   gfx_uarr_puttex(ua, 0, tex, v3d_minfilt_nearest | v3d_magfilt_nearest);
 
+  gfx_ctx_reset(ctx);
+  gfx_ctx_batch(ctx, bat);
+  gfx_ctx_call(ctx, 0, 6, 0);
+
   while (1) {
     void *buf = draw_mikan();
     gfx_tex_update(tex, buf, v3d_tex_fmt_bgr);
 
-    gfx_ctx_reset(ctx, gfx_tex_screen(), 0xff000000);
-
-    gfx_ctx_batch(ctx, bat);
-    gfx_ctx_call(ctx, 0, 6, 0);
+    gfx_ctx_config(ctx, gfx_tex_screen(), 0xff000000);
 
     gfx_ctx_issue(ctx);
 
@@ -92,6 +93,6 @@ void main()
 {
   crt_init();
 
-  syscall(0, draw, synth, event, update);
+  mika_rout(draw, synth, event, update);
   mika_yield(1);
 }

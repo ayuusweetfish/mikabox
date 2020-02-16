@@ -151,7 +151,8 @@ typedef struct v3d_ctx {
 } v3d_ctx;
 
 v3d_ctx v3d_ctx_create();
-void v3d_ctx_anew(v3d_ctx *c, v3d_tex target, uint32_t clear);
+void v3d_ctx_anew(v3d_ctx *c);
+void v3d_ctx_config(v3d_ctx *c, v3d_tex target, uint32_t clear);
 void v3d_ctx_use_batch(v3d_ctx *c, const v3d_batch *batch);
 void v3d_ctx_add_call(v3d_ctx *c, const v3d_call *call);
 void v3d_ctx_issue(v3d_ctx *c);

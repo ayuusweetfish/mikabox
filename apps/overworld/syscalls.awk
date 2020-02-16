@@ -68,7 +68,7 @@ $1 ~ /^ *[0-9]+ *$/ {
     argc = NF - 2
 
     if (output == "c") {
-      printf("static inline %s%s_%s(", type_c[type[0]], scope, name[0])
+      printf("static inline %s %s_%s(", type_c[type[0]], scope, name[0])
       for (i = 1; i <= argc; i++) {
         if (i > 1) printf(", ")
         printf("%s%s%s", type_c[type[i]], (type[i] ~ "ptr") ? "" : " ", name[i])

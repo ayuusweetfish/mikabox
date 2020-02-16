@@ -86,11 +86,12 @@ static inline void mika_log(uint32_t level, const void *str) { syscall2(level, (
 static inline void mika_test() { syscall0(128); }
 static inline uint64_t mika_wall() { return syscall0(129); }
 static inline uint32_t gfx_ctx_create() { return syscall0(256); }
-static inline void gfx_ctx_reset(uint32_t ctx, uint32_t target, uint32_t clear) { syscall3(ctx, target, clear, 257); }
-static inline void gfx_ctx_batch(uint32_t ctx, uint32_t bat) { syscall2(ctx, bat, 258); }
-static inline void gfx_ctx_call(uint32_t ctx, uint32_t is_indexed, uint32_t num_verts, uint32_t start_or_idxbuf) { syscall4(ctx, is_indexed, num_verts, start_or_idxbuf, 259); }
-static inline void gfx_ctx_issue(uint32_t ctx) { syscall1(ctx, 260); }
-static inline void gfx_ctx_wait(uint32_t ctx) { syscall1(ctx, 261); }
+static inline void gfx_ctx_reset(uint32_t ctx) { syscall1(ctx, 257); }
+static inline void gfx_ctx_config(uint32_t ctx, uint32_t target, uint32_t clear) { syscall3(ctx, target, clear, 258); }
+static inline void gfx_ctx_batch(uint32_t ctx, uint32_t bat) { syscall2(ctx, bat, 259); }
+static inline void gfx_ctx_call(uint32_t ctx, uint32_t is_indexed, uint32_t num_verts, uint32_t start_or_idxbuf) { syscall4(ctx, is_indexed, num_verts, start_or_idxbuf, 260); }
+static inline void gfx_ctx_issue(uint32_t ctx) { syscall1(ctx, 261); }
+static inline void gfx_ctx_wait(uint32_t ctx) { syscall1(ctx, 262); }
 static inline void gfx_ctx_close(uint32_t ctx) { syscall1(ctx, 271); }
 static inline uint32_t gfx_tex_create(uint32_t width, uint32_t height) { return syscall2(width, height, 272); }
 static inline void gfx_tex_update(uint32_t tex, const void *pixels, uint32_t format) { syscall3(tex, (uint32_t)pixels, format, 273); }

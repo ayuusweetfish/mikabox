@@ -15,11 +15,12 @@
 256, == gfx ==
 
  0, u32 ctx_create
- 1, _   ctx_reset, u32 ctx, u32 target, u32 clear
- 2, _   ctx_batch, u32 ctx, u32 bat
- 3, _   ctx_call, u32 ctx, u32 is_indexed, u32 num_verts, u32 start_or_idxbuf
- 4, _   ctx_issue, u32 ctx
- 5, _   ctx_wait, u32 ctx
+ 1, _   ctx_reset, u32 ctx
+ 2, _   ctx_config, u32 ctx, u32 target, u32 clear
+ 3, _   ctx_batch, u32 ctx, u32 bat
+ 4, _   ctx_call, u32 ctx, u32 is_indexed, u32 num_verts, u32 start_or_idxbuf
+ 5, _   ctx_issue, u32 ctx
+ 6, _   ctx_wait, u32 ctx
 15, _   ctx_close, u32 ctx
 
 16, u32 tex_create, u32 width, u32 height

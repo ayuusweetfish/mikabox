@@ -199,19 +199,25 @@ def(GFX, 0, {
 
 def(GFX, 1, {
   v3d_ctx *c = pool_elm(dual_sel(ctxs), r0);
-  v3d_tex *t = pool_elm(dual_sel(texs), r1);
-  if (c == NULL || t == NULL) return (uint32_t)-2;
-  v3d_ctx_anew(c, *t, r2);
+  if (c == NULL) return (uint32_t)-2;
+  v3d_ctx_anew(c);
 })
 
 def(GFX, 2, {
+  v3d_ctx *c = pool_elm(dual_sel(ctxs), r0);
+  v3d_tex *t = pool_elm(dual_sel(texs), r1);
+  if (c == NULL || t == NULL) return (uint32_t)-2;
+  v3d_ctx_config(c, *t, r2);
+})
+
+def(GFX, 3, {
   v3d_ctx *c = pool_elm(dual_sel(ctxs), r0);
   v3d_batch *b = pool_elm(dual_sel(batches), r1);
   if (c == NULL || b == NULL) return (uint32_t)-2;
   v3d_ctx_use_batch(c, b);
 })
 
-def(GFX, 3, {
+def(GFX, 4, {
   v3d_ctx *c = pool_elm(dual_sel(ctxs), r0);
   if (c == NULL) return (uint32_t)-2;
   v3d_call call;
@@ -227,13 +233,13 @@ def(GFX, 3, {
   v3d_ctx_add_call(c, &call);
 })
 
-def(GFX, 4, {
+def(GFX, 5, {
   v3d_ctx *c = pool_elm(dual_sel(ctxs), r0);
   if (c == NULL) return (uint32_t)-2;
   v3d_ctx_issue(c);
 })
 
-def(GFX, 5, {
+def(GFX, 6, {
   v3d_ctx *c = pool_elm(dual_sel(ctxs), r0);
   if (c == NULL) return (uint32_t)-2;
   v3d_ctx_wait(c);

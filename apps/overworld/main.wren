@@ -23,7 +23,9 @@ var draw = Fiber.new {
     t1 = t2
 
     Mikabox.gfxCtxWait(ctx)
-    Mikabox.gfxCtxReset(ctx, Mikabox.gfxTexScreen(),
+    Mikabox.gfxCtxReset(ctx)
+    Mikabox.gfxCtxConfig(ctx,
+      Mikabox.gfxTexScreen(),
       Mikabox.btns(0) == 0 ? 0xffffffdd : 0xffffddff)
 
     App.f.draw(ctx)

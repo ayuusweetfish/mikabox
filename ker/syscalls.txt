@@ -14,11 +14,12 @@ num #in #ou desc
 
 +256: Graphics
 0   0   1   Create context
-1   3   0   Reset context
-2   2   0   Use batch
-3   4   0   Add call
-4   1   0   Issue commands
-5   1   0   Wait for completion
+1   1   0   Reset context
+2   2   0   Configuration
+3   2   0   Use batch
+4   4   0   Add call
+5   1   0   Issue commands
+6   1   0   Wait for completion
 15  1   0   Close context
 16  2   1   Create texture
 17  3   0   Update texture
