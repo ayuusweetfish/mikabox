@@ -399,9 +399,11 @@ v3d_batch v3d_batch_create(
   return b;
 }
 
-#define CTRL_BEGIN        0x0
-#define CTRL_SIZE         0x4000
-#define TILE_ALLOC_BEGIN  (CTRL_BEGIN + CTRL_SIZE)
+#define REN_CTRL_BEGIN    0x0
+#define REN_CTRL_SIZE     0x10000
+#define BIN_CTRL_BEGIN    (REN_CTRL_BEGIN + REN_CTRL_SIZE)      // 4096-byte aligned
+#define BIN_CTRL_SIZE     0x10000
+#define TILE_ALLOC_BEGIN  (BIN_CTRL_BEGIN + BIN_CTRL_SIZE)
 #define TILE_ALLOC_SIZE   0x20000
 #define TILE_STATE_BEGIN  (TILE_ALLOC_BEGIN + TILE_ALLOC_SIZE)  // 16-byte aligned
 #define TILE_STATE_SIZE   0x10000
@@ -413,20 +415,22 @@ v3d_ctx v3d_ctx_create()
   c.mem = v3d_mem_create(CTX_MEM_TOTAL, 0x1000,
     MEM_FLAG_COHERENT | MEM_FLAG_ZERO | MEM_FLAG_HINT_PERMALOCK);
   c.offs = 0;
-  c.bin_ctrl_end = 0;
+  c.running = false;
   return c;
 }
 
-void v3d_ctx_anew(v3d_ctx *c, v3d_tex target, uint32_t clear)
+void v3d_ctx_anew(v3d_ctx *c)
 {
-  c->target = target;
+  v3d_tex target = c->target;
+  uint32_t clear = c->clear;
+
   uint16_t w = target.w, h = target.h;
   const uint16_t bin_sidelen = 32;
   uint8_t bin_cols = (w + bin_sidelen - 1) / bin_sidelen;
   uint8_t bin_rows = (h + bin_sidelen - 1) / bin_sidelen;
 
   uint8_t *p;
-  c->offs = CTRL_BEGIN;
+  c->offs = REN_CTRL_BEGIN;
 
   // Render control
 
@@ -480,7 +484,7 @@ void v3d_ctx_anew(v3d_ctx *c, v3d_tex target, uint32_t clear)
 
   // Binning configuration
 
-  _align(c->offs, 0x1000);
+  c->offs = BIN_CTRL_BEGIN;
   p = _armptr(c->mem) + c->offs;
   c->bin_ctrl_start = c->mem.addr + c->offs;
 
@@ -519,6 +523,16 @@ void v3d_ctx_anew(v3d_ctx *c, v3d_tex target, uint32_t clear)
   _putu16(&p, 0);
 
   c->offs = _offset(p, c->mem);
+}
+
+void v3d_ctx_config(v3d_ctx *c, v3d_tex target, uint32_t clear)
+{
+  c->target = target;
+  c->clear = clear;
+
+  uint32_t orig_offs = c->offs;
+  v3d_ctx_anew(c);
+  c->offs = orig_offs;
 }
 
 void v3d_ctx_use_batch(v3d_ctx *c, const v3d_batch *batch)
@@ -589,7 +603,7 @@ void v3d_ctx_issue(v3d_ctx *c)
 
 void v3d_ctx_wait(v3d_ctx *c)
 {
-  if (c->bin_ctrl_end != 0)
+  if (c->running != 0)
     while (*V3D_RFC == 0) { } // co_yield();
-  c->bin_ctrl_end = 0;
+  c->running = 0;
 }
