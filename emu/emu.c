@@ -553,14 +553,21 @@ bool parse_args(int argc, char *argv[])
 
   int ind = 1;
 
-  if (ind >= argc) return false;
-  if (strcmp(argv[ind], "-a") == 0) {
+  if (ind < argc && strcmp(argv[ind], "-a") == 0) {
     headless = true;
     ind++;
   }
 
-  if (ind >= argc) return false;
-  cmd_app_path = argv[ind++];
+  if (ind >= argc) {
+    // Try ./a.out as a default
+    // stat() works, but stdio does as well
+    FILE *f = fopen("./a.out", "r");
+    if (f == NULL) return false;
+    fclose(f);
+    cmd_app_path = "./a.out";
+  } else {
+    cmd_app_path = argv[ind++];
+  }
 
   if (ind < argc) {
     size_t len = strlen(argv[ind]);
@@ -594,8 +601,10 @@ bool parse_args(int argc, char *argv[])
 int main(int argc, char *argv[])
 {
   if (!parse_args(argc, argv)) {
-    printf("usage: %s [-a] <executable> [<file system root>]\n", argv[0]);
+    printf("usage: %s [-a] [<executable> [<file system root>]]\n", argv[0]);
     printf("  -a    Headless: run application without overworld\n");
+    printf("  <executable> defaults to \"./a.out\"\n");
+    printf("  <file system root> defaults to path of executable\n");
     return 0;
   }
 
