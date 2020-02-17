@@ -77,6 +77,4 @@ directory and run `make`.
 
 Then run this "Hello World" application with `<path to emu> -a <path to a.out>`.
 
-See [Application development] for further documentations.
-
-[Application development]: #
+See [Application development](/application/) for further details.
