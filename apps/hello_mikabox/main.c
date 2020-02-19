@@ -119,7 +119,7 @@ void update()
   long long x_ban = 0, y_ban = 0;
   long long t = mika_tick();
 
-  const int ban_time = 20000; // milliseconds
+  const int ban_time = 20000; // microseconds
 
   while (1) {
     long long t1 = mika_tick();
@@ -150,14 +150,14 @@ void update()
     float ul = ux * ux + uy * uy;
     float vl = vx * vx + vy * vy;
     float rate = (ul > vl ? 10 : 5) * dt;
-    float dx = (ux - vx) * rate;
-    float dy = (uy - vy) * rate;
+    float ax = (ux - vx) * rate;
+    float ay = (uy - vy) * rate;
 
     // Position update
-    x += (vx + dx * 0.5) * dt;
-    y += (vy + dy * 0.5) * dt;
-    vx += dx;
-    vy += dy;
+    x += (vx + ax * 0.5) * dt;
+    y += (vy + ay * 0.5) * dt;
+    vx += ax;
+    vy += ay;
 
     // Bounces
     if (update_bounce(&x, SCR_W, &vx)) {
