@@ -55,6 +55,18 @@ receive input, read files etc.
 
 Relevant system calls will be covered in the subsections to follow.
 
+### Entry
+
+### Scheduling
+
+### Thread "draw"
+
+### Thread "synth"
+
+### Thread "event"
+
+### Thread "update"
+
 ## Other languages
 
 Support for other languages is work in progress. Planned are:
