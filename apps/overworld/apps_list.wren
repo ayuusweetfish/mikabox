@@ -1,4 +1,5 @@
 import "mikabox" for Mikabox
+import "stb" for Stb
 
 class AppsList {
   construct new() {
@@ -15,5 +16,7 @@ class AppsList {
       }
     }
     Mikabox.filClosedir(dir)
+
+    Stb.loadImage("1.png")
   }
 }

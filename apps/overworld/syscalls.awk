@@ -13,10 +13,9 @@ BEGIN {
   type_c["cptr"] = "const void *"
 
   if (output == "wren0") {
-    printf("#include \"mikabox.h\"\n")
-    printf("#include \"wren.h\"\n")
+    printf("#include \"main.h\"\n")
     printf("#include <string.h>\n\n")
-    printf("const char *wren_mikabox_def =\n")
+    printf("const char *wren_def_mikabox =\n")
     printf("\"class Mikabox {\\n\"\n")
   } else if (output == "wren2") {
     printf("WrenForeignMethodFn wren_bind_mikabox(WrenVM *vm, const char *module,\n")

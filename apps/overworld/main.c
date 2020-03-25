@@ -1,8 +1,7 @@
-#include "mikabox.h"
-#include "wren.h"
+#include "main.h"
 #include <string.h>
 
-static char *read_file(const char *path)
+char *read_file(const char *path)
 {
   int f = fil_open(path, FA_READ);
   int len = fil_size(f);
@@ -66,16 +65,18 @@ static void wren_error(WrenVM *vm, WrenErrorType type,
   printf("%s:%d: %s\n", module, line, message);
 }
 
-extern const char *wren_mikabox_def;
-
 static char *wren_load_module(WrenVM *vm, const char *name)
 {
   // asprintf and strdup are non-standard
 
-  if (strcmp(name, "mikabox") == 0) {
-    size_t length = strlen(wren_mikabox_def);
+  const char *def = NULL;
+  if (strcmp(name, "mikabox") == 0) def = wren_def_mikabox;
+  else if (strcmp(name, "stb") == 0) def = wren_def_stb;
+
+  if (def != NULL) {
+    size_t length = strlen(def);
     char *copy = malloc(length + 1);
-    memcpy(copy, wren_mikabox_def, length + 1);
+    memcpy(copy, def, length + 1);
     return copy;
   }
 
@@ -87,14 +88,6 @@ static char *wren_load_module(WrenVM *vm, const char *name)
   free(path);
   return buf;
 }
-
-// wren_bind_mikabox.c
-WrenForeignMethodFn wren_bind_mikabox(WrenVM *vm, const char *module,
-  const char *class_name, bool is_static, const char *signature);
-
-// wren_bind_stb.c
-WrenForeignMethodFn wren_bind_stb(WrenVM *vm, const char *module,
-  const char *class_name, bool is_static, const char *signature);
 
 WrenForeignMethodFn wren_bind_method(WrenVM *vm, const char *module,
   const char *class_name, bool is_static, const char *signature)
