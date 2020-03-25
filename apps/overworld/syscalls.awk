@@ -1,5 +1,5 @@
 # awk -v output=<c|wren<0|1|2>> -f syscalls.awk syscalls.txt
-# :> wren_bind.c; for i in 0 1 2; do awk -v output=wren$i -f syscalls.awk syscalls.txt >> wren_bind.c; done
+# :> wren_bind_mikabox.c; for i in 0 1 2; do awk -v output=wren$i -f syscalls.awk syscalls.txt >> wren_bind_mikabox.c; done
 
 BEGIN {
   FS = ","
@@ -19,7 +19,7 @@ BEGIN {
     printf("const char *wren_mikabox_def =\n")
     printf("\"class Mikabox {\\n\"\n")
   } else if (output == "wren2") {
-    printf("WrenForeignMethodFn wren_bind_method(WrenVM *vm, const char *module,\n")
+    printf("WrenForeignMethodFn wren_bind_mikabox(WrenVM *vm, const char *module,\n")
     printf("  const char *class_name, bool is_static, const char *signature)\n")
     printf("{\n")
     printf("  if (is_static && strcmp(class_name, \"Mikabox\") == 0) {\n")

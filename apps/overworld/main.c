@@ -88,9 +88,26 @@ static char *wren_load_module(WrenVM *vm, const char *name)
   return buf;
 }
 
-// wren_bind.c
-WrenForeignMethodFn wren_bind_method(WrenVM *vm, const char *module,
+// wren_bind_mikabox.c
+WrenForeignMethodFn wren_bind_mikabox(WrenVM *vm, const char *module,
   const char *class_name, bool is_static, const char *signature);
+
+// wren_bind_stb.c
+WrenForeignMethodFn wren_bind_stb(WrenVM *vm, const char *module,
+  const char *class_name, bool is_static, const char *signature);
+
+WrenForeignMethodFn wren_bind_method(WrenVM *vm, const char *module,
+  const char *class_name, bool is_static, const char *signature)
+{
+  WrenForeignMethodFn fn;
+
+  if ((fn = wren_bind_mikabox(vm, module,
+    class_name, is_static, signature)) != NULL) return fn;
+  if ((fn = wren_bind_stb(vm, module,
+    class_name, is_static, signature)) != NULL) return fn;
+
+  return NULL;
+}
 
 void main()
 {
