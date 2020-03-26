@@ -3,7 +3,6 @@
 #include <time.h>
 #include "mikabox.h"
 
-#undef printf
 int printf(const char *format, ...)
 {
   char s[256];

@@ -139,16 +139,6 @@ static inline void ovw_resume() { syscall0(3843); }
 
 // Utilities
 
-static inline void mika_printf(const char *format, ...)
-{
-  char s[256];
-  va_list arg;
-  va_start(arg, format);
-  vsnprintf(s, sizeof s, format, arg);
-  va_end(arg);
-  mika_log(0, s);
-}
-
-#define printf mika_printf
+int printf(const char *format, ...);
 
 #endif
