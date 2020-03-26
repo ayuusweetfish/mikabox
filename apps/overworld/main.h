@@ -4,7 +4,7 @@
 #include "mikabox.h"
 #include "wren.h"
 
-char *read_file(const char *path);
+void *read_file(const char *path, int *o_len);
 
 // wren_bind_mikabox.c
 

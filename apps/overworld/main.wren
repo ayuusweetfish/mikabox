@@ -31,6 +31,7 @@ var draw = Fiber.new {
       Mikabox.btns(0) == 0 ? 0xffffffdd : 0xffffddff)
 
     App.f.draw(ctx)
+    appsList.draw(ctx)
 
     Mikabox.gfxCtxIssue(ctx)
     Fiber.yield(true)

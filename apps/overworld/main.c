@@ -1,9 +1,11 @@
 #include "main.h"
 #include <string.h>
 
-char *read_file(const char *path)
+void *read_file(const char *path, int *o_len)
 {
   int f = fil_open(path, FA_READ);
+  if (f < 0) return NULL;
+
   int len = fil_size(f);
   char *buf = malloc(len + 1);
   if (buf == NULL) {
@@ -17,6 +19,8 @@ char *read_file(const char *path)
   buf[len] = '\0';
 
   fil_close(f);
+  if (o_len != NULL) *o_len = len;
+
   return buf;
 }
 
@@ -83,7 +87,7 @@ static char *wren_load_module(WrenVM *vm, const char *name)
   size_t length = strlen(name);
   char *path = malloc(length + 7);
   sprintf(path, "/%s.wren", name);
-  char *buf = read_file(path);
+  char *buf = read_file(path, NULL);
 
   free(path);
   return buf;
@@ -114,7 +118,7 @@ void main()
 
   vm = wrenNewVM(&config);
 
-  char *src = read_file("/main.wren");
+  char *src = read_file("/main.wren", NULL);
   if (src == NULL) while (1) { }
 
   WrenInterpretResult result = wrenInterpret(
