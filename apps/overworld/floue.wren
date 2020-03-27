@@ -54,6 +54,8 @@ class FloueSpotlight {
 class Floue {
   construct new(list) {
     _n = list.count
+    _frame = 0
+    _dt = 0
 
     _spots = []
     for (s in list) {
@@ -105,34 +107,56 @@ class Floue {
       }
     }
 
-    _cosTable = []
-    _sinTable = []
+    // Calculate vertex coordinate offsets
+
+    var cosTable = []
+    var sinTable = []
     for (i in 0...Poly) {
-      _cosTable.add((Num.pi * 2 / Poly * i).cos)
-      _sinTable.add((Num.pi * 2 / Poly * i).sin)
+      cosTable.add((Num.pi * 2 / Poly * i).cos)
+      sinTable.add((Num.pi * 2 / Poly * i).sin)
+    }
+
+    _poff = List.filled(_n * (Poly + 1) * 2, 0)
+    base = 0
+    for (i in 0..._n) {
+      var s = _spots[i]
+      var r
+      for (j in 0...Poly) {
+        if (j % 2 == 0) r = s.r * 800 - 50 else r = s.r * 800
+        _poff[base + 0] = r * cosTable[j]
+        _poff[base + 1] = r * sinTable[j]
+        base = base + 2
+      }
+      _poff[base + 0] = 0
+      _poff[base + 1] = 0
+      base = base + 2
     }
   }
 
   tick(dt) {
-    for (s in _spots) s.tick(dt)
+    _dt = _dt + dt
+    if (_dt > 0.05) {
+      for (s in _spots) s.tick(_dt)
+      _dt = 0
+    }
   }
 
   draw(ctx) {
+    _frame = _frame + 1
+    if (_frame == 3) _frame = 0 else return
+
+    var b1 = 0
+    var b2 = 0
     for (i in 0..._n) {
       var s = _spots[i]
-      // Draw a spotlight
-      var base = (Poly + 1) * 6 * i
       var x = s.x * 800
       var y = s.y * 800
-      var r
-      for (j in 0...Poly) {
-        if (j % 2 == 0) r = s.r * 800 - 50 else r = s.r * 800
-        _vs[base + 0] = x + r * _cosTable[j]
-        _vs[base + 1] = y + r * _sinTable[j]
-        base = base + 6
+      for (j in 0..Poly) {
+        _vs[b1] = x + _poff[b2]
+        _vs[b1 + 1] = y + _poff[b2 + 1]
+        b1 = b1 + 6
+        b2 = b2 + 2
       }
-      _vs[base + 0] = x
-      _vs[base + 1] = y
     }
 
     Mikabox.gfxVarrPut(_varr, 0, _vs, _n * (Poly + 1))
