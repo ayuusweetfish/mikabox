@@ -17,6 +17,7 @@ var draw = Fiber.new {
 
   Mikabox.gfxCtxReset(ctx)
   App.f.addCommands(ctx)
+  appsList.addCommands(ctx)
 
   while (true) {
     var t2 = Mikabox.tick()

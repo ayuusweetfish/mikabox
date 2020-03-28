@@ -48,7 +48,9 @@ class AppRecord {
       }
     }
     Mikabox.gfxVarrPut(_varr, 0, _vs, 4)
+  }
 
+  addCommands(ctx) {
     Mikabox.gfxCtxBatch(ctx, _bat)
     Mikabox.gfxCtxCall(ctx, 1, 6, _iarr)
   }
@@ -78,6 +80,13 @@ class AppsList {
     for (i in 0..._apps.count) {
       var a = _apps[i]
       a.draw(ctx, 0, i * 180)
+    }
+  }
+
+  addCommands(ctx) {
+    for (i in 0..._apps.count) {
+      var a = _apps[i]
+      a.addCommands(ctx)
     }
   }
 }
