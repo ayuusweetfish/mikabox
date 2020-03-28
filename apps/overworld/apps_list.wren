@@ -1,6 +1,8 @@
 import "mikabox" for Mikabox
 import "stb" for Stb
 
+var ICON_SIZE = 120
+
 class AppRecord {
   construct new(name) {
     _tex = null
@@ -39,12 +41,16 @@ class AppRecord {
     Mikabox.gfxIarrPut(_iarr, 0, [0, 1, 2, 1, 2, 3], 6)
   }
 
-  draw(ctx, x, y) {
+  draw(ctx, x, y, scale) {
+    var offs = (scale - 1) * ICON_SIZE / 2
+    var size = ICON_SIZE * scale
+    x = x - offs
+    y = y - offs
     for (i in 0..1) {
       for (j in 0..1) {
         var base = (i * 2 + j) * 4
-        _vs[base + 0] = x + 120 * i
-        _vs[base + 1] = y + 120 * j
+        _vs[base + 0] = x + size * i
+        _vs[base + 1] = y + size * j
       }
     }
     Mikabox.gfxVarrPut(_varr, 0, _vs, 4)
@@ -79,7 +85,7 @@ class AppsList {
   draw(ctx) {
     for (i in 0..._apps.count) {
       var a = _apps[i]
-      a.draw(ctx, 0, i * 180)
+      a.draw(ctx, 120, i * 160, 1 + (Mikabox.tick() / 300000 + i).sin * 0.05)
     }
   }
 
