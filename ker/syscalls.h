@@ -275,13 +275,13 @@ def(GFX, 4, {
 def(GFX, 5, {
   v3d_ctx *c = pool_elm(dual_sel(ctxs), r0);
   if (c == NULL) return (uint32_t)-2;
-  v3d_ctx_issue(c);
+  //v3d_ctx_issue(c);
 })
 
 def(GFX, 6, {
   v3d_ctx *c = pool_elm(dual_sel(ctxs), r0);
   if (c == NULL) return (uint32_t)-2;
-  v3d_ctx_wait(c);
+  //v3d_ctx_wait(c);
 })
 
 def(GFX, 15, {

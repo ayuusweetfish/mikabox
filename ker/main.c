@@ -104,9 +104,9 @@ void vsync_callback(void *_unused)
   frame_count++;
 */
   flipped = true;
-  if (!is_in_abt && app_fb_buf != 0) return;
-  if (is_in_abt) charbuf_flush();
+  charbuf_flush();
   fb_flip_buffer();
+  if (!is_in_abt && app_fb_buf != 0) return;
 }
 
 static void kbd_upd_callback(uint8_t mod, const uint8_t k[6])
@@ -435,6 +435,7 @@ void sys_main()
     co_next(&usb_co);
     co_next(&audio_co);
 
+#if 0
     if (!program_paused && !(player_btns_last[0] & BTN_START) && (player_btns[0] & BTN_START)) {
       // Pause
       program_paused = true;
@@ -502,6 +503,7 @@ void sys_main()
       last_comp = global_tick * 240 / 1000000;
       req_flags |= (1 << 3);
     }
+#endif
   }
 
   while (1) { }

@@ -286,13 +286,13 @@ while (1) {
 
 Support for other languages is work in progress. Planned are:
 
-- Wren
+- Wren (almost done)
 - Lua
 - Rust
 - Pascal
 - Many more scripting languages
 
-Take a look [into the box] if interested in adopting a new language.
+Take a look at [into the box] if interested in adopting a new language.
 
 [into the box]: #inside-the-box
 
@@ -311,3 +311,16 @@ An application is a normal ELF file compiled for ARMv6.
 - 0x97d00000 -- 0x97dfffff: Stack space for thread **synth**
 - 0x97e00000 -- 0x97efffff: Stack space for thread **event**
 - 0x97f00000 -- 0x97ffffff: Stack space for thread **update**
+
+### System call
+
+At assembly level, a system call is issued by putting the call number at
+register R7 and arguments at R0-R3, then invoking a software interrupt #0
+(`SWI #0`). The system call follows the AAPCS32 standard; in particular, the
+return value, if any, is saved at R0-R1 in little-endian format.
+
+Pointers are expressed as virtual addresses in application space.
+
+For a comprehensive list of system calls see [here].
+
+[here]: #TODO

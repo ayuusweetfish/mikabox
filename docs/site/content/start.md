@@ -47,7 +47,7 @@ running.
 #### Kernel
 
 ```
-cd sys
+cd ker
 make libs && make
 ```
 
